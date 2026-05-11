@@ -1,0 +1,12 @@
+.inputfields {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.text_field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items:normal
+}
