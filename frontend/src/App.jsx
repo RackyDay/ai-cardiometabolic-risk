@@ -1,28 +1,16 @@
-import { useEffect, useState } from "react";
+import InputPage from "./pages/inputs";
+import DashboardPage from "./pages/dashboard";
+import LearnPage from "./pages/learn";
+import { RiskProvider } from "./pages/RiskContext";
 
 function App() {
-  const [response, setResponse] = useState("");
-  const [age, setAge] = useState("");
-
-  const sendData = () => {
-    fetch("http://localhost:8000/test", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({age: Number(age)})
-    })
-      .then(res => res.json())
-      .then(data => setResponse(data.message));
-  };
-
-  return(
+  return (
     <div>
-      <input
-        type="number"
-        value={age}
-        onChange={(e) => setAge(e.target.value)}
-        />
-      <button onClick={sendData}>Send Data</button>
-      <h1>{response}</h1>
+      <RiskProvider>
+        <InputPage />
+        <DashboardPage />
+        <LearnPage />
+      </RiskProvider>
     </div>
   );
 }

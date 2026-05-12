@@ -14,6 +14,15 @@ app.add_middleware(
 
 class RiskInputData(BaseModel):
     age: int
+    smoker: bool
+
+@app.post("/predict")
+def predict(data: RiskInputData):
+    return {"risk_score": data.age + int(data.smoker)}
+
+@app.get("/learn")
+def learn():
+    pass
 
 @app.post("/test")
 def test_endpoint(data: RiskInputData):
