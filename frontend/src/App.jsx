@@ -1,3 +1,4 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import InputPage from "./pages/inputs";
 import DashboardPage from "./pages/dashboard";
 import LearnPage from "./pages/learn";
@@ -5,13 +6,15 @@ import { RiskProvider } from "./pages/RiskContext";
 
 function App() {
   return (
-    <div>
+    <BrowserRouter>
       <RiskProvider>
-        <InputPage />
-        <DashboardPage />
-        <LearnPage />
+        <Routes>
+          <Route path="/" element={<InputPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/learn" element={<LearnPage />} />
+        </Routes>
       </RiskProvider>
-    </div>
+    </BrowserRouter>
   );
 }
 
