@@ -1,6 +1,6 @@
-function ActionButton({ label, onClick }) {
+function ActionButton({ label, onClick, className }) {
   return (
-    <button onClick={onClick}>
+    <button className={className} onClick={onClick}>
       {label}
     </button>
   );
