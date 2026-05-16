@@ -1,8 +1,5 @@
 import Dropdown from "../../components/Dropdown";
 import InputTextField from "../../components/InputTextField";
-import GearIcon from "../../components/icons/GearIcon";
-import HeartECGIcon from "../../components/icons/HeartECGIcon";
-import UserIcon from "../../components/icons/UserIcon";
 import "../../styles/inputs.css";
 import { useInputViewModel } from "./useInputViewModel";
 
@@ -29,21 +26,6 @@ function InputPage() {
 
   return (
     <div className="inputs-page">
-      <header className="inputs-header">
-        <div className="header-brand">
-          <HeartECGIcon />
-        </div>
-        <span className="header-title">CVD Calculator</span>
-        <div className="header-actions">
-          <button className="icon-btn" aria-label="Settings">
-            <GearIcon />
-          </button>
-          <button className="icon-btn" aria-label="Profile">
-            <UserIcon />
-          </button>
-        </div>
-      </header>
-
       <div className="page-body">
         <button className="back-btn" onClick={() => navigate(-1)}>
           ‹ Back
