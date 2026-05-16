@@ -1,4 +1,4 @@
-function InputTextField({ label, value, onChange, min, step, error, required = true }) {
+function InputTextField({ label, value, onChange, min, step, error, required = true, placeholder }) {
   return (
     <div className="form-field">
       <label className="form-label">
@@ -14,6 +14,7 @@ function InputTextField({ label, value, onChange, min, step, error, required = t
         onChange={onChange}
         min={min}
         step={step}
+        placeholder={placeholder}
       />
       {error && <div className="form-error">{error}</div>}
     </div>

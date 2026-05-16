@@ -104,6 +104,12 @@
   font-family: system-ui, -apple-system, sans-serif;
 }
 
+.form-input::placeholder {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #b0b8c9;
+}
+
 /* Select */
 .select-wrapper {
   position: relative;

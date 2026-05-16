@@ -103,6 +103,7 @@ function InputPage() {
                 onChange={set("sysBP")}
                 min={0}
                 error={errors.sysBP}
+                placeholder="Enter number from 70 to 300"
               />
               <InputTextField
                 label="Diastolic blood pressure"
@@ -110,6 +111,7 @@ function InputPage() {
                 onChange={set("diaBP")}
                 min={0}
                 error={errors.diaBP}
+                placeholder="Enter number from 40 to 200"
               />
             </>
           )}
@@ -123,6 +125,7 @@ function InputPage() {
                 min={0}
                 step={0.1}
                 error={errors.BMI}
+                placeholder="Enter number from 10 to 60"
               />
               <InputTextField
                 label="Average heart rate"
@@ -130,6 +133,7 @@ function InputPage() {
                 onChange={set("heartRate")}
                 min={0}
                 error={errors.heartRate}
+                placeholder="Enter number from 30 to 200"
               />
               <InputTextField
                 label="Glucose level"
@@ -137,6 +141,7 @@ function InputPage() {
                 onChange={set("glucose")}
                 min={0}
                 error={errors.glucose}
+                placeholder="Enter number from 50 to 500"
               />
               <div className="submit-wrapper">
                 <button className="submit-btn" onClick={handleSubmit}>
