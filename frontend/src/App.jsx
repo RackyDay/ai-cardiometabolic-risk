@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import InputPage from "./pages/inputs/InputPage";
+import MenuBar from "./components/MenuBar";
 import DashboardPage from "./pages/dashboard";
 import LearnPage from "./pages/learn";
 import { RiskProvider } from "./pages/RiskContext";
@@ -8,11 +9,16 @@ function App() {
   return (
     <BrowserRouter>
       <RiskProvider>
-        <Routes>
-          <Route path="/" element={<InputPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/learn" element={<LearnPage />} />
-        </Routes>
+        <div className="app-shell">
+          <MenuBar />
+          <main className="app-content">
+            <Routes>
+              <Route path="/" element={<InputPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/learn" element={<LearnPage />} />
+            </Routes>
+          </main>
+        </div>
       </RiskProvider>
     </BrowserRouter>
   );
