@@ -1,0 +1,52 @@
+.menu-bar {
+  height: 70px;
+  width: 100%;
+  background: #f7faFd;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 180px 1fr 180px;
+  align-items: center;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.menu-bar-left {
+  display: flex;
+  align-items: center;
+}
+
+.menu-bar-title {
+  margin: 0;
+  text-align: center;
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--text-h);
+  letter-spacing: 0.5px;
+}
+
+.menu-bar-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+}
+
+.menu-icon-button {
+  border: none;
+  background: transparent;
+  color: var(--text-h);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 6px;
+  line-height: 1;
+}
+
+.menu-icon-button:hover {
+  opacity: 0.7;
+}
+
+.menu-bar-logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
