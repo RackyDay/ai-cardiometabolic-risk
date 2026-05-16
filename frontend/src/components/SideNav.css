@@ -31,3 +31,8 @@
   color: #3f73f6;
   font-weight: 600;
 }
+
+.side-nav-footer {
+  margin-top: auto;
+  padding: 16px;
+}
