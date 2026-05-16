@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import InputPage from "./pages/inputs/InputPage";
 import MenuBar from "./components/MenuBar";
-import InputPage from "./pages/inputs";
 import DashboardPage from "./pages/dashboard";
 import LearnPage from "./pages/learn";
 import { RiskProvider } from "./pages/RiskContext";
