@@ -1,7 +1,23 @@
-.app-shell {
+.app-layout {
   min-height: 100vh;
+}
+
+.app-body {
+  min-height: calc(100vh - 70px);
+}
+
+.app-body.with-sidebar {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+}
+
+.app-body.no-sidebar {
+  display: block;
 }
 
 .app-content {
   background: #eaf0fb;
+  padding: 32px;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
