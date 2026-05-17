@@ -1,0 +1,112 @@
+/* ===== Dashboard Page Layout ===== */
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background-color: #eef0f7;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+}
+
+.top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.risk-score-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.gauge-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+.insight-subheading {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.625rem 0;
+}
+
+.stress-heading {
+  margin-top: 1.25rem;
+}
+
+.insight-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.insight-item {
+  border-radius: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.insight-green {
+  background-color: #f0fdf4;
+  color: #166534;
+}
+
+.insight-red {
+  background-color: #fef2f2;
+  color: #991b1b;
+}
+
+.risk-factor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.risk-factor-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #f3f4f6;
+  border-radius: 0.625rem;
+  padding: 0.875rem 1.125rem;
+}
+
+.risk-factor-number {
+  font-weight: 700;
+  color: #374151;
+  font-size: 0.9375rem;
+  min-width: 1.25rem;
+}
+
+.risk-factor-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9375rem;
+}
+
+@media (max-width: 48rem) {
+  .top-row {
+    grid-template-columns: 1fr;
+  }
+}

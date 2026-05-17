@@ -9,7 +9,6 @@ import SideNav from "./components/SideNav/SideNav";
 import useAppLayoutViewModel from "./viewmodels/useAppLayoutViewModel";
 
 function AppLayout() {
-  // Indicator for side navbar visibility
   const { shouldShowSideNav } = useAppLayoutViewModel();
 
   return (
@@ -21,8 +20,8 @@ function AppLayout() {
 
         <main className="app-content">
           <Routes>
-            <Route path="/" element={<InputPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/inputs" element={<InputPage />} />
             <Route path="/learn" element={<LearnPage />} />
           </Routes>
         </main>

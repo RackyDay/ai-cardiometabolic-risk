@@ -1,12 +1,13 @@
 import { NavLink } from "react-router-dom";
 import "./SideNav.css";
+import ActionButton from "../ActionButton";
 
 function SideNav() {
   return (
     <aside className="side-nav">
       <nav className="side-nav-links">
         <NavLink
-          to="/dashboard"
+          to="/"
           className={({ isActive }) =>
             isActive ? "side-nav-link active" : "side-nav-link"
           }
@@ -23,6 +24,10 @@ function SideNav() {
           Learn
         </NavLink>
       </nav>
+
+      <div className="side-nav-footer">
+        <ActionButton label="Add Assessment" to="/inputs" />
+      </div>
     </aside>
   );
 }
