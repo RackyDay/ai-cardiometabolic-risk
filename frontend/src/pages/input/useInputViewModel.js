@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RiskContext } from "../RiskContext";
+import { RiskContext } from "../../context/RiskContext";
 
 export function useInputViewModel() {
     

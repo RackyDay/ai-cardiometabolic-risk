@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./App.css";
-import InputPage from "./pages/inputs/InputPage";
-import DashboardPage from "./pages/dashboard";
-import LearnPage from "./pages/learn";
-import { RiskProvider } from "./pages/RiskContext";
-import MenuBar from "./components/MenuBar";
-import SideNav from "./components/SideNav";
+import InputPage from "./pages/input/InputPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
+import LearnPage from "./pages/learn/LearnPage";
+import { RiskProvider } from "./context/RiskContext";
+import MenuBar from "./components/MenuBar/MenuBar";
+import SideNav from "./components/SideNav/SideNav";
 import useAppLayoutViewModel from "./viewmodels/useAppLayoutViewModel";
 
 function AppLayout() {
