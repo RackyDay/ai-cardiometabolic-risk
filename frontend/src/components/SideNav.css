@@ -1,0 +1,33 @@
+.side-nav {
+  min-height: calc(100vh - 70px);
+  background: #eef2f7;
+  border-right: 1px solid var(--border);
+  padding: 24px 12px;
+  box-sizing: border-box;
+}
+
+.side-nav-links {
+  display: grid;
+  gap: 10px;
+}
+
+.side-nav-link {
+  display: block;
+  text-decoration: none;
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  text-align: left;
+}
+
+.side-nav-link:hover {
+  background: rgba(63, 115, 246, 0.08);
+  color: #3f73f6;
+}
+
+.side-nav-link.active {
+  background: #ffffff;
+  color: #3f73f6;
+  font-weight: 600;
+}
