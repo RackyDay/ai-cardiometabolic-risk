@@ -1,6 +1,11 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+
 function useLearnViewModel() {
-  // Temporary logic for now.
-  // Later, this can come from RiskContext or backend results.
+  const cardScrollRef = useRef(null);
+
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   const relevantRiskFactors = {
     smoking: true,
     bloodPressure: false,
@@ -40,8 +45,50 @@ function useLearnViewModel() {
 
   const visibleSections = learningSections.filter((section) => section.isVisible);
 
+  const updateScrollButtons = useCallback(() => {
+    const container = cardScrollRef.current;
+
+    if (!container) return;
+
+    const tolerance = 2;
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+    setCanScrollLeft(container.scrollLeft > tolerance);
+    setCanScrollRight(container.scrollLeft < maxScrollLeft - tolerance);
+  }, []);
+
+  const scrollCardsLeft = () => {
+    cardScrollRef.current?.scrollBy({
+      left: -260,
+      behavior: "smooth",
+    });
+  };
+
+  const scrollCardsRight = () => {
+    cardScrollRef.current?.scrollBy({
+      left: 260,
+      behavior: "smooth",
+    });
+  };
+
+  useEffect(() => {
+    requestAnimationFrame(updateScrollButtons);
+
+    window.addEventListener("resize", updateScrollButtons);
+
+    return () => {
+      window.removeEventListener("resize", updateScrollButtons);
+    };
+  }, [updateScrollButtons]);
+
   return {
     visibleSections,
+    cardScrollRef,
+    canScrollLeft,
+    canScrollRight,
+    scrollCardsLeft,
+    scrollCardsRight,
+    updateScrollButtons,
   };
 }
 
