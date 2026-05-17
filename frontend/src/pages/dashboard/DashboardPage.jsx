@@ -10,7 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import RiskGauge from "../../components/RiskGauge";
-import "./dashboard.css";
+import "./DashboardPage.css";
 
 const TOP_RISK_FACTORS = [
   "Number of cigarettes smoked",

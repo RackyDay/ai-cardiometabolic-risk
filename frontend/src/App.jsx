@@ -20,8 +20,8 @@ function AppLayout() {
 
         <main className="app-content">
           <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/inputs" element={<InputPage />} />
+            <Route path="/" element={<InputPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/learn" element={<LearnPage />} />
           </Routes>
         </main>

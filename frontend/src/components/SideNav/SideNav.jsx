@@ -7,7 +7,7 @@ function SideNav() {
     <aside className="side-nav">
       <nav className="side-nav-links">
         <NavLink
-          to="/"
+          to="/dashboard"
           className={({ isActive }) =>
             isActive ? "side-nav-link active" : "side-nav-link"
           }
