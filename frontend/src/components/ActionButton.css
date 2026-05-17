@@ -2,14 +2,14 @@
   background: linear-gradient(135deg, #4f8ef7, #1d4ed8);
   color: white;
   border: none;
-  border-radius: 50px;
-  padding: 16px 24px;
-  font-size: 18px;
+  border-radius: 3.125rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   width: 100%;
   transition: opacity 0.2s;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(59, 130, 246, 0.4);
 }
 
 .action-button:hover {

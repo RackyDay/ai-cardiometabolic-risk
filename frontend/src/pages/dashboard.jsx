@@ -9,9 +9,9 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import RiskGauge from "../components/RiskGauge";
 import "../styles/dashboard.css";
 
-// --- Hardcoded data (replace with real data later) ---
 const TOP_RISK_FACTORS = [
   "Number of cigarettes smoked",
   "Glucose Level",
@@ -20,6 +20,7 @@ const TOP_RISK_FACTORS = [
 
 const INSIGHTS = [
   "Overall Risk Score has decreased by 4%",
+  "Heart rate has improved by 5 BPM",
   "BMI result is now closer to the ideal value",
 ];
 
@@ -36,64 +37,13 @@ const TREND_DATA = [
   { year: 10, risk: 68 },
 ];
 
-// --- Circular Risk Gauge ---
-function RiskGauge({ score }) {
-  const radius = 70;
-  const stroke = 10;
-  const normalizedRadius = radius - stroke / 2;
-  const circumference = 2 * Math.PI * normalizedRadius;
-  const progress = (score / 100) * circumference;
-
-  return (
-    <div className="gauge-wrapper">
-      <svg width={radius * 2} height={radius * 2} className="gauge-svg">
-        <circle
-          cx={radius}
-          cy={radius}
-          r={normalizedRadius}
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth={stroke}
-        />
-        <circle
-          cx={radius}
-          cy={radius}
-          r={normalizedRadius}
-          fill="none"
-          stroke="#f97316"
-          strokeWidth={stroke}
-          strokeDasharray={`${progress} ${circumference}`}
-          strokeLinecap="round"
-        />
-        <text
-          x={radius}
-          y={radius}
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="gauge-text"
-        >
-          {score}%
-        </text>
-      </svg>
-
-      <div className="simulate-dropdown">
-        <span>Simulate how different factors affect this score</span>
-        <span className="dropdown-arrow">▾</span>
-      </div>
-    </div>
-  );
-}
-
-// --- Main Dashboard Component ---
 function DashboardPage() {
   const { riskScore } = useContext(RiskContext);
   const displayScore = riskScore ?? 50;
 
   return (
     <div className="dashboard-page">
-      {/* Top row: Risk Score + Insights */}
       <div className="top-row">
-        {/* Risk Score Card */}
         <div className="card risk-score-card">
           <h2 className="card-title">Risk Score</h2>
           <div className="gauge-center">
@@ -101,10 +51,8 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* Insights Card */}
         <div className="card insights-card">
           <h2 className="card-title">Insights</h2>
-
           <p className="insight-subheading">Since the last assessment:</p>
           <div className="insight-list">
             {INSIGHTS.map((text, i) => (
@@ -113,7 +61,6 @@ function DashboardPage() {
               </div>
             ))}
           </div>
-
           <p className="insight-subheading stress-heading">Stress</p>
           <div className="insight-item insight-red">
             Your data shows traits that are usually associated with stress. This
@@ -122,7 +69,6 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Risk Factors Card */}
       <div className="card risk-factors-card">
         <h2 className="card-title">Top 3 Risk Factors</h2>
         <div className="risk-factor-list">
@@ -135,7 +81,6 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Trend Chart Card */}
       <div className="card trend-card">
         <h2 className="card-title">10-year Cardiovascular Health Trend</h2>
         <ResponsiveContainer width="100%" height={260}>
