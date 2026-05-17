@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./App.css";
-import InputPage from "./pages/inputs";
+import InputPage from "./pages/inputs/InputPage";
 import DashboardPage from "./pages/dashboard";
 import LearnPage from "./pages/learn";
 import { RiskProvider } from "./pages/RiskContext";
