@@ -31,7 +31,7 @@ function useLearnViewModel() {
         },
         {
           id: 4,
-          title: "Why does smoking increase risk?",
+          title: "Why does smoking increase heart attack risk?",
           url: "#",
         },
       ],

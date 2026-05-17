@@ -1,0 +1,48 @@
+.learn-page {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.learn-section {
+  margin-bottom: 32px;
+}
+
+.learn-section-title {
+  margin: 0 0 16px;
+  font-size: 28px;
+  font-weight: 500;
+  color: #111111;
+}
+
+.learn-card-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 220px;
+  gap: 24px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  padding-bottom: 12px;
+  scroll-snap-type: x proximity;
+}
+
+.learn-card {
+  min-height: 80px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+  text-decoration: none;
+  color: #111111;
+  font-size: 16px;
+  line-height: 1.25;
+
+  scroll-snap-align: start;
+}
+
+.learn-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
