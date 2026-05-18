@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import "./SideNav.css";
-import ActionButton from "../ActionButton";
+import ActionButton from "../../common/ActionButton";
 
 function SideNav() {
   return (

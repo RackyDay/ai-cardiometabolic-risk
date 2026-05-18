@@ -1,5 +1,5 @@
 import "./MenuBar.css";
-import logo from "../../assets/heart-logo.png"
+import logo from "../../../assets/heart-logo.png"
 import useMenuBarViewModel from "./useMenuBarViewModel";
 
 function MenuBar() {

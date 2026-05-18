@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import RiskGauge from "../../components/RiskGauge";
+import RiskGauge from "./components/RiskGauge";
 import "./DashboardPage.css";
 
 const TOP_RISK_FACTORS = [

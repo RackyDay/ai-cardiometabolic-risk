@@ -1,5 +1,5 @@
-import Dropdown from "../../components/Dropdown";
-import InputTextField from "../../components/InputTextField";
+import Dropdown from "../../components/common/Dropdown";
+import InputTextField from "../../components/common/InputTextField";
 import "./InputPage.css";
 import { useInputViewModel } from "./useInputViewModel";
 

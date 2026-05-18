@@ -4,8 +4,8 @@ import InputPage from "./pages/input/InputPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import LearnPage from "./pages/learn/LearnPage";
 import { RiskProvider } from "./context/RiskContext";
-import MenuBar from "./components/MenuBar/MenuBar";
-import SideNav from "./components/SideNav/SideNav";
+import MenuBar from "./components/layout/MenuBar/MenuBar";
+import SideNav from "./components/layout/SideNav/SideNav";
 import useAppLayoutViewModel from "./viewmodels/useAppLayoutViewModel";
 
 function AppLayout() {
