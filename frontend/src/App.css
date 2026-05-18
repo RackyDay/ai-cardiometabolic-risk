@@ -1,14 +1,16 @@
 .app-layout {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .app-body {
-  min-height: calc(100vh - 70px);
+  height: calc(100vh - 70px);
+  overflow: hidden;
 }
 
 .app-body.with-sidebar {
   display: grid;
-  grid-template-columns: 180px 1fr;
+  grid-template-columns: 180px minmax(0, 1fr);
 }
 
 .app-body.no-sidebar {
@@ -16,8 +18,10 @@
 }
 
 .app-content {
+  height: 100%;
   background: #eaf0fb;
   padding: 32px;
   box-sizing: border-box;
+  overflow-y: auto;
   overflow-x: hidden;
 }
