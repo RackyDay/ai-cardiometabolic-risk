@@ -2,6 +2,7 @@ import Dropdown from "../../components/common/Dropdown";
 import InputTextField from "../../components/common/InputTextField";
 import "./InputPage.css";
 import { useInputViewModel } from "./useInputViewModel";
+import { useNavigate } from "react-router-dom";
 
 const GENDER_OPTIONS = [
   { value: "M", label: "Male" },
@@ -23,13 +24,14 @@ const YES_NO = [
 function InputPage() {
 
   const {formData, errors, set, page, setPage, handleSubmit} = useInputViewModel();
+  const navigate = useNavigate();
 
   return (
     <div className="inputs-page">
       <div className="page-body">
-        <button className="back-btn" onClick={() => navigate(-1)}>
-          ‹ Back
-        </button>
+      <button className="back-btn" onClick={() => navigate("/")}>
+        ‹ Back
+      </button>
 
         <div className="form-card">
           {page === 1 && (

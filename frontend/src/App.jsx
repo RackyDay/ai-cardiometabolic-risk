@@ -3,6 +3,7 @@ import "./App.css";
 import InputPage from "./pages/input/InputPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import LearnPage from "./pages/learn/LearnPage";
+import WelcomePage from "./pages/welcome/WelcomePage";
 import { RiskProvider } from "./context/RiskContext";
 import MenuBar from "./components/layout/MenuBar/MenuBar";
 import SideNav from "./components/layout/SideNav/SideNav";
@@ -20,7 +21,8 @@ function AppLayout() {
 
         <main className="app-content">
           <Routes>
-            <Route path="/" element={<InputPage />} />
+            <Route path="/" element={<WelcomePage />} />
+            <Route path="/inputs" element={<InputPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/learn" element={<LearnPage />} />
           </Routes>
