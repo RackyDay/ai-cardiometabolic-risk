@@ -1,5 +1,5 @@
-import useLearnViewModel from "../viewmodels/useLearnViewModel";
-import "./learn.css";
+import useLearnViewModel from "./useLearnViewModel";
+import "./LearnPage.css";
 
 function LearnPage() {
   const {

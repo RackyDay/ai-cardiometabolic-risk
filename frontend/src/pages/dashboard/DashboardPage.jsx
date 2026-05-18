@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { RiskContext } from "./RiskContext";
+import { RiskContext } from "../../context/RiskContext";
 import {
   LineChart,
   Line,
@@ -9,8 +9,8 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import RiskGauge from "../components/RiskGauge";
-import "../styles/dashboard.css";
+import RiskGauge from "./components/RiskGauge";
+import "./DashboardPage.css";
 
 const TOP_RISK_FACTORS = [
   "Number of cigarettes smoked",

@@ -1,13 +1,13 @@
 import { NavLink } from "react-router-dom";
 import "./SideNav.css";
-import ActionButton from "./ActionButton";
+import ActionButton from "../../common/ActionButton";
 
 function SideNav() {
   return (
     <aside className="side-nav">
       <nav className="side-nav-links">
         <NavLink
-          to="/"
+          to="/dashboard"
           className={({ isActive }) =>
             isActive ? "side-nav-link active" : "side-nav-link"
           }

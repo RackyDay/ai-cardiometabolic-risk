@@ -1,6 +1,6 @@
 import "./MenuBar.css";
-import logo from "../assets/heart-logo.png"
-import useMenuBarViewModel from "../viewmodels/useMenuBarViewModel";
+import logo from "../../../assets/heart-logo.png"
+import useMenuBarViewModel from "./useMenuBarViewModel";
 
 function MenuBar() {
   const { pageTitle } = useMenuBarViewModel()

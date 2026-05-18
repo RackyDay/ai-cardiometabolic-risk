@@ -1,6 +1,6 @@
-import Dropdown from "../../components/Dropdown";
-import InputTextField from "../../components/InputTextField";
-import "../../styles/inputs.css";
+import Dropdown from "../../components/common/Dropdown";
+import InputTextField from "../../components/common/InputTextField";
+import "./InputPage.css";
 import { useInputViewModel } from "./useInputViewModel";
 
 const GENDER_OPTIONS = [
