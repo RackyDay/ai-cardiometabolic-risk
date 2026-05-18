@@ -4,12 +4,13 @@ function useMenuBarViewModel() {
   const location = useLocation();
 
   const pageTitles = {
-    "/": "Assessment",
-    "/dashboard": "Dashboard",
+    "/": "",
+    "/inputs": "My Health Information",
+    "/dashboard": "Overview",
     "/learn": "Learn",
   };
 
-  const pageTitle = pageTitles[location.pathname] || "Assessment";
+  const pageTitle = pageTitles[location.pathname] || "";
 
   return {
     pageTitle,
