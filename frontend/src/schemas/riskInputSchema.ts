@@ -8,7 +8,8 @@ export const riskInputSchema = {
         required: true,
         options: [  {value: "M", label: "Male"},
                     {value: "F", label: "Female"},
-                    {value: "O", label: "Rather not say"}]
+                    {value: "O", label: "Rather not say"}],
+        category: "demographic"
     },
     
     age: {
@@ -39,7 +40,7 @@ export const riskInputSchema = {
         name: "currentSmoker",
         input_label: "Are you a smoker?",
         type: "boolean",
-        defaultValue: false,
+        defaultValue: null,
         required: true,
         category: "lifestyle",
     },
@@ -59,36 +60,36 @@ export const riskInputSchema = {
         name: "bpMeds",
         input_label: "Do you take any blood pressure medication?",
         type: "boolean",
-        defaultValue: false,
+        defaultValue: null,
         required: true,
-        category: "lifestyle",
+        category: "medical history",
     },
 
     prevalentStroke: {
         name: "prevalentStroke",
         input_label: "Have you ever had a stroke?",
         type: "boolean",
-        defaultValue: false,
+        defaultValue: null,
         required: true,
-        category: "lifestyle",
+        category: "medical history",
     },
 
     prevalentHyp: {
         name: "prevalentHyp",
         input_label: "Have you been clinically diagnosed with hypertension?",
         type: "boolean",
-        defaultValue: false,
+        defaultValue: null,
         required: true,
-        category: "lifestyle",
+        category: "medical history",
     },
 
     diabetes: {
         name: "diabetes",
         input_label: "Have you been clinically diagnosed with diabetes?",
         type: "boolean",
-        defaultValue: false,
+        defaultValue: null,
         required: true,
-        category: "lifestyle",
+        category: "medical history",
     },
 
     sysBP: {

@@ -110,6 +110,31 @@
   color: #b0b8c9;
 }
 
+/* Boolean */
+.boolean-wrapper {
+  display: flex;
+  gap: 0.3rem
+}
+
+.boolean-button {
+  flex: 1;
+  padding: 0.7rem;
+  border: 1px solid #d0d0d4;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.boolean-button--selected{
+  background-color: #3d6fd4;
+  color: white;
+}
+
+.boolean-button:hover{
+  background-color: #3d6fd488;
+}
+
 /* Select */
 .select-wrapper {
   position: relative;

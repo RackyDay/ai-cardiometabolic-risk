@@ -1,5 +1,5 @@
 import { createContext, useState } from "react";
-import { createInitalRiskInputs } from "../schemas/createInitialRiskInputs";\
+import { createInitalRiskInputs } from "../schemas/createInitialRiskInputs";
 import { riskInputSchema } from "../schemas/riskInputSchema";
 
 export const RiskContext = createContext();
