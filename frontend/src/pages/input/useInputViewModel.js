@@ -49,11 +49,17 @@ export function useInputViewModel() {
         if (riskField.type === "number") {
             const n = parseFloat(value)
             if (isNaN(n)) {
-                return riskField.name + " must be a valid number";
+                return riskField.print_name + " must be a valid number";
+            }
+
+            if (!riskField.decimal) {
+                if (n % 1 !==0) {
+                    return riskField.print_name + " must be an integer"
+                }
             }
             
             if (n < riskField.min || n > riskField.max) {
-                return riskField.name + " must be between " + riskField.min + " and " + riskField.max;
+                return riskField.print_name + " must be between " + riskField.min + " and " + riskField.max;
             }
         }
         return "";

@@ -2,6 +2,7 @@ export const riskInputSchema = {
     
     gender: {
         name: "gender",
+        print_name: "Gender",
         input_label: "What is your gender?",
         type: "select",
         defaultValue: null,
@@ -14,8 +15,10 @@ export const riskInputSchema = {
     
     age: {
         name: "age",
+        print_name: "Age",
         input_label: "How old are you?",
         type: "number",
+        decimal: false,
         defaultValue: null,
         required: true,
         min: 1,
@@ -25,6 +28,7 @@ export const riskInputSchema = {
 
     education: {
         name: "education",
+        print_name: "Highest completed level of education",
         input_label: "What is the highest level of education you've completed?",
         type: "select",
         defaultValue: null,
@@ -38,6 +42,7 @@ export const riskInputSchema = {
 
     currentSmoker: {
         name: "currentSmoker",
+        print_name: "Smoking status",
         input_label: "Are you a smoker?",
         type: "boolean",
         defaultValue: null,
@@ -47,8 +52,10 @@ export const riskInputSchema = {
 
     cigsPerDay: {
         name: "cigsPerDay",
+        print_name: "Number of cigarettes smoked per day",
         input_label: "How many cigarettes do you smoke a day?",
         type: "number",
+        decimal: false,
         defaultValue: null,
         required: true,
         min: 0,
@@ -58,6 +65,7 @@ export const riskInputSchema = {
 
     bpMeds: {
         name: "bpMeds",
+        print_name: "Blood pressure medication status",
         input_label: "Do you take any blood pressure medication?",
         type: "boolean",
         defaultValue: null,
@@ -67,6 +75,7 @@ export const riskInputSchema = {
 
     prevalentStroke: {
         name: "prevalentStroke",
+        print_name: "Stroke status",
         input_label: "Have you ever had a stroke?",
         type: "boolean",
         defaultValue: null,
@@ -76,6 +85,7 @@ export const riskInputSchema = {
 
     prevalentHyp: {
         name: "prevalentHyp",
+        print_name: "Hypertension diagnosis status",
         input_label: "Have you been clinically diagnosed with hypertension?",
         type: "boolean",
         defaultValue: null,
@@ -85,6 +95,7 @@ export const riskInputSchema = {
 
     diabetes: {
         name: "diabetes",
+        print_name: "Diabetes diagnosis status",
         input_label: "Have you been clinically diagnosed with diabetes?",
         type: "boolean",
         defaultValue: null,
@@ -94,8 +105,10 @@ export const riskInputSchema = {
 
     sysBP: {
         name: "sysBP",
+        print_name: "Systolic blood pressure",
         input_label: "What is your systolic blood pressure?",
         type: "number",
+        decimal: true,
         defaultValue: null,
         required: false,
         min: 70,
@@ -106,8 +119,10 @@ export const riskInputSchema = {
 
     diaBP: {
         name: "diaBP",
+        print_name: "Diastolic blood pressure",
         input_label: "What is your diastolic blood pressure?",
         type: "number",
+        decimal: true,
         defaultValue: null,
         required: false,
         min: 40,
@@ -118,8 +133,10 @@ export const riskInputSchema = {
 
     BMI: {
         name: "BMI",
+        print_name: "Body mass index",
         input_label: "What is your body mass index (BMI)?",
         type: "number",
+        decimal: true,
         defaultValue: null,
         required: false,
         min: 10,
@@ -130,8 +147,10 @@ export const riskInputSchema = {
 
     heartRate: {
         name: "heartRate",
+        print_name: "Resting heart rate",
         input_label: "What is your resting heart rate (in beats per minute)?",
         type: "number",
+        decimal: true,
         defaultValue: null,
         required: false,
         min: 30,
@@ -142,8 +161,10 @@ export const riskInputSchema = {
 
     glucose: {
         name: "glucose",
+        print_name: "Fasting blood glucose level",
         input_label: "What is your current fasting blood glucose level?",
         type: "number",
+        decimal: true,
         defaultValue: null,
         required: false,
         min: 40,
@@ -154,8 +175,10 @@ export const riskInputSchema = {
 
     totChol: {
         name: "totChol",
+        print_name: "Total cholesterol level",
         input_label: "What is your total cholesterol level?",
         type: "number",
+        decimal: true,
         defaultValue: null,
         required: false,
         min: 100,
