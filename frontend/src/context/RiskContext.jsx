@@ -1,23 +1,14 @@
 import { createContext, useState } from "react";
+import { createInitalRiskInputs } from "../schemas/createInitialRiskInputs";
+import { riskInputSchema } from "../schemas/riskInputSchema";
 
 export const RiskContext = createContext();
 
 export function RiskProvider({ children }) {
-  const [riskInputs, setRiskInputs] = useState({
-    gender: "",
-    age: "",
-    education: "",
-    currentSmoker: "",
-    cigsPerDay: "",
-    BPMeds: "",
-    prevalentStroke: "",
-    prevalentHyp: "",
-    sysBP: "",
-    diaBP: "",
-    BMI: "",
-    heartRate: "",
-    glucose: "",
-  });
+  const [riskInputs, setRiskInputs] = useState(
+    createInitalRiskInputs(riskInputSchema)
+  );
+
   const [riskScore, setRiskScore] = useState(null);
 
   return (
