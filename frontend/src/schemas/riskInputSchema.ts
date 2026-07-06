@@ -24,6 +24,7 @@ export const riskInputSchema = {
         min: 1,
         max: 150,
         category: "demographic",
+        blockKeys: ["e", "E"],
     },
 
     education: {
@@ -37,7 +38,7 @@ export const riskInputSchema = {
                     {value: 2, label: "High School/GED"}, 
                     {value: 3, label: "Some College/Vocational"}, 
                     {value: 4, label: "College Graduate"}],
-        category: "demographic", 
+        category: "demographic",
     },
 
     currentSmoker: {
@@ -57,10 +58,11 @@ export const riskInputSchema = {
         type: "number",
         decimal: false,
         defaultValue: null,
-        required: true,
+        required: false,
         min: 0,
         max: 500,
         category: "lifestyle",
+        blockKeys: ["e", "E"],
     },
 
     bpMeds: {
@@ -114,6 +116,7 @@ export const riskInputSchema = {
         min: 70,
         max: 300,
         units: "mmHg",
+        blockKeys: ["e", "E"],
         category: "clinical",
     },
 
@@ -128,6 +131,7 @@ export const riskInputSchema = {
         min: 40,
         max: 200,
         units: "mmHg",
+        blockKeys: ["e", "E"],
         category: "clinical",
     },
 
@@ -142,6 +146,7 @@ export const riskInputSchema = {
         min: 10,
         max: 60,
         units: "kg/m^2",
+        blockKeys: ["e", "E"],
         category: "clinical",
     },
 
@@ -156,6 +161,7 @@ export const riskInputSchema = {
         min: 30,
         max: 200,
         units: "bpm",
+        blockKeys: ["e", "E"],
         category: "clinical",
     },
 
@@ -170,6 +176,7 @@ export const riskInputSchema = {
         min: 40,
         max: 500,
         units: "mg/dL",
+        blockKeys: ["e", "E"],
         category: "clinical",
     },
 
@@ -184,6 +191,7 @@ export const riskInputSchema = {
         min: 100,
         max: 600,
         units: "mg/dL",
+        blockKeys: ["e", "E"],
         category: "clinical",
     },
 }
