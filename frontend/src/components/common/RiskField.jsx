@@ -22,10 +22,17 @@ function RiskField({ field, value, onChange, error }) {
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     min={field.min}
-                    step={field.max}
+                    step={field.step || 1}
+                    max={field.max}
                     error={error}
                     required={field.required}
                     placeholder={field.defaultValue}
+                    onKeyDown={(e) => {
+                        const blockedKeys = field.blockKeys || [];
+                        if (blockedKeys.includes(e.key)) {
+                            e.preventDefault();
+                        }
+                    }}
                 />
             )
         case "boolean":

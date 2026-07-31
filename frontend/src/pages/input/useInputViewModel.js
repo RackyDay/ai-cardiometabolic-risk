@@ -45,9 +45,16 @@ export function useInputViewModel() {
                 return ""
             }
         }
-
+        
+        // Validate number fields
         if (riskField.type === "number") {
-            const n = parseFloat(value)
+            const cleaned_n = String(value).trim();
+
+            if (/[eE]/.test(cleaned_n)) {
+                return riskField.print_name + " must be a valid number";
+            }
+
+            const n = Number(value);
             if (isNaN(n)) {
                 return riskField.print_name + " must be a valid number";
             }
