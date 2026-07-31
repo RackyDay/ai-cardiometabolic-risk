@@ -217,5 +217,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# My stuff
-handoff.md
+# Extras
+CLAUDE.md
+.claude
+graphify-out
