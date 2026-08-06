@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 function InputPage() {
 
-  const {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit} = useInputViewModel();
+  const {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit, isSubmitting, submitError} = useInputViewModel();
   const navigate = useNavigate();
   const currentCategory = pageOrder[page];
   const currentFields = categories[currentCategory];
@@ -31,8 +31,11 @@ function InputPage() {
 
           {isLastPage && (
             <div className="submit-wrapper">
-            <button className="submit-btn" onClick={handleSubmit}>
-              Submit
+            {/* submitError/isSubmitting come from the ViewModel's call to
+                the /predict API in handleSubmit */}
+            {submitError && <div className="form-error">{submitError}</div>}
+            <button className="submit-btn" onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? "Calculating..." : "Submit"}
             </button>
           </div>
           )}
