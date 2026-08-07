@@ -10,14 +10,34 @@ import SideNav from "./components/layout/SideNav/SideNav";
 import useAppLayoutViewModel from "./viewmodels/useAppLayoutViewModel";
 
 function AppLayout() {
-  const { shouldShowSideNav } = useAppLayoutViewModel();
+  const {
+    shouldShowSideNav,
+    isSideNavOpen,
+    closeSideNav,
+    toggleSideNav,
+  } = useAppLayoutViewModel();
 
   return (
     <div className="app-layout">
-      <MenuBar />
+      <MenuBar
+        showMenuButton={shouldShowSideNav}
+        onMenuClick={toggleSideNav}
+      />
 
       <div className={shouldShowSideNav ? "app-body with-sidebar" : "app-body no-sidebar"}>
-        {shouldShowSideNav && <SideNav />}
+        {shouldShowSideNav && (
+          <>
+            <div
+              className={isSideNavOpen ? "drawer-backdrop open" : "drawer-backdrop"}
+              onClick={closeSideNav}
+            />
+
+            <SideNav
+              isOpen={isSideNavOpen}
+              onNavigate={closeSideNav}
+            />
+          </>
+        )}
 
         <main className="app-content">
           <Routes>
