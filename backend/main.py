@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+
+from risk_model import predict_risk_score
+from schemas import RiskInputData
 
 app = FastAPI()
 
@@ -12,13 +14,11 @@ app.add_middleware(
     allow_headers = ["*"],
 )
 
-class RiskInputData(BaseModel):
-    age: int
-    smoker: bool
-
 @app.post("/predict")
 def predict(data: RiskInputData):
-    return {"risk_score": data.age + int(data.smoker)}
+    # data is already validated/coerced against RiskInputData's field
+    # constraints by FastAPI before this line runs.
+    return {"risk_score": predict_risk_score(data)}
 
 @app.get("/learn")
 def learn():

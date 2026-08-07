@@ -2,13 +2,19 @@ import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RiskContext } from "../../context/RiskContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
+import { buildPredictionPayload } from "./riskInputTransform";
+import { predictRisk } from "../../services/api";
 
 export function useInputViewModel() {
 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
-    const { riskInputs, setRiskInputs } = useContext(RiskContext);
+    const { riskInputs, setRiskInputs, setRiskScore } = useContext(RiskContext);
     const [page, setPage] = useState(0);
+    // Tracks the in-flight /predict request so the View can disable the
+    // submit button and avoid duplicate submissions.
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState("");
 
     const categories = Object.entries(riskInputSchema).reduce(
         (acc, [key, field]) => {
@@ -78,7 +84,7 @@ export function useInputViewModel() {
         setErrors((prev) => ({ ...prev, [field]: error }));
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const newErrors = {};
         Object.keys(riskInputs).forEach((field) => {
         const error = validateField(field, riskInputs[field]);
@@ -89,13 +95,30 @@ export function useInputViewModel() {
         setErrors(newErrors);
         const firstErrorIndex = pageOrder.findIndex((category) =>
             categories[category].some((field) => newErrors[field.name]));
-        console.log(firstErrorIndex)
         if (firstErrorIndex !== -1) setPage(firstErrorIndex);
         return;
         }
 
-        navigate("/dashboard");
+        // All fields passed validation above, so it's safe to build the API
+        // payload and ask the model for a risk score.
+        setSubmitError("");
+        setIsSubmitting(true);
+
+        try {
+            const payload = buildPredictionPayload(riskInputs, riskInputSchema);
+            const result = await predictRisk(payload);
+            // Persist the score on the shared RiskContext (Model) so
+            // DashboardPage can read it after navigation.
+            setRiskScore(result.risk_score);
+            navigate("/dashboard");
+        } catch (err) {
+            // Network failure or a 4xx/5xx from the API — keep the user on
+            // this page and surface a generic, non-technical message.
+            setSubmitError("We couldn't calculate your risk score. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    return {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit};
+    return {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit, isSubmitting, submitError};
 }
