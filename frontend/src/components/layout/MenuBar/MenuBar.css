@@ -70,3 +70,18 @@
   font-weight: 500;
   color: #1a1a2e;
 }
+
+.menu-drawer-button {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .menu-drawer-button {
+    display: grid;
+    place-items: center;
+  }
+
+  .menu-bar {
+    grid-template-columns: auto 1fr auto;
+  }
+}
