@@ -4,7 +4,7 @@
 // successful one instead of getting a FastAPI error body back as if it were
 // a score.
 export const predictRisk = async (inputData) => {
-  const res = await fetch("http://localhost:8000/predict", {
+  const res = await fetch("/api/predict", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(inputData)
@@ -22,7 +22,7 @@ export const predictRisk = async (inputData) => {
 };
 
 export const getLearningContent = async () => {
-  const res = await fetch("http://localhost:8000/learn");
+  const res = await fetch("/api/learn");
   return res.json();
 };
 
