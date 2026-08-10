@@ -14,7 +14,6 @@
 .menu-bar-left {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   gap: 0.4rem;
   z-index: 2;
 }
@@ -50,7 +49,6 @@
   cursor: pointer;
   padding: 0;
   line-height: 1;
-
   display: grid;
   place-items: center;
 }
@@ -64,13 +62,9 @@
   font-size: 1.6rem;
 }
 
-.menu-bar-logo {
-  height: 36px;
-  width: auto;
-  object-fit: contain;
-}
-
 .menu-profile {
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -81,17 +75,36 @@
 .menu-profile svg {
   width: 22px;
   height: 22px;
+  display: block;
 }
 
 .settings-button {
   font-size: 1.7rem;
 }
 
+.menu-logo-button {
+  width: 52px;
+  height: 52px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+
+  display: grid;
+  place-items: center;
+}
+
+.menu-logo-button svg {
+  width: 36px;
+  height: 36px;
+  display: block;
+}
+
 @media (min-width: 768px) {
   .menu-drawer-button {
     display: none;
   }
-  
+
   .menu-bar {
     height: 70px;
     padding: 0 1.5rem;
@@ -99,10 +112,6 @@
 
   .menu-bar-title {
     font-size: 1.75rem;
-  }
-
-  .menu-bar-logo {
-    height: 3.25rem;
   }
 
   .menu-icon-button {
@@ -116,13 +125,21 @@
   }
 
   .menu-profile {
-    display: grid;
-    place-items: center;
-    padding: 0;
-    border-radius: 50%;
+    width: 40px;
+    height: 40px;
   }
 
-  .settings-button {
-    font-size: 1.7rem;
+  .menu-profile svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .menu-logo-button {
+    margin-left: -16px;
+  }
+
+  .menu-logo-button svg {
+    width: 52px;
+    height: 52px;
   }
 }

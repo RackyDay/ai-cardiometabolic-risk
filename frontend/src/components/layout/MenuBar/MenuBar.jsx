@@ -21,9 +21,13 @@ function MenuBar({ showMenuButton, onMenuClick }) {
           </button>
         )}
 
-        <div onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
+        <button
+          className="menu-logo-button"
+          onClick={() => navigate("/")}
+          aria-label="Go to welcome page"
+        >
           <HeartECGIcon />
-        </div>
+        </button>
       </div>
 
       <h1 className="menu-bar-title">{pageTitle}</h1>
