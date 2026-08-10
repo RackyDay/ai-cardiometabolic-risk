@@ -7,4 +7,4 @@ joblib
 pandas
 numpy
 scikit-learn
-interpret
+interpret==0.7.8
