@@ -3,8 +3,12 @@
 // callers (the input ViewModel) can distinguish a failed prediction from a
 // successful one instead of getting a FastAPI error body back as if it were
 // a score.
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 export const predictRisk = async (inputData) => {
-  const res = await fetch("http://localhost:8000/predict", {
+  const res = await fetch(`${API_URL}/predict`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(inputData)
@@ -22,7 +26,7 @@ export const predictRisk = async (inputData) => {
 };
 
 export const getLearningContent = async () => {
-  const res = await fetch("http://localhost:8000/learn");
+  const res = await fetch(`${API_URL}/learn`);
   return res.json();
 };
 
