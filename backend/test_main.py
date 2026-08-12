@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from main import app
+from risk_model import TOP_CONTRIBUTORS_COUNT, _feature_names
 
 client = TestClient(app)
 
@@ -43,6 +44,31 @@ def test_predict_is_deterministic():
     first = client.post("/predict", json=VALID_PAYLOAD).json()["risk_score"]
     second = client.post("/predict", json=VALID_PAYLOAD).json()["risk_score"]
     assert first == second
+
+
+# --- Feature contributions ---------------------------------------------------
+
+def test_predict_returns_top_contributors():
+    response = client.post("/predict", json=VALID_PAYLOAD)
+    body = response.json()
+
+    assert "top_contributors" in body
+    contributors = body["top_contributors"]
+    assert len(contributors) == TOP_CONTRIBUTORS_COUNT
+
+    for contributor in contributors:
+        assert contributor.keys() == {"feature", "value", "contribution"}
+        # Only the model's named input features should appear, never one of
+        # the EBM's pairwise interaction terms (e.g. "age & sysBP").
+        assert contributor["feature"] in _feature_names
+        assert isinstance(contributor["value"], float)
+        assert isinstance(contributor["contribution"], float)
+
+
+def test_top_contributors_sorted_by_absolute_contribution_descending():
+    contributors = client.post("/predict", json=VALID_PAYLOAD).json()["top_contributors"]
+    magnitudes = [abs(c["contribution"]) for c in contributors]
+    assert magnitudes == sorted(magnitudes, reverse=True)
 
 
 # --- Optional/edge-case inputs ---------------------------------------------
