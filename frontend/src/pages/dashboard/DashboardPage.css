@@ -1,4 +1,3 @@
-/* ===== Dashboard Page Layout ===== */
 .dashboard-page {
   display: flex;
   flex-direction: column;
@@ -21,6 +20,78 @@
   font-weight: 600;
   color: #111827;
   margin: 0 0 1rem 0;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.card-header-row .card-title {
+  margin: 0;
+}
+
+.disclaimer-wrapper {
+  position: relative;
+}
+
+.disclaimer-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: #fffbeb;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.disclaimer-trigger:hover {
+  background: #fef3c7;
+}
+
+.disclaimer-panel {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 0.625rem);
+  transform: translateY(-50%) translateX(0.5rem);
+  width: 15rem;
+  max-width: 60vw;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 10;
+}
+
+.disclaimer-panel.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+
+.disclaimer-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.disclaimer-text {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #78350f;
+  line-height: 1.45;
 }
 
 .top-row {
