@@ -20,6 +20,17 @@
   font-family: inherit;
 }
 
+.gauge-level-text {
+  transform: rotate(90deg);
+  transform-box: fill-box;
+  transform-origin: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
 .simulate-dropdown {
   display: flex;
   align-items: center;
@@ -40,4 +51,51 @@
 
 .dropdown-arrow {
   font-size: 0.875rem;
+}
+
+
+.risk-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  width: 100%;
+  padding-top: 0.25rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.risk-legend-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.risk-legend-swatch {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  margin-top: 0.3125rem;
+ flex-shrink: 0;
+}
+
+.risk-legend-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+}
+
+.risk-legend-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.risk-legend-range {
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.risk-legend-desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
 }
