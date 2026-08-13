@@ -25,6 +25,7 @@ export const riskInputSchema = {
         max: 150,
         category: "demographic",
         blockKeys: ["e", "E"],
+        tooltip: "Your current age in years."
     },
 
     education: {
@@ -118,6 +119,7 @@ export const riskInputSchema = {
         units: "mmHg",
         blockKeys: ["e", "E"],
         category: "clinical",
+        tooltip: "Enter your systolic blood pressure in mmHg — the top number in a reading (e.g. the 120 in 120/80). A normal reading is typically around 120 mmHg."
     },
 
     diaBP: {
@@ -133,6 +135,7 @@ export const riskInputSchema = {
         units: "mmHg",
         blockKeys: ["e", "E"],
         category: "clinical",
+        tooltip: "Enter your diastolic blood pressure in mmHg — the bottom number in a reading (e.g. the 80 in 120/80). A normal reading is typically around 80 mmHg."
     },
 
     BMI: {
@@ -148,6 +151,7 @@ export const riskInputSchema = {
         units: "kg/m^2",
         blockKeys: ["e", "E"],
         category: "clinical",
+        tooltip: "Enter your BMI in kg/m². This is calculated as weight (kg) ÷ height (m)². A BMI of 18.5-24.9 is generally considered a healthy range."
     },
 
     heartRate: {
@@ -163,6 +167,7 @@ export const riskInputSchema = {
         units: "bpm",
         blockKeys: ["e", "E"],
         category: "clinical",
+        tooltip: "Enter your resting heart rate in bpm, ideally measured after sitting quietly for a few minutes. A typical resting heart rate for adults is 60-100 bpm."
     },
 
     glucose: {
@@ -178,6 +183,8 @@ export const riskInputSchema = {
         units: "mg/dL",
         blockKeys: ["e", "E"],
         category: "clinical",
+        tooltip: "Enter your fasting blood glucose level in mg/dL, measured after not eating for at least 8 hours. A normal fasting level is typically under 100 mg/dL."
+
     },
 
     totChol: {
@@ -193,5 +200,6 @@ export const riskInputSchema = {
         units: "mg/dL",
         blockKeys: ["e", "E"],
         category: "clinical",
+        tooltip: "Enter your total cholesterol level in mg/dL, from a recent blood test (lipid panel). A desirable level is generally under 200 mg/dL."
     },
 }

@@ -2,6 +2,13 @@ import Dropdown from "./Dropdown";
 import InputTextField from "./InputTextField";
 import BooleanField from "./BooleanField";
 
+function getNumberPlaceholder(field) {
+    const { min, max, units } = field;
+    if (min == null || max == null) return "";
+    const unitSuffix = units ? ` ${units}` : "";
+    return `Enter a value between ${min}\u2013${max}${unitSuffix}`;
+}
+
 function RiskField({ field, value, onChange, error }) {
     switch (field.type) {
         case "select":
@@ -13,6 +20,7 @@ function RiskField({ field, value, onChange, error }) {
                     options={field.options}
                     error={error}
                     required={field.required}
+                    tooltip={field.tooltip}
                 />
             )
         case "number":
@@ -26,7 +34,8 @@ function RiskField({ field, value, onChange, error }) {
                     max={field.max}
                     error={error}
                     required={field.required}
-                    placeholder={field.defaultValue}
+                    placeholder={getNumberPlaceholder(field)}
+                    tooltip={field.tooltip}
                     onKeyDown={(e) => {
                         const blockedKeys = field.blockKeys || [];
                         if (blockedKeys.includes(e.key)) {
@@ -43,6 +52,7 @@ function RiskField({ field, value, onChange, error }) {
                     onChange={onChange}
                     error={error}
                     required={field.required}
+                    tooltip={field.tooltip}
                 />
             )
     }

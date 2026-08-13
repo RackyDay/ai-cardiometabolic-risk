@@ -1,12 +1,9 @@
-function BooleanField({ label, value, onChange, error, required = true}) {
-    return (
+import FieldLabel from "./FieldLabel";
+
+function BooleanField({ label, value, onChange, error, required = true, tooltip }) {
+        return (
         <div className="form-field">
-            <label className="form-label">
-                {label}
-                <span className={`field-tag ${required ? "field-tag--required" : "field-tag--optional"}`}>
-                    {required ? "Required" : "Optional"}
-                </span>
-            </label>
+            <FieldLabel label={label} required={required} tooltip={tooltip} />
             <div className ="boolean-wrapper">
                 <button 
                     className = {`boolean-button ${value === true ? "boolean-button--selected" : ""}`}
