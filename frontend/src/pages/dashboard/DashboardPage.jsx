@@ -13,11 +13,7 @@ import RiskGauge from "./components/RiskGauge";
 import AlertTriangleIcon from "../../components/icons/AlertTriangleIcon";
 import "./DashboardPage.css";
 
-const TOP_RISK_FACTORS = [
-  "Number of cigarettes smoked",
-  "Glucose Level",
-  "Systolic Blood Pressure",
-];
+const VISIBLE_RISK_FACTOR_ROWS = 5;
 
 const INSIGHTS = [
   "Overall Risk Score has decreased by 4%",
@@ -91,15 +87,37 @@ function DashboardPage() {
       </div>
 
       <div className="card risk-factors-card">
-        <h2 className="card-title">Top 3 Risk Factors</h2>
-        <div className="risk-factor-list">
-          {TOP_RISK_FACTORS.map((factor, i) => (
-            <div key={i} className="risk-factor-row">
-              <span className="risk-factor-number">{i + 1}.</span>
-              <span className="risk-factor-label">{factor}</span>
-            </div>
-          ))}
-        </div>
+        <h2 className="card-title">Top {riskFactors.length || 10} Risk Factors</h2>
+        {riskFactors.length === 0 ? (
+          <p className="risk-factors-empty">
+            Submit your health information to see what's driving your risk score.
+          </p>
+        ) : (
+          <div
+            className="risk-factor-list"
+            style={{ "--visible-rows": VISIBLE_RISK_FACTOR_ROWS }}
+          >
+            {riskFactors.map((factor, i) => (
+              <div key={factor.feature} className="risk-factor-row">
+                <span className="risk-factor-number">{i + 1}.</span>
+                <span className="risk-factor-label" title={factor.label}>
+                  {factor.label}
+                </span>
+                <span
+                  className={`risk-factor-tag ${
+                    factor.raisesRisk ? "risk-factor-tag--up" : "risk-factor-tag--down"
+                  }`}
+                  title={`${factor.raisesRisk ? "Raises" : "Lowers"} risk — ${Math.round(
+                    factor.weightPercent
+                  )}% of the shown factors' combined weight`}
+                >
+                  {factor.raisesRisk ? "+" : "−"}
+                  {Math.round(factor.weightPercent)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="card trend-card">

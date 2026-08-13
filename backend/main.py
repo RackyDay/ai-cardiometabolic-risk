@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from risk_model import predict_risk_score
-from schemas import RiskInputData
+from risk_model import predict_risk
+from schemas import PredictionResponse, RiskInputData
 
 app = FastAPI()
 
@@ -17,11 +17,12 @@ app.add_middleware(
     allow_headers = ["*"],
 )
 
-@app.post("/predict")
+@app.post("/predict", response_model=PredictionResponse)
 def predict(data: RiskInputData):
     # data is already validated/coerced against RiskInputData's field
-    # constraints by FastAPI before this line runs.
-    return {"risk_score": predict_risk_score(data)}
+    # constraints by FastAPI before this line runs. response_model in turn
+    # validates/serializes predict_risk()'s return value on the way out.
+    return predict_risk(data)
 
 @app.get("/learn")
 def learn():
