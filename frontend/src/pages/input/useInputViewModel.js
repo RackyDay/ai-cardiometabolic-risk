@@ -9,7 +9,7 @@ export function useInputViewModel() {
 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
-    const { riskInputs, setRiskInputs, setRiskScore } = useContext(RiskContext);
+    const { riskInputs, setRiskInputs, setRiskScore, setTopContributors } = useContext(RiskContext);
     const [page, setPage] = useState(0);
     // Tracks the in-flight /predict request so the View can disable the
     // submit button and avoid duplicate submissions.
@@ -107,9 +107,11 @@ export function useInputViewModel() {
         try {
             const payload = buildPredictionPayload(riskInputs, riskInputSchema);
             const result = await predictRisk(payload);
-            // Persist the score on the shared RiskContext (Model) so
-            // DashboardPage can read it after navigation.
+            // Persist the score and its explanation on the shared
+            // RiskContext (Model) so DashboardPage can read them after
+            // navigation.
             setRiskScore(result.risk_score);
+            setTopContributors(result.top_contributors);
             navigate("/dashboard");
         } catch (err) {
             // Network failure or a 4xx/5xx from the API — keep the user on

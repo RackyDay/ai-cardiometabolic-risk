@@ -29,3 +29,16 @@ class RiskInputData(BaseModel):
     heartRate: Optional[float] = Field(default=None, ge=30, le=200)
     glucose: Optional[float] = Field(default=None, ge=40, le=500)
     totChol: Optional[float] = Field(default=None, ge=100, le=600)
+
+
+class FeatureContribution(BaseModel):
+    # One input feature's effect on a single prediction, from the EBM's
+    # local (per-prediction) explanation.
+    feature: str  # model feature name, e.g. "age", "male", "BPMeds"
+    value: float  # the (possibly imputed) value the model used for this feature
+    contribution: float  # signed effect on the risk score; further from 0 = bigger effect
+
+
+class PredictionResponse(BaseModel):
+    risk_score: float
+    top_contributors: list[FeatureContribution]
