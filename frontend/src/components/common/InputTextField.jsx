@@ -1,12 +1,9 @@
-function InputTextField({ label, value, onChange, min, step, max, error, required = true, placeholder, onKeyDown }) {
-  return (
+import FieldLabel from "./FieldLabel";
+
+function InputTextField({ label, value, onChange, min, step, max, error, required = true, placeholder, onKeyDown, tooltip }) {
+    return (
     <div className="form-field">
-      <label className="form-label">
-        {label}
-        <span className={`field-tag ${required ? "field-tag--required" : "field-tag--optional"}`}>
-          {required ? "Required" : "Optional"}
-        </span>
-      </label>
+      <FieldLabel label={label} required={required} tooltip={tooltip} />
       <input
         className={`form-input ${error ? "error" : ""}`}
         type="number"

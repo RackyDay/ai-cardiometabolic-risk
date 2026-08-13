@@ -220,6 +220,77 @@
   color: #888;
 }
 
+/* Field tooltip */
+.field-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-left: 0.4em;
+  vertical-align: middle;
+}
+
+.field-tooltip-trigger {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  border: none;
+  background: #dde6f8;
+  color: #5c6b8a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-style: italic;
+  font-family: Georgia, serif;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.field-tooltip-trigger:hover {
+  background: #c3d2f0;
+  color: #3d6fd4;
+}
+
+.field-tooltip-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 16rem;
+  max-width: 70vw;
+  background: #1a1a2e;
+  color: #f4f6fb;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: normal;
+  border-radius: 8px;
+  padding: 0.75rem 0.875rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-0.25rem);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 20;
+}
+
+.field-tooltip-panel.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.field-tooltip-wrapper:hover .field-tooltip-panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
 /* Validation */
 .form-error {
   margin-top: 0.35em;
