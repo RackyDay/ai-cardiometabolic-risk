@@ -129,6 +129,48 @@
   color: #6b7086;
 }
 
+.insight-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.35);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.insight-modal {
+  width: 100%;
+  max-width: 24rem;
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.insight-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.insight-modal-close {
+  border: none;
+  background: transparent;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+}
+
+.insight-modal-close:hover {
+  color: #111827;
+}
+
 @media (max-width: 48rem) {
   .top-row {
     grid-template-columns: 1fr;

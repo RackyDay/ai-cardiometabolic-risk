@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { RiskContext } from "../../context/RiskContext";
 import EyeIcon from "../../components/icons/EyeIcon";
 import {
@@ -41,6 +41,7 @@ const TREND_DATA = [
 function DashboardPage() {
   const { riskScore } = useContext(RiskContext);
   const displayScore = riskScore ?? 50;
+  const [isInsightsOpen, setIsInsightsOpen] = useState(false);
 
   return (
     <div className="dashboard-page">
@@ -74,7 +75,11 @@ function DashboardPage() {
         <div className="risk-factors-header">
           <h2 className="card-title">Top 3 Risk Factors</h2>
 
-          <button className="insight-eye-button" aria-label="View insights">
+          <button
+            className="insight-eye-button"
+            aria-label="View insights"
+            onClick={() => setIsInsightsOpen(true)}
+          >
             <EyeIcon />
           </button>
         </div>
@@ -128,6 +133,46 @@ function DashboardPage() {
           </LineChart>
         </ResponsiveContainer>
       </div>
+            {isInsightsOpen && (
+        <div
+          className="insight-modal-backdrop"
+          onClick={() => setIsInsightsOpen(false)}
+        >
+          <div
+            className="insight-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="insight-modal-header">
+              <h2 className="card-title">Insights</h2>
+
+              <button
+                className="insight-modal-close"
+                aria-label="Close insights"
+                onClick={() => setIsInsightsOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <p className="insight-subheading">Since the last assessment:</p>
+
+            <div className="insight-list">
+              {INSIGHTS.map((text, i) => (
+                <div key={i} className="insight-item insight-green">
+                  {text}
+                </div>
+              ))}
+            </div>
+
+            <p className="insight-subheading stress-heading">Stress</p>
+
+            <div className="insight-item insight-red">
+              Your data shows traits that are usually associated with stress. This
+              could suggest that you may be experiencing high stress.
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
