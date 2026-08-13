@@ -5,6 +5,7 @@
 ### Team members:<br>
 Remy Didelis - remydidelis@gmail.com <br>
 Joesiah Liu - tsunetoishida03@gmail.com <br>
+Simran Rao - simranrao9703@gmail.com </br>
 *(Enter your personal emails here..)*
 
 ### Running the prototype:
