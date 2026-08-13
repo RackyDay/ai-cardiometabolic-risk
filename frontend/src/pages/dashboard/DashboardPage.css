@@ -105,8 +105,40 @@
   font-size: 0.9375rem;
 }
 
+.risk-factors-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.insight-eye-button {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #8b8fa3;
+  cursor: pointer;
+  padding: 0;
+  place-items: center;
+  transform: translateY(-7px);
+}
+
+.insight-eye-button:hover {
+  color: #6b7086;
+}
+
 @media (max-width: 48rem) {
   .top-row {
     grid-template-columns: 1fr;
+  }
+
+  .insights-card {
+    display: none;
+  }
+
+  .insight-eye-button {
+    display: grid;
   }
 }

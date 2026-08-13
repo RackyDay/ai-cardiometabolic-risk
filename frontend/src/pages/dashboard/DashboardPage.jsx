@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { RiskContext } from "../../context/RiskContext";
+import EyeIcon from "../../components/icons/EyeIcon";
 import {
   LineChart,
   Line,
@@ -70,7 +71,14 @@ function DashboardPage() {
       </div>
 
       <div className="card risk-factors-card">
-        <h2 className="card-title">Top 3 Risk Factors</h2>
+        <div className="risk-factors-header">
+          <h2 className="card-title">Top 3 Risk Factors</h2>
+
+          <button className="insight-eye-button" aria-label="View insights">
+            <EyeIcon />
+          </button>
+        </div>
+
         <div className="risk-factor-list">
           {TOP_RISK_FACTORS.map((factor, i) => (
             <div key={i} className="risk-factor-row">
