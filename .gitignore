@@ -222,3 +222,4 @@ __marimo__/
 CLAUDE.md
 .claude
 graphify-out
+node_modules/

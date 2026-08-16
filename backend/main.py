@@ -1,8 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from risk_model import predict_risk
 from schemas import PredictionResponse, RiskInputData
+
+from auth import get_current_user
 
 app = FastAPI()
 
@@ -35,3 +37,10 @@ def test_endpoint(data: RiskInputData):
 @app.get("/")
 def root():
     return {"message": "API running"}
+
+@app.get("/me")
+def me(user=Depends(get_current_user)):
+    return {
+        "id": user.id,
+        "email": user.email,
+    }
