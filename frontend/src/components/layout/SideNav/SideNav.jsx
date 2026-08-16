@@ -2,12 +2,13 @@ import { NavLink } from "react-router-dom";
 import "./SideNav.css";
 import ActionButton from "../../common/ActionButton";
 
-function SideNav() {
+function SideNav({ isOpen = false, onNavigate }) {
   return (
-    <aside className="side-nav">
+    <aside className={isOpen ? "side-nav open" : "side-nav"}>
       <nav className="side-nav-links">
         <NavLink
           to="/dashboard"
+          onClick={onNavigate}
           className={({ isActive }) =>
             isActive ? "side-nav-link active" : "side-nav-link"
           }
@@ -17,6 +18,7 @@ function SideNav() {
 
         <NavLink
           to="/learn"
+          onClick={onNavigate}
           className={({ isActive }) =>
             isActive ? "side-nav-link active" : "side-nav-link"
           }

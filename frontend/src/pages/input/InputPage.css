@@ -1,10 +1,9 @@
 .inputs-page {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #dde6f8;
+  min-height: 100%;
   text-align: left;
-  min-height: 100vh;
+  background: transparent;
+  --form-max-width: 50rem;
+  --form-horizontal-padding: 2.5rem;
 }
 
 /* Header */
@@ -61,11 +60,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.5rem 1.5rem 2rem;
+  padding: 0.5rem 0rem 2rem;
 }
 
 .back-btn {
-  align-self: flex-start;
+  align-self: center;
+  width: 100%;
+  max-width: var(--form-max-width);
+  text-align: left;
+
   background: none;
   border: none;
   cursor: pointer;
@@ -84,9 +87,10 @@
 .form-card {
   background: white;
   border-radius: 20px;
-  padding: 2rem 2.5rem;
+  padding: 2rem var(--form-horizontal-padding);
   width: 100%;
-  max-width: 45rem;
+  max-width: var(--form-max-width);
+  box-sizing: border-box;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
 }
 
@@ -380,4 +384,11 @@
 
 .page-num-btn:not(.active):hover {
   background: rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 767px) {
+  .inputs-page {
+    --form-max-width: 100%;
+    --form-horizontal-padding: 2rem;
+  }
 }

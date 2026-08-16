@@ -25,3 +25,32 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+.drawer-backdrop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .app-body.with-sidebar {
+    display: block;
+  }
+
+  .drawer-backdrop {
+    display: block;
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+  }
+
+  .drawer-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
