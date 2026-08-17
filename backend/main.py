@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from risk_model import predict_risk
 from schemas import PredictionResponse, RiskInputData
 
-from auth import get_current_user
+from auth import get_current_user, get_optional_user
+from database import save_assessment
 
 app = FastAPI()
 
@@ -20,19 +21,21 @@ app.add_middleware(
 )
 
 @app.post("/predict", response_model=PredictionResponse)
-def predict(data: RiskInputData):
+def predict(data: RiskInputData, auth = Depends(get_optional_user)):
     # data is already validated/coerced against RiskInputData's field
     # constraints by FastAPI before this line runs. response_model in turn
     # validates/serializes predict_risk()'s return value on the way out.
-    return predict_risk(data)
+    result = predict_risk(data)
+
+    if auth is not None:
+        user, token = auth
+        save_assessment(user.id, result["risk_score"], "1", token)
+
+    return result
 
 @app.get("/learn")
 def learn():
     pass
-
-@app.post("/test")
-def test_endpoint(data: RiskInputData):
-    return {"message": f"Received age: {data.age}"}
 
 @app.get("/")
 def root():
