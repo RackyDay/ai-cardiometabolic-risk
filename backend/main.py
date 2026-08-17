@@ -29,7 +29,7 @@ def predict(data: RiskInputData, auth = Depends(get_optional_user)):
 
     if auth is not None:
         user, token = auth
-        save_assessment(user.id, result["risk_score"], "1", token)
+        save_assessment(user.id, result["risk_score"], "1", data.model_dump(), token)
 
     return result
 
