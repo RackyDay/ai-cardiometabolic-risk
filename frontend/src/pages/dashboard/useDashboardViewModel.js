@@ -1,6 +1,8 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { RiskContext } from "../../context/RiskContext";
+import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
+import { getLatestPrediction } from "../../services/api";
 
 // The EBM model explains predictions using its training column names, which
 // differ from the input form's field names in a couple of spots (see
@@ -17,7 +19,35 @@ function labelForFeature(feature) {
 }
 
 export function useDashboardViewModel() {
-  const { riskScore, topContributors } = useContext(RiskContext);
+  const { riskScore, setRiskScore, topContributors, setTopContributors } = useContext(RiskContext);
+  const { isAuthenticated, accessToken } = useContext(AuthContext);
+
+  // A logged-in user should see their most recent evaluation on the
+  // dashboard even if they didn't just submit one this session (e.g. they
+  // logged back in later, or navigated here directly). The account's
+  // stored history is the source of truth once logged in, so this always
+  // re-syncs on mount/auth-change rather than only filling in a gap - that
+  // also means switching accounts can't leak the previous user's score.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let cancelled = false;
+    getLatestPrediction(accessToken)
+      .then((result) => {
+        if (cancelled || !result.has_history) return;
+        setRiskScore(result.risk_score);
+        setTopContributors(result.top_contributors ?? []);
+      })
+      .catch(() => {
+        // Best-effort: leave whatever's already in RiskContext (e.g. a
+        // just-submitted score) rather than blocking the dashboard on this.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, accessToken, setRiskScore, setTopContributors]);
+
   const contributors = topContributors ?? [];
 
   // The EBM is additive in log-odds (logit) space, not probability space —

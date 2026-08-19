@@ -1,12 +1,67 @@
 import "./MenuBar.css";
+import { useContext, useEffect, useRef, useState } from "react";
 import HeartECGIcon from "../../icons/HeartECGIcon";
-import UserIcon from "../../icons/UserIcon";
 import useMenuBarViewModel from "./useMenuBarViewModel";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../../context/AuthContext";
 
 function MenuBar({ showMenuButton, onMenuClick }) {
   const { pageTitle } = useMenuBarViewModel();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isAuthenticated, logOut } = useContext(AuthContext);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Username first (what the account is actually called), email as a
+  // fallback for the rare case a profile row exists without one yet (see
+  // backend/auth.py's log_in - username can come back null there too).
+  const displayName = isAuthenticated ? (user?.username || user?.email) : "Guest";
+
+  // Only listen for outside clicks while the dropdown is actually open -
+  // otherwise every click anywhere in the app would run this handler for no
+  // reason. document-level "mousedown" (not "click") so the outside click
+  // closes the menu before whatever it targets (e.g. a SideNav link) fires
+  // its own click handler.
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isDropdownOpen]);
+
+  // Logged in: the button opens the Settings/Log out dropdown. Logged out:
+  // there's nothing to put in a dropdown (no settings, nothing to log out
+  // of), so it goes straight to the auth page instead, same as before this
+  // control had a dropdown at all.
+  const handleProfileClick = () => {
+    if (isAuthenticated) {
+      setIsDropdownOpen((open) => !open);
+    } else {
+      navigate("/auth", { state: { from: location.pathname } });
+    }
+  };
+
+  const handleSettingsClick = () => {
+    setIsDropdownOpen(false);
+    navigate("/settings");
+  };
+
+  const handleLogoutClick = async () => {
+    setIsDropdownOpen(false);
+    await logOut();
+    // Only navigate if we're not already on Welcome - avoids an unnecessary
+    // history entry/re-render when logging out from the welcome page itself.
+    if (location.pathname !== "/") {
+      navigate("/");
+    }
+  };
 
   return (
     <header className="menu-bar">
@@ -36,8 +91,29 @@ function MenuBar({ showMenuButton, onMenuClick }) {
         <button className="menu-icon-button settings-button" aria-label="Settings">
           ⚙
         </button>
-        <div className="menu-profile">
-          <UserIcon />
+
+        <div className="menu-profile-wrapper" ref={dropdownRef}>
+          <button
+            className="menu-profile-name"
+            onClick={handleProfileClick}
+            aria-haspopup={isAuthenticated ? "menu" : undefined}
+            aria-expanded={isAuthenticated ? isDropdownOpen : undefined}
+            aria-label={isAuthenticated ? `Account menu (${displayName})` : "Log in or sign up"}
+            title={isAuthenticated ? displayName : "Log in or sign up"}
+          >
+            {displayName}
+          </button>
+
+          {isAuthenticated && isDropdownOpen && (
+            <div className="menu-profile-dropdown" role="menu">
+              <button role="menuitem" onClick={handleSettingsClick}>
+                Settings
+              </button>
+              <button role="menuitem" onClick={handleLogoutClick}>
+                Log out
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
