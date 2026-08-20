@@ -28,7 +28,7 @@ VALID_PAYLOAD = {
 
 # --- Output validity -------------------------------------------------------
 
-def test_predict_returns_valid_risk_score():
+def test_UT_BE_001_predict_returns_valid_risk_score():
     response = client.post("/predict", json=VALID_PAYLOAD)
     assert response.status_code == 200
 
@@ -40,7 +40,7 @@ def test_predict_returns_valid_risk_score():
     assert 0.0 <= risk_score <= 100.0
 
 
-def test_predict_is_deterministic():
+def test_UT_BE_002_predict_is_deterministic():
     first = client.post("/predict", json=VALID_PAYLOAD).json()["risk_score"]
     second = client.post("/predict", json=VALID_PAYLOAD).json()["risk_score"]
     assert first == second
@@ -48,7 +48,7 @@ def test_predict_is_deterministic():
 
 # --- Feature contributions ---------------------------------------------------
 
-def test_predict_returns_top_contributors():
+def test_UT_BE_003_predict_returns_top_contributors():
     response = client.post("/predict", json=VALID_PAYLOAD)
     body = response.json()
 
@@ -65,7 +65,7 @@ def test_predict_returns_top_contributors():
         assert isinstance(contributor["contribution"], float)
 
 
-def test_top_contributors_sorted_by_absolute_contribution_descending():
+def test_UT_BE_004_top_contributors_sorted_by_absolute_contribution_descending():
     contributors = client.post("/predict", json=VALID_PAYLOAD).json()["top_contributors"]
     magnitudes = [abs(c["contribution"]) for c in contributors]
     assert magnitudes == sorted(magnitudes, reverse=True)
@@ -73,7 +73,7 @@ def test_top_contributors_sorted_by_absolute_contribution_descending():
 
 # --- Optional/edge-case inputs ---------------------------------------------
 
-def test_predict_accepts_missing_optional_fields():
+def test_UT_BE_005_predict_accepts_missing_optional_fields():
     payload = {
         "gender": "F",
         "age": 30,
@@ -91,7 +91,7 @@ def test_predict_accepts_missing_optional_fields():
     assert 0.0 <= risk_score <= 100.0
 
 
-def test_predict_accepts_undisclosed_gender():
+def test_UT_BE_006_predict_accepts_undisclosed_gender():
     payload = dict(VALID_PAYLOAD, gender="O")
     response = client.post("/predict", json=payload)
     assert response.status_code == 200
@@ -100,26 +100,26 @@ def test_predict_accepts_undisclosed_gender():
 
 # --- Input validation (schema should reject bad data before the model sees it) --
 
-def test_predict_rejects_missing_required_field():
+def test_UT_BE_007_predict_rejects_missing_required_field():
     payload = dict(VALID_PAYLOAD)
     del payload["age"]
     response = client.post("/predict", json=payload)
     assert response.status_code == 422
 
 
-def test_predict_rejects_out_of_range_value():
+def test_UT_BE_008_predict_rejects_out_of_range_value():
     payload = dict(VALID_PAYLOAD, age=999)
     response = client.post("/predict", json=payload)
     assert response.status_code == 422
 
 
-def test_predict_rejects_invalid_gender():
+def test_UT_BE_009_predict_rejects_invalid_gender():
     payload = dict(VALID_PAYLOAD, gender="X")
     response = client.post("/predict", json=payload)
     assert response.status_code == 422
 
 
-def test_predict_rejects_invalid_education():
+def test_UT_BE_010_predict_rejects_invalid_education():
     payload = dict(VALID_PAYLOAD, education=9)
     response = client.post("/predict", json=payload)
     assert response.status_code == 422
@@ -127,7 +127,7 @@ def test_predict_rejects_invalid_education():
 
 # --- Model behavior sanity check --------------------------------------------
 
-def test_higher_risk_profile_scores_higher_than_lower_risk_profile():
+def test_UT_BE_011_higher_risk_profile_scores_higher_than_lower_risk_profile():
     # Not a check on the exact score, just that the model responds in the
     # clinically expected direction to a clearly worse risk profile.
     low_risk = dict(
@@ -149,6 +149,6 @@ def test_higher_risk_profile_scores_higher_than_lower_risk_profile():
     assert high_score > low_score
 
 
-def test_learn():
+def test_UT_BE_012_learn_returns_expected_data():
     response = client.get("/learn")
     assert response.status_code == 200
