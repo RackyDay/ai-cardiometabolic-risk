@@ -18,3 +18,10 @@ def save_assessment(user_id, risk_score, model_version, risk_inputs, token):
         "riskcalc_id": riskcalc_id,
         "inputs_JSON": risk_inputs
     }).execute()
+
+def delete_assessment(riskcalc_id, token):
+    user_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    user_client.postgrest.auth(token)
+
+    user_client.table("risk_calculations").delete().eq("riskcalc_id", riskcalc_id).execute()

@@ -5,7 +5,7 @@ from risk_model import predict_risk
 from schemas import PredictionResponse, RiskInputData
 
 from auth import get_current_user, get_optional_user
-from database import save_assessment
+from database import save_assessment, delete_assessment
 
 app = FastAPI()
 
@@ -32,6 +32,15 @@ def predict(data: RiskInputData, auth = Depends(get_optional_user)):
         save_assessment(user.id, result["risk_score"], "1", data.model_dump(), token)
 
     return result
+
+
+
+@app.post("/delete")
+def delete(risk_assessment, auth = Depends(get_optional_user)):
+    if auth is not None:
+        user, token = auth
+        delete_assessment(risk_assessment, token)
+        
 
 @app.get("/learn")
 def learn():
