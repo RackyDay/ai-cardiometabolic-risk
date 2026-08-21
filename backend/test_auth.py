@@ -50,14 +50,26 @@ class FakeTableClient:
 
 
 class FakeAuthAdminAPI:
+    def __init__(self, users):
+        self._users = users  # email -> {password, id, username}
+
     def sign_out(self, token, scope="global"):
         return None
+
+    def get_user_by_id(self, uid):
+        # Mirrors the real Admin API: look up by user id, not email - the
+        # only index test_auth's fake user store doesn't already have, so
+        # scan for it (fine at test scale).
+        for email, record in self._users.items():
+            if record["id"] == uid:
+                return SimpleNamespace(user=SimpleNamespace(id=uid, email=email))
+        return SimpleNamespace(user=None)
 
 
 class FakeAuth:
     def __init__(self, users):
         self._users = users  # email -> {password, id, username}
-        self.admin = FakeAuthAdminAPI()
+        self.admin = FakeAuthAdminAPI(users)
 
     def sign_up(self, payload):
         email = payload["email"]
@@ -119,7 +131,7 @@ def test_signup_succeeds_and_returns_a_session(monkeypatch):
 
 
 def test_signup_rejects_taken_username(monkeypatch):
-    tables = {"profiles": [{"user_id": "u1", "username": "taken", "email": "a@example.com"}]}
+    tables = {"profiles": [{"user_id": "u1", "user_displayname": "taken"}]}
     _install_fake_supabase(monkeypatch, tables=tables)
 
     response = client.post("/auth/signup", json={
@@ -148,7 +160,7 @@ def test_signup_rejects_existing_email(monkeypatch):
 
 def test_login_by_email_succeeds(monkeypatch):
     users = {"user@example.com": {"password": "correcthorse", "id": "u1", "username": "someone"}}
-    tables = {"profiles": [{"user_id": "u1", "username": "someone", "email": "user@example.com"}]}
+    tables = {"profiles": [{"user_id": "u1", "user_displayname": "someone"}]}
     _install_fake_supabase(monkeypatch, tables=tables, users=users)
 
     response = client.post("/auth/login", json={
@@ -164,7 +176,7 @@ def test_login_by_email_succeeds(monkeypatch):
 
 def test_login_by_username_succeeds(monkeypatch):
     users = {"user@example.com": {"password": "correcthorse", "id": "u1", "username": "someone"}}
-    tables = {"profiles": [{"user_id": "u1", "username": "someone", "email": "user@example.com"}]}
+    tables = {"profiles": [{"user_id": "u1", "user_displayname": "someone"}]}
     _install_fake_supabase(monkeypatch, tables=tables, users=users)
 
     response = client.post("/auth/login", json={
@@ -189,7 +201,7 @@ def test_login_rejects_unknown_username(monkeypatch):
 
 def test_login_rejects_wrong_password(monkeypatch):
     users = {"user@example.com": {"password": "correcthorse", "id": "u1", "username": "someone"}}
-    tables = {"profiles": [{"user_id": "u1", "username": "someone", "email": "user@example.com"}]}
+    tables = {"profiles": [{"user_id": "u1", "user_displayname": "someone"}]}
     _install_fake_supabase(monkeypatch, tables=tables, users=users)
 
     response = client.post("/auth/login", json={

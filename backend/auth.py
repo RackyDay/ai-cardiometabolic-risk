@@ -73,21 +73,32 @@ def get_current_user_optional(
 
 def _resolve_login_email(identifier: str) -> str:
     """Accept either an email or a username and return the email to
-    authenticate with. Username lookup goes through the service-role client
-    because RLS on public.profiles only lets a user read their own row.
+    authenticate with. Username -> user_id goes through the service-role
+    client (RLS on public.profiles only lets a user read their own row);
+    user_id -> email is then read live from auth.users via the Admin API,
+    rather than a denormalized copy - one extra round trip per username
+    login, but no second copy of email that could ever drift out of sync.
     """
     if "@" in identifier:
         return identifier
 
     data = _maybe_single_data(
-        supabase_admin.table("profiles").select("email").eq("username", identifier).maybe_single()
+        supabase_admin.table("profiles").select("user_id").eq("user_displayname", identifier).maybe_single()
     )
-    if not data or not data.get("email"):
+    if not data or not data.get("user_id"):
         # Unknown username - raise the same generic error the caller uses
         # for a wrong password, so login never reveals which part was wrong.
         raise HTTPException(status_code=401, detail="Invalid email/username or password")
 
-    return data["email"]
+    try:
+        user = supabase_admin.auth.admin.get_user_by_id(data["user_id"]).user
+    except Exception:
+        user = None
+
+    if not user or not user.email:
+        raise HTTPException(status_code=401, detail="Invalid email/username or password")
+
+    return user.email
 
 
 def sign_up(req: SignUpRequest) -> AuthResponse:
@@ -102,12 +113,15 @@ def sign_up(req: SignUpRequest) -> AuthResponse:
     # trigger, which fails the auth.users insert itself and surfaces as an
     # opaque 500 from Supabase Auth instead of a clean 409 here.
     existing = _maybe_single_data(
-        supabase_admin.table("profiles").select("user_id").eq("username", req.username).maybe_single()
+        supabase_admin.table("profiles").select("user_id").eq("user_displayname", req.username).maybe_single()
     )
     if existing:
         raise HTTPException(status_code=409, detail="That username is already taken")
 
     try:
+        # "username" here is just the auth.users.raw_user_meta_data JSON key
+        # handle_new_user() reads from - unrelated to the profiles column
+        # name, which is user_displayname (see the consolidation migration).
         result = supabase.auth.sign_up({
             "email": req.email,
             "password": req.password,
@@ -159,9 +173,9 @@ def log_in(req: LoginRequest) -> AuthResponse:
         raise HTTPException(status_code=401, detail="Invalid email/username or password")
 
     profile = _maybe_single_data(
-        supabase_admin.table("profiles").select("username").eq("user_id", user.id).maybe_single()
+        supabase_admin.table("profiles").select("user_displayname").eq("user_id", user.id).maybe_single()
     )
-    username = profile.get("username") if profile else None
+    username = profile.get("user_displayname") if profile else None
 
     return AuthResponse(
         access_token=session.access_token,

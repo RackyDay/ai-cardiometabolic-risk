@@ -172,10 +172,10 @@ def logout(authorization: str | None = Header(default=None)):
 @app.get("/me")
 def me(user=Depends(get_current_user)):
     profile = _maybe_single_data(
-        supabase_admin.table("profiles").select("username").eq("user_id", user.id).maybe_single()
+        supabase_admin.table("profiles").select("user_displayname").eq("user_id", user.id).maybe_single()
     )
     return {
         "id": user.id,
         "email": user.email,
-        "username": profile.get("username") if profile else None,
+        "username": profile.get("user_displayname") if profile else None,
     }
