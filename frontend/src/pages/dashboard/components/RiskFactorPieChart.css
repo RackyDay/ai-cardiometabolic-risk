@@ -16,10 +16,6 @@
 
   padding: 0.25rem 0 0.5rem;
 
-  /*
-    Prevent anything inside the chart from
-    visually extending outside the card.
-  */
   overflow: hidden;
 }
 
@@ -31,10 +27,6 @@
 .risk-donut-wrapper {
   position: relative;
 
-  /*
-    Each side gets roughly half of the
-    available card width.
-  */
   flex: 1 1 50%;
 
   width: 50%;
@@ -74,7 +66,9 @@
 
   pointer-events: none;
 
-  box-shadow: 0 0 0 1px #f1f5f9;
+  box-shadow:
+    0 0 0 1px #f1f5f9,
+    0 4px 12px rgba(15, 23, 42, 0.04);
 }
 
 .risk-donut-total-label {
@@ -97,7 +91,7 @@
 
 
 /* =========================================
-   Risk Factor Breakdown
+   Interactive Risk Factor Breakdown
 ========================================= */
 
 .risk-factor-breakdown {
@@ -125,12 +119,9 @@
 .risk-factor-breakdown-header {
   display: grid;
 
-  /*
-    First column takes all remaining space.
-    Second column is fixed so percentages
-    stay aligned.
-  */
-  grid-template-columns: minmax(0, 1fr) 80px;
+  grid-template-columns:
+    minmax(0, 1fr)
+    80px;
 
   align-items: center;
 
@@ -163,7 +154,9 @@
 
   display: grid;
 
-  grid-template-columns: minmax(0, 1fr) 80px;
+  grid-template-columns:
+    minmax(0, 1fr)
+    80px;
 
   align-items: center;
 
@@ -171,7 +164,40 @@
 
   padding: 0 0.25rem;
 
+  border: none;
   border-bottom: 1px dashed #e5e7eb;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  text-align: left;
+
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+
+/* Hover */
+
+.risk-factor-breakdown-row:hover {
+  background-color: #f8fafc;
+
+  transform: translateX(2px);
+}
+
+
+/* Active / selected */
+
+.risk-factor-breakdown-row-active {
+  background-color: #eff6ff;
+
+  border-radius: 0.5rem;
+}
+
+.risk-factor-breakdown-row-active:hover {
+  background-color: #eff6ff;
 }
 
 
@@ -221,6 +247,14 @@
   border-radius: 4px;
 
   flex-shrink: 0;
+
+  transition:
+    transform 0.18s ease;
+}
+
+.risk-factor-breakdown-row:hover
+.risk-factor-color {
+  transform: scale(1.15);
 }
 
 
@@ -244,6 +278,80 @@
   white-space: nowrap;
 
   box-sizing: border-box;
+}
+
+
+/* =========================================
+   Tooltip
+========================================= */
+
+.risk-chart-tooltip {
+  min-width: 190px;
+
+  padding: 0.75rem 0.875rem;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 0.75rem;
+
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.12);
+
+  pointer-events: none;
+}
+
+.risk-chart-tooltip-title {
+  color: #111827;
+
+  font-size: 0.9rem;
+
+  font-weight: 700;
+
+  line-height: 1.35;
+
+  margin-bottom: 0.45rem;
+}
+
+.risk-chart-tooltip-divider {
+  height: 1px;
+
+  background: #e5e7eb;
+
+  margin-bottom: 0.5rem;
+}
+
+.risk-chart-tooltip-row {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  font-size: 0.8rem;
+
+  line-height: 1.5;
+}
+
+.risk-chart-tooltip-row span {
+  color: #64748b;
+}
+
+.risk-chart-tooltip-row strong {
+  color: #111827;
+
+  font-weight: 700;
+}
+
+.risk-tooltip-positive {
+  color: #dc2626 !important;
+}
+
+.risk-tooltip-negative {
+  color: #16a34a !important;
 }
 
 
