@@ -8,6 +8,10 @@
   box-sizing: border-box;
 }
 
+/* =========================================
+   General Cards
+========================================= */
+
 .card {
   background: #ffffff;
   border-radius: 1rem;
@@ -21,6 +25,10 @@
   color: #111827;
   margin: 0 0 1rem 0;
 }
+
+/* =========================================
+   Header / Disclaimer
+========================================= */
 
 .card-header-row {
   display: flex;
@@ -59,17 +67,26 @@
   top: 50%;
   right: calc(100% + 0.625rem);
   transform: translateY(-50%) translateX(0.5rem);
+
   width: 15rem;
   max-width: 60vw;
+
   background: #fffbeb;
   border: 1px solid #fde68a;
   border-radius: 0.75rem;
   padding: 0.875rem 1rem;
+
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s;
+
   z-index: 10;
 }
 
@@ -94,6 +111,10 @@
   line-height: 1.45;
 }
 
+/* =========================================
+   Top Row
+========================================= */
+
 .top-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -112,6 +133,10 @@
   flex: 1;
   padding: 0.5rem 0;
 }
+
+/* =========================================
+   Insights
+========================================= */
 
 .insight-subheading {
   font-size: 0.9375rem;
@@ -148,14 +173,35 @@
   color: #991b1b;
 }
 
+/* =========================================
+   Risk Factor Breakdown
+========================================= */
+
+.risk-contribution-card {
+  overflow: hidden;
+}
+
+.risk-chart-description {
+  margin: -0.5rem 0 0.75rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* =========================================
+   Risk Factor List
+========================================= */
+
 .risk-factor-list {
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  /* Only the first --visible-rows rows show without scrolling; the rest
-     are reachable by scrolling inside this container. Row height (2.75rem)
-     matches .risk-factor-row's min-height below. */
-  max-height: calc(var(--visible-rows) * 2.75rem + (var(--visible-rows) - 1) * 0.625rem);
+
+  max-height: calc(
+    var(--visible-rows) * 2.75rem +
+    (var(--visible-rows) - 1) * 0.625rem
+  );
+
   overflow-y: auto;
   padding-right: 0.25rem;
 }
@@ -213,6 +259,10 @@
   margin: 0;
 }
 
+/* =========================================
+   Risk Factor Header
+========================================= */
+
 .risk-factors-header {
   display: flex;
   align-items: center;
@@ -236,6 +286,10 @@
 .insight-eye-button:hover {
   color: #6b7086;
 }
+
+/* =========================================
+   Insights Modal
+========================================= */
 
 .insight-modal-backdrop {
   position: fixed;
@@ -262,15 +316,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   margin-bottom: 1rem;
 }
 
 .insight-modal-close {
   border: none;
   background: transparent;
+
   font-size: 1.75rem;
   line-height: 1;
+
   cursor: pointer;
+
   color: #6b7280;
   padding: 0;
 }
@@ -278,6 +336,10 @@
 .insight-modal-close:hover {
   color: #111827;
 }
+
+/* =========================================
+   Responsive
+========================================= */
 
 @media (max-width: 48rem) {
   .top-row {
@@ -290,5 +352,9 @@
 
   .insight-eye-button {
     display: grid;
+  }
+
+  .risk-contribution-card {
+    margin-bottom: 1.5rem;
   }
 }
