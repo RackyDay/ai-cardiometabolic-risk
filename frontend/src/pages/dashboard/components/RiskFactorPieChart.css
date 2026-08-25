@@ -1,0 +1,354 @@
+/* =========================================
+   Main Chart Container
+========================================= */
+
+.risk-chart-container {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+
+  gap: 1.5rem;
+
+  min-height: 390px;
+
+  padding: 0.25rem 0 0.5rem;
+
+  /*
+    Prevent anything inside the chart from
+    visually extending outside the card.
+  */
+  overflow: hidden;
+}
+
+
+/* =========================================
+   Donut Chart
+========================================= */
+
+.risk-donut-wrapper {
+  position: relative;
+
+  /*
+    Each side gets roughly half of the
+    available card width.
+  */
+  flex: 1 1 50%;
+
+  width: 50%;
+  max-width: 50%;
+  min-width: 0;
+
+  height: 380px;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================
+   Donut Centre
+========================================= */
+
+.risk-donut-center {
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  transform: translate(-50%, -50%);
+
+  width: 130px;
+  height: 130px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  pointer-events: none;
+
+  box-shadow: 0 0 0 1px #f1f5f9;
+}
+
+.risk-donut-total-label {
+  color: #64748b;
+
+  font-size: 0.875rem;
+
+  margin-bottom: 0.15rem;
+
+  text-align: center;
+}
+
+.risk-donut-total {
+  color: #111827;
+
+  font-size: 1.5rem;
+
+  font-weight: 700;
+}
+
+
+/* =========================================
+   Risk Factor Breakdown
+========================================= */
+
+.risk-factor-breakdown {
+  flex: 1 1 50%;
+
+  width: 50%;
+  max-width: 50%;
+  min-width: 0;
+
+  max-height: 380px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding-right: 0.75rem;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================
+   Breakdown Header
+========================================= */
+
+.risk-factor-breakdown-header {
+  display: grid;
+
+  /*
+    First column takes all remaining space.
+    Second column is fixed so percentages
+    stay aligned.
+  */
+  grid-template-columns: minmax(0, 1fr) 80px;
+
+  align-items: center;
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 0 0.25rem 0.7rem;
+
+  color: #64748b;
+
+  font-size: 0.85rem;
+
+  font-weight: 600;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+
+/* =========================================
+   Breakdown Rows
+========================================= */
+
+.risk-factor-breakdown-row {
+  min-height: 43px;
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  display: grid;
+
+  grid-template-columns: minmax(0, 1fr) 80px;
+
+  align-items: center;
+
+  gap: 0.5rem;
+
+  padding: 0 0.25rem;
+
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+
+/* =========================================
+   Risk Factor Name
+========================================= */
+
+.risk-factor-name {
+  min-width: 0;
+
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 0.7rem;
+
+  color: #1f2937;
+
+  font-size: 0.9rem;
+
+  overflow: hidden;
+}
+
+.risk-factor-name span:last-child {
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================
+   Colour Indicator
+========================================= */
+
+.risk-factor-color {
+  width: 13px;
+  height: 13px;
+
+  min-width: 13px;
+
+  border-radius: 4px;
+
+  flex-shrink: 0;
+}
+
+
+/* =========================================
+   Contribution Percentage
+========================================= */
+
+.risk-factor-percentage {
+  width: 80px;
+
+  min-width: 0;
+
+  text-align: right;
+
+  color: #111827;
+
+  font-size: 0.9rem;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================
+   Scrollbar
+========================================= */
+
+.risk-factor-breakdown::-webkit-scrollbar {
+  width: 5px;
+}
+
+.risk-factor-breakdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.risk-factor-breakdown::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+
+  border-radius: 10px;
+}
+
+.risk-factor-breakdown::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+
+/* =========================================
+   Tablet
+========================================= */
+
+@media (max-width: 64rem) {
+  .risk-chart-container {
+    gap: 1rem;
+  }
+}
+
+
+/* =========================================
+   Mobile
+========================================= */
+
+@media (max-width: 48rem) {
+  .risk-chart-container {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 1rem;
+
+    min-height: auto;
+  }
+
+  .risk-donut-wrapper {
+    width: 100%;
+
+    max-width: 100%;
+
+    min-width: 0;
+
+    height: 360px;
+  }
+
+  .risk-factor-breakdown {
+    width: 100%;
+
+    max-width: 100%;
+
+    min-width: 0;
+
+    max-height: 300px;
+  }
+}
+
+
+/* =========================================
+   Small Mobile
+========================================= */
+
+@media (max-width: 37.5rem) {
+  .risk-donut-wrapper {
+    height: 320px;
+  }
+
+  .risk-donut-center {
+    width: 105px;
+    height: 105px;
+  }
+
+  .risk-donut-total {
+    font-size: 1.25rem;
+  }
+
+  .risk-donut-total-label {
+    font-size: 0.8rem;
+  }
+
+  .risk-factor-breakdown-row {
+    min-height: 40px;
+  }
+
+  .risk-factor-name {
+    font-size: 0.85rem;
+  }
+
+  .risk-factor-percentage {
+    font-size: 0.85rem;
+  }
+}
