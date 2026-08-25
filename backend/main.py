@@ -5,7 +5,8 @@ from risk_model import predict_risk
 from schemas import PredictionResponse, RiskInputData
 
 from auth import get_current_user, get_optional_user
-from database import save_assessment, delete_assessment
+from uuid import UUID
+import database as db
 
 app = FastAPI()
 
@@ -29,18 +30,36 @@ def predict(data: RiskInputData, auth = Depends(get_optional_user)):
 
     if auth is not None:
         user, token = auth
-        save_assessment(user.id, result["risk_score"], "1", data.model_dump(), token)
+        riskcalc_id = db.save_assessment(user.id, result["risk_score"], "1", data.model_dump(), token)
 
+    #add in riskcalc_id
     return result
 
-
-
 @app.post("/delete")
-def delete(risk_assessment, auth = Depends(get_optional_user)):
+def delete(assessment_id, auth = Depends(get_optional_user)):
     if auth is not None:
-        user, token = auth
-        delete_assessment(risk_assessment, token)
-        
+        _, token = auth
+        db.delete_assessment(assessment_id, token)
+
+@app.post("/edit")
+def edit(assessment_id, data: RiskInputData, auth = Depends(get_optional_user)):
+    if auth is not None:
+        _, token = auth
+        db.edit_assessment(assessment_id, data.model_dump(), token)
+
+    predict(data, auth)
+
+@app.get("/api/risk-calculations")
+async def get_risk_calculations(auth = Depends(get_optional_user)):
+    if auth is not None:
+        _, token = auth
+        risk_calculations = db.fetch_risk_calculations(token)
+
+@app.get("/api/risk-calculations/{calculation_id}")
+async def get_risk_calculation(calculation_id: UUID, auth = Depends(get_optional_user)):
+    if auth is not None:
+        _, token = auth
+        risk_calc, risk_inputs = db.fetch_risk_calculation(calculation_id, token)
 
 @app.get("/learn")
 def learn():
@@ -56,3 +75,4 @@ def me(user=Depends(get_current_user)):
         "id": user.id,
         "email": user.email,
     }
+
