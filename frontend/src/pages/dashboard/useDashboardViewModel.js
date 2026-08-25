@@ -81,8 +81,15 @@ export function useDashboardViewModel() {
           : (Math.abs(contributor.contribution) / totalAbsContribution) * 100,
     }));
 
+  const pieData = riskFactors.map((factor) => ({
+    name: factor.label,
+    value: factor.weightPercent,
+  }));
+
   return {
     displayScore: riskScore ?? 50,
     riskFactors,
+    pieData,
   };
 }
+
