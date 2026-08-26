@@ -13,10 +13,13 @@ function MenuBar({ showMenuButton, onMenuClick }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Username first (what the account is actually called), email as a
-  // fallback for the rare case a profile row exists without one yet (see
-  // backend/auth.py's log_in - username can come back null there too).
-  const displayName = isAuthenticated ? (user?.username || user?.email) : "Guest";
+  // Username first (what the account is actually called); fullName is
+  // Google-only (see AuthContext's fromSupabaseSession) and reads better
+  // than a bare email for accounts that never set a username; email is the
+  // last-resort fallback for the rare case neither is available.
+  const displayName = isAuthenticated
+    ? (user?.username || user?.fullName || user?.email)
+    : "Guest";
 
   // Only listen for outside clicks while the dropdown is actually open -
   // otherwise every click anywhere in the app would run this handler for no

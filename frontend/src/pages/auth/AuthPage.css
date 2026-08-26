@@ -131,3 +131,40 @@
 .auth-submit-btn:not(:disabled):hover {
   background: linear-gradient(180deg, #3f73f6, #2857bd);
 }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.25rem 0;
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.auth-divider span {
+  padding: 0 0.75rem;
+}
+
+.auth-google-btn {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 0.85rem 1rem;
+  background: #ffffff;
+  color: #222222;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.auth-google-btn:hover {
+  background: #f9fafb;
+}

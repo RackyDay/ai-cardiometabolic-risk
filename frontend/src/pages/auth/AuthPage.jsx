@@ -17,6 +17,7 @@ function AuthPage() {
     error,
     confirmationRequired,
     handleSubmit,
+    handleGoogleSignIn,
   } = useAuthViewModel();
 
   const isSignup = mode === "signup";
@@ -123,6 +124,17 @@ function AuthPage() {
 
         <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
           {isSubmitting ? "Please wait..." : isSignup ? "Create Account" : "Sign In"}
+        </button>
+
+        {/* Same action regardless of mode - Google sign-in creates the
+            account on first use and logs in on every use after, so the
+            Sign In/Sign Up toggle above doesn't apply to it. */}
+        <div className="auth-divider">
+          <span>or</span>
+        </div>
+
+        <button type="button" className="auth-google-btn" onClick={handleGoogleSignIn}>
+          Continue with Google
         </button>
       </form>
     </main>

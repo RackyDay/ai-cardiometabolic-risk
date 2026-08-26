@@ -1,5 +1,6 @@
-import { createContext, useRef, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { logIn, logOut, signUp } from "../services/api";
+import { supabase } from "../services/supabaseClient";
 
 export const AuthContext = createContext();
 
@@ -27,6 +28,24 @@ const persistSession = (session) => {
   }
 };
 
+// Converts a supabase-js Session (only ever produced by the Google OAuth
+// flow - see signInWithGoogle/onAuthStateChange below) into the same
+// {accessToken, refreshToken, user} shape our backend's AuthResponse
+// produces for password login, so both flows share one session shape from
+// here on. username stays null for Google sign-ups - nothing sets it in
+// user_metadata - which every display fallback already handles; fullName
+// is Google-only extra, used as a nicer fallback than a bare email.
+const fromSupabaseSession = (supabaseSession) => ({
+  accessToken: supabaseSession.access_token,
+  refreshToken: supabaseSession.refresh_token,
+  user: {
+    id: supabaseSession.user.id,
+    email: supabaseSession.user.email,
+    username: supabaseSession.user.user_metadata?.username ?? null,
+    fullName: supabaseSession.user.user_metadata?.full_name ?? null,
+  },
+});
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(loadStoredSession);
   const [toastMessage, setToastMessage] = useState(null);
@@ -35,14 +54,18 @@ export function AuthProvider({ children }) {
   // re-render on its own.
   const toastTimeoutRef = useRef(null);
 
-  const showToast = (message) => {
+  // useCallback so this has a stable identity - it's used inside the
+  // onAuthStateChange effect below, and without a stable identity it'd
+  // either need to be a dependency that re-subscribes the listener on
+  // every render, or get called from a stale closure.
+  const showToast = useCallback((message) => {
     // Clear any timer from a previous toast first, so signing in twice in
     // quick succession resets the 3s countdown instead of the first timer
     // dismissing the second toast early.
     clearTimeout(toastTimeoutRef.current);
     setToastMessage(message);
     toastTimeoutRef.current = setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
-  };
+  }, []);
 
   // Shared by signUp/logIn: turn a backend AuthResponse into local session
   // state. Bails out without establishing a session when Supabase requires
@@ -68,11 +91,57 @@ export function AuthProvider({ children }) {
 
   const logInUser = async (credentials) => applySession(await logIn(credentials));
 
+  // Redirects the whole page to Google - nothing after this call runs in
+  // the current page load. `from` (e.g. "/" or "/dashboard") is where the
+  // user started, same idea as the password flow's location.state.from,
+  // but it has to survive an actual cross-site navigation here, so it's
+  // baked into redirectTo instead of React Router state. Coming back is
+  // handled entirely by the onAuthStateChange listener below - Supabase
+  // redirects the browser straight back to that URL with a session already
+  // established, and supabase-js's default detectSessionInUrl notices it.
+  const signInWithGoogle = async (from) => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}${from}` },
+    });
+  };
+
   const logOutUser = async () => {
     await logOut(session?.accessToken).catch(() => {});
+    // Also clears supabase-js's own separately-persisted session. Without
+    // this, a Google-authenticated session would still be sitting in its
+    // own localStorage entry and silently restore itself via
+    // onAuthStateChange's INITIAL_SESSION on the next page load, undoing
+    // this logout.
+    await supabase.auth.signOut().catch(() => {});
     setSession(null);
     persistSession(null);
   };
+
+  // The other half of the Google flow. This client is never used to sign
+  // in with a password (that goes straight to our backend), so any session
+  // this fires with only ever came from Google - either just now (event
+  // "SIGNED_IN", right after the OAuth redirect completes - toast-worthy),
+  // or restored from supabase-js's own storage on a later page load
+  // ("INITIAL_SESSION" - already-known, no toast) or a background refresh
+  // ("TOKEN_REFRESHED"). A null session here (e.g. a plain "SIGNED_OUT")
+  // is ignored rather than clearing state, so it can't stomp on an
+  // existing password-based session that this client was never party to.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, supabaseSession) => {
+      if (!supabaseSession) return;
+
+      const next = fromSupabaseSession(supabaseSession);
+      setSession(next);
+      persistSession(next);
+
+      if (event === "SIGNED_IN") {
+        showToast(`Signed in as ${next.user.username || next.user.fullName || next.user.email}`);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [showToast]);
 
   return (
     <AuthContext.Provider
@@ -82,6 +151,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: Boolean(session?.accessToken),
         signUp: signUpUser,
         logIn: logInUser,
+        signInWithGoogle,
         logOut: logOutUser,
       }}
     >

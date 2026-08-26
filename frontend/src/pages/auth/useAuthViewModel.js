@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 export function useAuthViewModel() {
-  const { signUp, logIn, isAuthenticated } = useContext(AuthContext);
+  const { signUp, logIn, signInWithGoogle, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   // Wherever the user navigated here from (e.g. "/" or "/dashboard") -
@@ -57,6 +57,19 @@ export function useAuthViewModel() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setError("");
+    try {
+      // Redirects the whole page - on success, this call never actually
+      // returns here. An error only surfaces if the redirect itself
+      // couldn't be started (e.g. the Google provider isn't enabled on the
+      // Supabase project yet).
+      await signInWithGoogle(from);
+    } catch (err) {
+      setError(err.message || "Couldn't start Google sign-in. Please try again.");
+    }
+  };
+
   return {
     mode,
     toggleMode,
@@ -72,5 +85,6 @@ export function useAuthViewModel() {
     error,
     confirmationRequired,
     handleSubmit,
+    handleGoogleSignIn,
   };
 }
