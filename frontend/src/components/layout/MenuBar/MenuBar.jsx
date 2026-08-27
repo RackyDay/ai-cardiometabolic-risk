@@ -91,24 +91,27 @@ function MenuBar({ showMenuButton, onMenuClick }) {
       <h1 className="menu-bar-title">{pageTitle}</h1>
 
       <div className="menu-bar-actions">
-        <button className="menu-icon-button settings-button" aria-label="Settings">
-          ⚙
-        </button>
-
         <div className="menu-profile-wrapper" ref={dropdownRef}>
           <button
-            className="menu-profile-name"
+            className="menu-profile-button"
             onClick={handleProfileClick}
             aria-haspopup={isAuthenticated ? "menu" : undefined}
             aria-expanded={isAuthenticated ? isDropdownOpen : undefined}
             aria-label={isAuthenticated ? `Account menu (${displayName})` : "Log in or sign up"}
             title={isAuthenticated ? displayName : "Log in or sign up"}
           >
-            {displayName}
+            ⋯
           </button>
 
           {isAuthenticated && isDropdownOpen && (
             <div className="menu-profile-dropdown" role="menu">
+              <div className="menu-profile-dropdown-header">
+                <span>Signed in as</span>
+                <strong>{displayName}</strong>
+              </div>
+
+              <div className="menu-profile-dropdown-divider" />
+
               <button role="menuitem" onClick={handleSettingsClick}>
                 Settings
               </button>
