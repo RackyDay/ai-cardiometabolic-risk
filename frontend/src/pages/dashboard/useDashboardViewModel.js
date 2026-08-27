@@ -1,11 +1,15 @@
-import { useContext } from "react";
+import { useContext, useEffect, useRef } from "react";
+
 import { RiskContext } from "../../context/RiskContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
+import { predictRisk } from "../../services/api";
+import { buildPredictionPayload } from "../input/riskInputTransform";
+import { CHANGEABLE_RISK_FACTORS } from "./changeableRiskFactors";
 
-// The EBM model explains predictions using its training column names, which
-// differ from the input form's field names in a couple of spots (see
-// backend/risk_model.py's _build_feature_row). Map back to the schema key
-// so we can reuse the form's print_name for display.
+// The EBM model explains predictions using its training column names,
+// which differ from the input form's field names in a couple of spots.
+// Map those model names back to the schema keys so we can reuse the
+// form's print_name for display.
 const FEATURE_TO_SCHEMA_KEY = {
   male: "gender",
   BPMeds: "bpMeds",
@@ -13,53 +17,221 @@ const FEATURE_TO_SCHEMA_KEY = {
 
 function labelForFeature(feature) {
   const schemaKey = FEATURE_TO_SCHEMA_KEY[feature] || feature;
+
   return riskInputSchema[schemaKey]?.print_name ?? feature;
 }
 
-export function useDashboardViewModel() {
-  const { riskScore, topContributors } = useContext(RiskContext);
-  const contributors = topContributors ?? [];
+/*
+ * Convert raw EBM contributors into the format used by the dashboard.
+ */
+function buildRiskFactors(contributors) {
+  const safeContributors = contributors ?? [];
 
-  // The EBM is additive in log-odds (logit) space, not probability space —
-  // sigmoid(intercept + sum of contributions) = risk probability — so an
-  // individual contribution can't be read as "X% of the risk score" without
-  // misrepresenting the math. Instead we show each factor's *relative
-  // weight*: its share of the total |contribution| across the factors shown
-  // here, so the displayed percentages sum to 100% of "what's shown," not
-  // of the risk score itself.
-  const totalAbsContribution = contributors.reduce(
-    (sum, contributor) => sum + Math.abs(contributor.contribution),
+  const totalAbsContribution = safeContributors.reduce(
+    (sum, contributor) =>
+      sum + Math.abs(contributor.contribution),
     0
   );
 
-  // top_contributors arrives capped at 10 and sorted by |contribution|
-  // (see backend/risk_model.py), which mixes risk-raising and risk-lowering
-  // factors together by magnitude. For display we want them ordered from
-  // highest (most risk-raising) contribution down to lowest (most
-  // risk-lowering), so re-sort by the signed value here.
-  const riskFactors = [...contributors] // copy first: Array.sort mutates in place, and topContributors is shared RiskContext state
-    .sort((a, b) => b.contribution - a.contribution) // descending by signed value, not |value| — negative (protective) contributors sink to the bottom
+  return [...safeContributors]
+    .sort(
+      (a, b) =>
+        b.contribution - a.contribution
+    )
     .map((contributor) => ({
       feature: contributor.feature,
-      label: labelForFeature(contributor.feature),
-      raisesRisk: contributor.contribution > 0,
-      // Guard against 0/0 in the (unreachable in practice) case where every
-      // shown contribution is exactly 0.
+
+      label: labelForFeature(
+        contributor.feature
+      ),
+
+      raisesRisk:
+        contributor.contribution > 0,
+
       weightPercent:
         totalAbsContribution === 0
           ? 0
-          : (Math.abs(contributor.contribution) / totalAbsContribution) * 100,
+          : (
+              Math.abs(
+                contributor.contribution
+              ) / totalAbsContribution
+            ) * 100,
     }));
-
-  const pieData = riskFactors.map((factor) => ({
-    name: factor.label,
-    value: factor.weightPercent,
-  }));
-
-  return {
-    displayScore: riskScore ?? 50,
-    riskFactors,
-    pieData,
-  };
 }
 
+export function useDashboardViewModel() {
+  const {
+    // ---------------------------------------------
+    // Original assessment
+    // ---------------------------------------------
+    riskInputs,
+    riskScore,
+    topContributors,
+
+    // ---------------------------------------------
+    // Hypothetical / What-if assessment
+    // ---------------------------------------------
+    hypotheticalInputs,
+    setHypotheticalInputs,
+
+    hypotheticalRiskScore,
+    hypotheticalTopContributors,
+
+    setHypotheticalRiskScore,
+    setHypotheticalTopContributors,
+
+    resetHypothetical,
+  } = useContext(RiskContext);
+
+  // Used to debounce calls to the backend when a slider
+  // is moved continuously.
+  const predictionTimer = useRef(null);
+
+  // ---------------------------------------------
+  // Original risk factors
+  // ---------------------------------------------
+
+  const riskFactors = buildRiskFactors(
+    topContributors
+  );
+
+  const pieData = riskFactors.map(
+    (factor) => ({
+      name: factor.label,
+      value: factor.weightPercent,
+      feature: factor.feature,
+      raisesRisk: factor.raisesRisk,
+    })
+  );
+
+  // ---------------------------------------------
+  // Hypothetical risk factors
+  // ---------------------------------------------
+
+  const hypotheticalRiskFactors =
+    buildRiskFactors(
+      hypotheticalTopContributors
+    );
+
+  const hypotheticalPieData =
+    hypotheticalRiskFactors.map(
+      (factor) => ({
+        name: factor.label,
+        value: factor.weightPercent,
+        feature: factor.feature,
+        raisesRisk: factor.raisesRisk,
+      })
+    );
+
+  // ---------------------------------------------
+  // Update a hypothetical input
+  // ---------------------------------------------
+
+  const updateHypotheticalInput = (
+    feature,
+    value
+  ) => {
+    setHypotheticalInputs((previous) => ({
+      ...(previous ?? riskInputs),
+      [feature]: value,
+    }));
+  };
+
+  // ---------------------------------------------
+  // Run hypothetical prediction
+  // ---------------------------------------------
+  //
+  // Whenever the user changes a hypothetical
+  // value, wait 300ms before sending the request.
+  //
+  // This prevents a slider from creating a new
+  // backend request for every tiny movement.
+  // ---------------------------------------------
+
+  useEffect(() => {
+    if (!hypotheticalInputs) {
+      return;
+    }
+
+    if (predictionTimer.current) {
+      clearTimeout(predictionTimer.current);
+    }
+
+    predictionTimer.current = setTimeout(
+      async () => {
+        try {
+          const payload =
+            buildPredictionPayload(
+              hypotheticalInputs,
+              riskInputSchema
+            );
+
+          const result =
+            await predictRisk(payload);
+
+          setHypotheticalRiskScore(
+            result.risk_score
+          );
+
+          setHypotheticalTopContributors(
+            result.top_contributors
+          );
+        } catch (error) {
+          console.error(
+            "Hypothetical prediction failed:",
+            error
+          );
+        }
+      },
+      300
+    );
+
+    return () => {
+      if (predictionTimer.current) {
+        clearTimeout(
+          predictionTimer.current
+        );
+      }
+    };
+  }, [
+    hypotheticalInputs,
+    setHypotheticalRiskScore,
+    setHypotheticalTopContributors,
+  ]);
+
+  // ---------------------------------------------
+  // Return values used by DashboardPage
+  // ---------------------------------------------
+
+  return {
+    // Original assessment
+    displayScore: riskScore ?? 50,
+
+    riskFactors,
+
+    pieData,
+
+    // Hypothetical / What-if assessment
+    hypotheticalScore:
+      hypotheticalRiskScore,
+
+    hypotheticalRiskFactors,
+
+    hypotheticalPieData,
+
+    hypotheticalInputs,
+
+    // Configuration describing which factors
+    // can be changed by the user.
+    changeableRiskFactors:
+      CHANGEABLE_RISK_FACTORS,
+
+    // Function used by the dashboard controls
+    // to change one hypothetical input.
+    updateHypotheticalInput,
+
+    // Reset hypothetical changes back to the
+    // original assessment state.
+    resetHypothetical,
+  };
+}
