@@ -1,10 +1,9 @@
-import { useEffect, useRef,useState } from "react";
+import { useState } from "react";
 import {
   Cell,
   Pie,
   PieChart,
   ResponsiveContainer,
-  Sector,
   Tooltip,
 } from "recharts";
 
@@ -59,6 +58,9 @@ const RISK_FACTOR_DESCRIPTIONS = {
 
   "Resting heart rate":
     "Resting heart rate can provide information about cardiovascular health, although its contribution to risk depends on the individual's overall health and other factors.",
+
+  "Diabetes diagnosis status":
+    "Diabetes can damage blood vessels and is associated with a higher risk of heart disease and stroke.",
 };
 
 function getRiskFactorDescription(name) {
@@ -70,9 +72,9 @@ function getRiskFactorDescription(name) {
 }
 
 
-/* =========================================
-   Pie Chart Tooltip
-========================================= */
+/* =========================================================
+   Chart tooltip
+========================================================= */
 
 function RiskFactorTooltip({ active, payload }) {
   if (!active || !payload || payload.length === 0) {
@@ -80,6 +82,7 @@ function RiskFactorTooltip({ active, payload }) {
   }
 
   const factor = payload[0].payload;
+
   const contribution = Number(factor.value);
 
   return (
@@ -122,50 +125,16 @@ function RiskFactorTooltip({ active, payload }) {
 }
 
 
-/* =========================================
-   Active Pie Slice
-========================================= */
+/* =========================================================
+   Risk Factor Pie Chart
+========================================================= */
 
-function renderActiveShape(props) {
-  const {
-    cx,
-    cy,
-    innerRadius,
-    outerRadius,
-    startAngle,
-    endAngle,
-    fill,
-  } = props;
-
-  return (
-    <Sector
-      cx={cx}
-      cy={cy}
-      innerRadius={innerRadius}
-      outerRadius={outerRadius + 8}
-      startAngle={startAngle}
-      endAngle={endAngle}
-      fill={fill}
-      stroke="#ffffff"
-      strokeWidth={3}
-      style={{
-        filter:
-          "drop-shadow(0 5px 8px rgba(15, 23, 42, 0.18))",
-      }}
-    />
-  );
-}
-
-
-/* =========================================
-   Main Component
-========================================= */
-
-function RiskFactorPieChart({ data }) {
+function RiskFactorPieChart({
+  data,
+  hypotheticalData,
+}) {
   const [activeIndex, setActiveIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const selectedRowRef = useRef(null);
-  const breakdownRef = useRef(null);
 
   if (!data || data.length === 0) {
     return (
@@ -174,35 +143,7 @@ function RiskFactorPieChart({ data }) {
       </p>
     );
   }
-  useEffect(() => {
-  if (
-    selectedIndex === null ||
-    !selectedRowRef.current ||
-    !breakdownRef.current
-  ) {
-    return;
-  }
 
-  const container = breakdownRef.current;
-  const selectedRow = selectedRowRef.current;
-
-  const targetScrollTop =
-    selectedRow.offsetTop -
-    container.offsetTop -
-    container.clientHeight / 2 +
-    selectedRow.clientHeight / 2;
-
-  container.scrollTo({
-    top: Math.max(0, targetScrollTop),
-    behavior: "smooth",
-  });
-}, [selectedIndex]);
-
-
-  /*
-   * A clicked factor remains highlighted.
-   * Otherwise the currently hovered factor is highlighted.
-   */
   const highlightedIndex =
     selectedIndex !== null
       ? selectedIndex
@@ -216,203 +157,452 @@ function RiskFactorPieChart({ data }) {
     setActiveIndex(null);
   };
 
-  const handleFactorClick = (index) => {
+  const handleFactorClick = (_, index) => {
     setSelectedIndex((current) =>
       current === index ? null : index
     );
   };
 
+  /*
+   * If hypothetical data is not available yet,
+   * simply display the original contribution chart.
+   */
+  const hasHypotheticalData =
+    hypotheticalData &&
+    hypotheticalData.length > 0;
+
+
   return (
     <div className="risk-chart-container">
 
-      {/* =========================================
-          Donut Chart
-      ========================================= */}
+      {/* =====================================================
+          Chart area
+      ====================================================== */}
 
-      <div className="risk-donut-wrapper">
+      <div className="risk-donut-section">
 
-        <ResponsiveContainer
-          width="100%"
-          height={380}
-        >
-          <PieChart>
+        {/* Small instruction above the chart */}
 
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-
-              cx="50%"
-              cy="48%"
-
-              innerRadius={88}
-              outerRadius={145}
-
-              paddingAngle={2}
-
-              stroke="#ffffff"
-              strokeWidth={2}
-
-              activeIndex={
-                highlightedIndex ?? undefined
-              }
-
-              activeShape={renderActiveShape}
-
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-
-              onClick={(_, index) =>
-                handleFactorClick(index)
-              }
-            >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${entry.name}`}
-                  fill={COLORS[index % COLORS.length]}
-                  opacity={
-                    highlightedIndex === null ||
-                    highlightedIndex === index
-                      ? 1
-                      : 0.45
-                  }
-                />
-              ))}
-            </Pie>
+        <div className="risk-chart-hint">
+          Hover over a factor to see its contribution.
+        </div>
 
 
-            {/* =====================================
-                Small Interactive Tooltip
-            ===================================== */}
+        <div className="risk-donut-wrapper">
 
-            <Tooltip
-              content={<RiskFactorTooltip />}
-              cursor={false}
-              offset={12}
-            />
+          <ResponsiveContainer
+            width="100%"
+            height={430}
+          >
+
+            <PieChart>
+
+              {/* =================================================
+                  What-if / hypothetical contribution
+                  OUTER RING
+              ================================================== */}
+
+              {hasHypotheticalData && (
+                <Pie
+                  data={hypotheticalData}
+                  dataKey="value"
+                  nameKey="name"
+
+                  cx="50%"
+                  cy="52%"
+
+                  innerRadius={155}
+                  outerRadius={185}
+
+                  paddingAngle={2}
+
+                  stroke="#ffffff"
+                  strokeWidth={2}
+
+                  activeIndex={highlightedIndex ?? undefined}
+
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                  onClick={handleFactorClick}
+                >
+                  {hypotheticalData.map(
+                    (entry, index) => (
+                      <Cell
+                        key={`hypothetical-${entry.name}`}
+                        fill={
+                          COLORS[
+                            index % COLORS.length
+                          ]
+                        }
+
+                        opacity={
+                          highlightedIndex === null ||
+                          highlightedIndex === index
+                            ? 0.25
+                            : 0.08
+                        }
+                      />
+                    )
+                  )}
+                </Pie>
+              )}
 
 
-            {/* =====================================
-                Centre Information
-            ===================================== */}
+              {/* =================================================
+                  Original contribution
+                  INNER RING
+              ================================================== */}
 
-            <text
-              x="50%"
-              y="45%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="risk-donut-center-label"
-            >
-              Total contribution
-            </text>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
 
-            <text
-              x="50%"
-              y="54%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="risk-donut-center-value"
-            >
-              100%
-            </text>
+                cx="50%"
+                cy="52%"
 
-          </PieChart>
-        </ResponsiveContainer>
+                innerRadius={90}
+                outerRadius={145}
+
+                paddingAngle={2}
+
+                stroke="#ffffff"
+                strokeWidth={2}
+
+                activeIndex={highlightedIndex ?? undefined}
+
+                activeShape={(props) => {
+                  const {
+                    cx,
+                    cy,
+                    innerRadius,
+                    outerRadius,
+                    startAngle,
+                    endAngle,
+                    fill,
+                  } = props;
+
+                  return (
+                    <path
+                      d={`
+                        M ${
+                          cx +
+                          outerRadius *
+                            Math.cos(
+                              (-startAngle *
+                                Math.PI) /
+                                180
+                            )
+                        }
+                          ${
+                            cy +
+                            outerRadius *
+                              Math.sin(
+                                (-startAngle *
+                                  Math.PI) /
+                                  180
+                              )
+                          }
+
+                        A ${outerRadius} ${outerRadius}
+                          0 0 0
+                          ${
+                            cx +
+                            outerRadius *
+                              Math.cos(
+                                (-endAngle *
+                                  Math.PI) /
+                                  180
+                              )
+                          }
+                          ${
+                            cy +
+                            outerRadius *
+                              Math.sin(
+                                (-endAngle *
+                                  Math.PI) /
+                                  180
+                              )
+                          }
+
+                        L ${
+                          cx +
+                          innerRadius *
+                            Math.cos(
+                              (-endAngle *
+                                Math.PI) /
+                                180
+                            )
+                        }
+                          ${
+                            cy +
+                            innerRadius *
+                              Math.sin(
+                                (-endAngle *
+                                  Math.PI) /
+                                  180
+                              )
+                          }
+
+                        A ${innerRadius} ${innerRadius}
+                          0 0 1
+                          ${
+                            cx +
+                            innerRadius *
+                              Math.cos(
+                                (-startAngle *
+                                  Math.PI) /
+                                  180
+                              )
+                          }
+                          ${
+                            cy +
+                            innerRadius *
+                              Math.sin(
+                                (-startAngle *
+                                  Math.PI) /
+                                  180
+                              )
+                          }
+
+                        Z
+                      `}
+
+                      fill={fill}
+
+                      stroke="#ffffff"
+                      strokeWidth={3}
+
+                      style={{
+                        filter:
+                          "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12))",
+                        transition:
+                          "all 0.2s ease",
+                      }}
+                    />
+                  );
+                }}
+
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                onClick={handleFactorClick}
+              >
+
+                {data.map(
+                  (entry, index) => (
+                    <Cell
+                      key={`original-${entry.name}`}
+                      fill={
+                        COLORS[
+                          index % COLORS.length
+                        ]
+                      }
+
+                      opacity={
+                        highlightedIndex === null ||
+                        highlightedIndex === index
+                          ? 1
+                          : 0.35
+                      }
+                    />
+                  )
+                )}
+
+              </Pie>
+
+
+              {/* =================================================
+                  Tooltip
+              ================================================== */}
+
+              <Tooltip
+                content={
+                  <RiskFactorTooltip />
+                }
+
+                /*
+                 * Keep the tooltip away from the
+                 * centre of the donut.
+                 */
+                position={{
+                  x: 15,
+                  y: 8,
+                }}
+
+                wrapperStyle={{
+                  zIndex: 50,
+                  pointerEvents: "none",
+                }}
+              />
+
+            </PieChart>
+
+          </ResponsiveContainer>
+
+
+          {/* =================================================
+              Centre text
+          ================================================== */}
+
+          <div className="risk-chart-center-text">
+
+            <strong>
+              Risk contribution
+            </strong>
+
+            <span>
+              Original → What-if
+            </span>
+
+          </div>
+
+        </div>
+
+
+        {/* =====================================================
+            Legend
+        ====================================================== */}
+
+        <div className="risk-chart-legend">
+
+          <div className="risk-chart-legend-item">
+
+            <span className="risk-chart-legend-dot original" />
+
+            <span>
+              Original assessment
+            </span>
+
+          </div>
+
+
+          {hasHypotheticalData && (
+            <div className="risk-chart-legend-item">
+
+              <span className="risk-chart-legend-dot hypothetical" />
+
+              <span>
+                What-if scenario
+              </span>
+
+            </div>
+          )}
+
+        </div>
 
       </div>
 
 
-      {/* =========================================
-          Interactive Factor Breakdown
-      ========================================= */}
+      {/* =====================================================
+          Risk Factor Breakdown
+      ====================================================== */}
 
       <div className="risk-factor-breakdown">
+
         <div className="risk-factor-breakdown-header">
-          <span>Risk factor</span>
-          <span>Contribution</span>
+
+          <span>
+            Risk factor
+          </span>
+
+          <span>
+            Contribution
+          </span>
+
         </div>
 
-        {data.map((entry, index) => {
 
-          const isActive =
-            activeIndex === index;
+        {data.map(
+          (entry, index) => {
 
-          const isSelected =
-            selectedIndex === index;
+            const isActive =
+              activeIndex === index;
 
-          return (
-            <button
-              key={entry.name}
-              ref={isSelected ? selectedRowRef : null}
-              type="button"
-              className={`risk-factor-breakdown-row ${
-                isActive || isSelected
-                  ? "risk-factor-breakdown-row-active"
-                  : ""
-              }`}
 
-              onMouseEnter={() =>
-                setActiveIndex(index)
-              }
+            return (
+              <button
+                key={entry.name}
+                type="button"
 
-              onMouseLeave={() =>
-                setActiveIndex(null)
-              }
+                className={`risk-factor-breakdown-row ${
+                  isActive
+                    ? "risk-factor-breakdown-row-active"
+                    : ""
+                }`}
 
-              onClick={() =>
-                handleFactorClick(index)
-              }
-            >
+                onMouseEnter={() =>
+                  setActiveIndex(index)
+                }
 
-              <div className="risk-factor-row-content">
+                onMouseLeave={() =>
+                  setActiveIndex(null)
+                }
 
-                <div className="risk-factor-name">
+                onClick={() =>
+                  handleFactorClick(
+                    null,
+                    index
+                  )
+                }
+              >
 
-                  <span
-                    className="risk-factor-color"
-                    style={{
-                      backgroundColor:
-                        COLORS[index % COLORS.length],
-                    }}
-                  />
+                <div className="risk-factor-row-content">
 
-                  <span title={entry.name}>
-                    {entry.name}
-                  </span>
+                  <div className="risk-factor-name">
+
+                    <span
+                      className="risk-factor-color"
+
+                      style={{
+                        backgroundColor:
+                          COLORS[
+                            index %
+                              COLORS.length
+                          ],
+                      }}
+                    />
+
+                    <span
+                      title={entry.name}
+                    >
+                      {entry.name}
+                    </span>
+
+                  </div>
+
+
+                  {isActive && (
+                    <div className="risk-factor-explanation">
+
+                      <span className="risk-factor-explanation-label">
+                        Why it matters:
+                      </span>
+
+                      <span className="risk-factor-explanation-text">
+                        {getRiskFactorDescription(
+                          entry.name
+                        )}
+                      </span>
+
+                    </div>
+                  )}
 
                 </div>
 
 
-                {/* =================================
-                    Why It Matters
-                ================================= */}
+                <span className="risk-factor-percentage">
 
-                {isActive && (
-                  <div className="risk-factor-explanation">
+                  {Number(
+                    entry.value
+                  ).toFixed(2)}
+                  %
 
-                    <span className="risk-factor-explanation-label">
-                      Why it matters:
-                    </span>
+                </span>
 
-                    <span className="risk-factor-explanation-text">
-                      {getRiskFactorDescription(
-                        entry.name
-                      )}
-                    </span>
-
-                  </div>
-                )}
-
-              </div>
-
-
-              <span className="risk-factor-percentage">
-                {Number(entry.value).toFixed(2)}%
-              </span>
-
-            </button>
-          );
-        })}
+              </button>
+            );
+          }
+        )}
 
       </div>
 
