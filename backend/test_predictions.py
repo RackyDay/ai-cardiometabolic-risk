@@ -2,6 +2,10 @@
 # validation) and main.get_user_scoped_client (the RLS-scoped Supabase
 # client) so the suite never hits a live Supabase project - consistent with
 # test_auth.py.
+#
+# Test Case IDs (TC-39 through TC-43) map to the QA Plan's traceability
+# matrix - FR17 ("store and retrieve user risk data securely") had no test
+# cases at all in the original plan; this file is what closes that.
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
@@ -96,6 +100,7 @@ def _install_fake_scoped_client(monkeypatch, tables):
 
 # --- POST /predict's optional-auth persistence -----------------------
 
+# TC-39
 def test_predict_persists_to_account_when_authenticated(monkeypatch):
     _install_fake_auth(monkeypatch)
     tables = {"risk_calculations": [], "risk_inputs": []}
@@ -115,6 +120,7 @@ def test_predict_persists_to_account_when_authenticated(monkeypatch):
     assert persisted["inputs_JSON"] == VALID_PAYLOAD
 
 
+# TC-40
 def test_predict_does_not_persist_when_anonymous(monkeypatch):
     # No Authorization header at all, so get_current_user_optional short-
     # circuits to None without even calling supabase.auth.get_user - the
@@ -130,6 +136,7 @@ def test_predict_does_not_persist_when_anonymous(monkeypatch):
     assert scoped_client_calls == []
 
 
+# TC-41
 def test_latest_prediction_with_no_history(monkeypatch):
     _install_fake_auth(monkeypatch)
     _install_fake_scoped_client(monkeypatch, {"risk_calculations": [], "risk_inputs": []})
@@ -145,6 +152,7 @@ def test_latest_prediction_with_no_history(monkeypatch):
     }
 
 
+# TC-42
 def test_latest_prediction_returns_most_recent_with_recomputed_contributors(monkeypatch):
     _install_fake_auth(monkeypatch)
     tables = {
@@ -169,6 +177,7 @@ def test_latest_prediction_returns_most_recent_with_recomputed_contributors(monk
     assert len(body["top_contributors"]) > 0
 
 
+# TC-43
 def test_latest_prediction_degrades_gracefully_with_no_matching_inputs_row(monkeypatch):
     _install_fake_auth(monkeypatch)
     tables = {

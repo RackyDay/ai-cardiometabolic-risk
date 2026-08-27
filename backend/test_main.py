@@ -1,3 +1,7 @@
+# Test Case IDs (TC-N) in the comments below map to the QA Plan's
+# traceability matrix - see the "Login Feature Traceability" mapping.
+# TC-13 (full pipeline) and TC-16 (clear error messages) aren't tied to any
+# single test - they're the backend half of this whole file collectively.
 from fastapi.testclient import TestClient
 
 from main import app
@@ -28,6 +32,7 @@ VALID_PAYLOAD = {
 
 # --- Output validity -------------------------------------------------------
 
+# TC-1, TC-5
 def test_predict_returns_valid_risk_score():
     response = client.post("/predict", json=VALID_PAYLOAD)
     assert response.status_code == 200
@@ -40,14 +45,29 @@ def test_predict_returns_valid_risk_score():
     assert 0.0 <= risk_score <= 100.0
 
 
+# TC-9
 def test_predict_is_deterministic():
     first = client.post("/predict", json=VALID_PAYLOAD).json()["risk_score"]
     second = client.post("/predict", json=VALID_PAYLOAD).json()["risk_score"]
     assert first == second
 
 
+def test_slight_input_change_produces_slight_risk_change():
+    # TC-10: a 1-year age nudge should move the score, but only slightly -
+    # a discontinuous jump for a tiny input change would suggest something
+    # wrong with the model/imputation, not realistic clinical behavior.
+    baseline = client.post("/predict", json=VALID_PAYLOAD).json()["risk_score"]
+    nudged_payload = dict(VALID_PAYLOAD, age=VALID_PAYLOAD["age"] + 1)
+    nudged = client.post("/predict", json=nudged_payload).json()["risk_score"]
+
+    difference = abs(nudged - baseline)
+    assert difference > 0  # the model is actually sensitive to this input
+    assert difference < 5  # ...but not wildly so, for a 1-year age change
+
+
 # --- Feature contributions ---------------------------------------------------
 
+# TC-12, TC-44
 def test_predict_returns_top_contributors():
     response = client.post("/predict", json=VALID_PAYLOAD)
     body = response.json()
@@ -65,6 +85,7 @@ def test_predict_returns_top_contributors():
         assert isinstance(contributor["contribution"], float)
 
 
+# TC-45
 def test_top_contributors_sorted_by_absolute_contribution_descending():
     contributors = client.post("/predict", json=VALID_PAYLOAD).json()["top_contributors"]
     magnitudes = [abs(c["contribution"]) for c in contributors]
@@ -73,6 +94,7 @@ def test_top_contributors_sorted_by_absolute_contribution_descending():
 
 # --- Optional/edge-case inputs ---------------------------------------------
 
+# TC-46
 def test_predict_accepts_missing_optional_fields():
     payload = {
         "gender": "F",
@@ -91,6 +113,7 @@ def test_predict_accepts_missing_optional_fields():
     assert 0.0 <= risk_score <= 100.0
 
 
+# TC-47
 def test_predict_accepts_undisclosed_gender():
     payload = dict(VALID_PAYLOAD, gender="O")
     response = client.post("/predict", json=payload)
@@ -100,6 +123,7 @@ def test_predict_accepts_undisclosed_gender():
 
 # --- Input validation (schema should reject bad data before the model sees it) --
 
+# TC-4
 def test_predict_rejects_missing_required_field():
     payload = dict(VALID_PAYLOAD)
     del payload["age"]
@@ -107,18 +131,28 @@ def test_predict_rejects_missing_required_field():
     assert response.status_code == 422
 
 
+# TC-3
 def test_predict_rejects_out_of_range_value():
     payload = dict(VALID_PAYLOAD, age=999)
     response = client.post("/predict", json=payload)
     assert response.status_code == 422
 
 
+# TC-2
+def test_predict_rejects_negative_age():
+    payload = dict(VALID_PAYLOAD, age=-5)
+    response = client.post("/predict", json=payload)
+    assert response.status_code == 422
+
+
+# TC-48
 def test_predict_rejects_invalid_gender():
     payload = dict(VALID_PAYLOAD, gender="X")
     response = client.post("/predict", json=payload)
     assert response.status_code == 422
 
 
+# TC-49
 def test_predict_rejects_invalid_education():
     payload = dict(VALID_PAYLOAD, education=9)
     response = client.post("/predict", json=payload)
@@ -127,6 +161,7 @@ def test_predict_rejects_invalid_education():
 
 # --- Model behavior sanity check --------------------------------------------
 
+# TC-7, TC-8
 def test_higher_risk_profile_scores_higher_than_lower_risk_profile():
     # Not a check on the exact score, just that the model responds in the
     # clinically expected direction to a clearly worse risk profile.
@@ -149,6 +184,7 @@ def test_higher_risk_profile_scores_higher_than_lower_risk_profile():
     assert high_score > low_score
 
 
+# TC-50
 def test_learn():
     response = client.get("/learn")
     assert response.status_code == 200

@@ -3,6 +3,10 @@
 # lightweight fakes so the suite never makes a live call to a Supabase
 # project - keeping `pytest` hermetic and runnable offline, like the rest of
 # this test suite.
+#
+# Test Case IDs (TC-18 through TC-38) in the comments below map to the QA
+# Plan's traceability matrix - FR16 ("create and authenticate accounts") had
+# no test cases at all in the original plan; this file is what closes that.
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
@@ -142,6 +146,7 @@ def _install_fake_supabase(monkeypatch, tables=None, users=None, tokens=None, si
 
 # --- Sign up -----------------------------------------------------------
 
+# TC-18
 def test_signup_succeeds_and_returns_a_session(monkeypatch):
     _install_fake_supabase(monkeypatch)
 
@@ -158,6 +163,7 @@ def test_signup_succeeds_and_returns_a_session(monkeypatch):
     assert body["email_confirmation_required"] is False
 
 
+# TC-19
 def test_signup_rejects_taken_username(monkeypatch):
     tables = {"profiles": [{"user_id": "u1", "user_displayname": "taken"}]}
     _install_fake_supabase(monkeypatch, tables=tables)
@@ -171,6 +177,7 @@ def test_signup_rejects_taken_username(monkeypatch):
     assert response.status_code == 409
 
 
+# TC-20
 def test_signup_rejects_existing_email(monkeypatch):
     users = {"dup@example.com": {"password": "whatever1", "id": "u1", "username": "someone"}}
     _install_fake_supabase(monkeypatch, users=users)
@@ -184,6 +191,7 @@ def test_signup_rejects_existing_email(monkeypatch):
     assert response.status_code == 409
 
 
+# TC-21
 def test_signup_reports_email_confirmation_required_when_no_session(monkeypatch):
     # Simulates a Supabase project with "Confirm email" turned on: sign_up()
     # itself succeeds, but no session comes back yet.
@@ -204,6 +212,7 @@ def test_signup_reports_email_confirmation_required_when_no_session(monkeypatch)
 
 # --- Sign up validation (fails before reaching Supabase at all) ----------
 
+# TC-22
 def test_signup_rejects_short_password(monkeypatch):
     _install_fake_supabase(monkeypatch)
 
@@ -216,6 +225,7 @@ def test_signup_rejects_short_password(monkeypatch):
     assert response.status_code == 422
 
 
+# TC-23
 def test_signup_rejects_invalid_username_characters(monkeypatch):
     _install_fake_supabase(monkeypatch)
 
@@ -228,6 +238,7 @@ def test_signup_rejects_invalid_username_characters(monkeypatch):
     assert response.status_code == 422
 
 
+# TC-24
 def test_signup_rejects_invalid_email_format(monkeypatch):
     _install_fake_supabase(monkeypatch)
 
@@ -242,6 +253,7 @@ def test_signup_rejects_invalid_email_format(monkeypatch):
 
 # --- Log in --------------------------------------------------------------
 
+# TC-25
 def test_login_by_email_succeeds(monkeypatch):
     users = {"user@example.com": {"password": "correcthorse", "id": "u1", "username": "someone"}}
     tables = {"profiles": [{"user_id": "u1", "user_displayname": "someone"}]}
@@ -258,6 +270,7 @@ def test_login_by_email_succeeds(monkeypatch):
     assert body["user"]["username"] == "someone"
 
 
+# TC-26
 def test_login_by_username_succeeds(monkeypatch):
     users = {"user@example.com": {"password": "correcthorse", "id": "u1", "username": "someone"}}
     tables = {"profiles": [{"user_id": "u1", "user_displayname": "someone"}]}
@@ -272,6 +285,7 @@ def test_login_by_username_succeeds(monkeypatch):
     assert response.json()["user"]["email"] == "user@example.com"
 
 
+# TC-27
 def test_login_rejects_unknown_username(monkeypatch):
     _install_fake_supabase(monkeypatch)
 
@@ -283,6 +297,7 @@ def test_login_rejects_unknown_username(monkeypatch):
     assert response.status_code == 401
 
 
+# TC-28
 def test_login_rejects_wrong_password(monkeypatch):
     users = {"user@example.com": {"password": "correcthorse", "id": "u1", "username": "someone"}}
     tables = {"profiles": [{"user_id": "u1", "user_displayname": "someone"}]}
@@ -296,6 +311,7 @@ def test_login_rejects_wrong_password(monkeypatch):
     assert response.status_code == 401
 
 
+# TC-29
 def test_login_returns_null_username_when_no_profile_row(monkeypatch):
     # A user_id with no matching profiles row at all (not just a null
     # user_displayname) - log_in should still succeed, just with username=None.
@@ -313,6 +329,7 @@ def test_login_returns_null_username_when_no_profile_row(monkeypatch):
 
 # --- Log in validation -----------------------------------------------------
 
+# TC-30
 def test_login_rejects_empty_identifier(monkeypatch):
     _install_fake_supabase(monkeypatch)
 
@@ -321,6 +338,7 @@ def test_login_rejects_empty_identifier(monkeypatch):
     assert response.status_code == 422
 
 
+# TC-31
 def test_login_rejects_empty_password(monkeypatch):
     _install_fake_supabase(monkeypatch)
 
@@ -331,6 +349,7 @@ def test_login_rejects_empty_password(monkeypatch):
 
 # --- Logout ----------------------------------------------------------------
 
+# TC-32
 def test_logout_with_valid_token_revokes_it(monkeypatch):
     _, _, fake_client = _install_fake_supabase(monkeypatch)
 
@@ -341,6 +360,7 @@ def test_logout_with_valid_token_revokes_it(monkeypatch):
     assert fake_client.auth.admin.sign_out_calls == ["some-access-token"]
 
 
+# TC-33
 def test_logout_without_authorization_header_still_succeeds(monkeypatch):
     _, _, fake_client = _install_fake_supabase(monkeypatch)
 
@@ -352,6 +372,7 @@ def test_logout_without_authorization_header_still_succeeds(monkeypatch):
     assert fake_client.auth.admin.sign_out_calls == []
 
 
+# TC-34
 def test_logout_with_malformed_header_still_succeeds(monkeypatch):
     _, _, fake_client = _install_fake_supabase(monkeypatch)
 
@@ -364,6 +385,7 @@ def test_logout_with_malformed_header_still_succeeds(monkeypatch):
 
 # --- /me ---------------------------------------------------------------
 
+# TC-35
 def test_me_returns_user_info_with_username(monkeypatch):
     tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
     tables = {"profiles": [{"user_id": "u1", "user_displayname": "someone"}]}
@@ -375,6 +397,7 @@ def test_me_returns_user_info_with_username(monkeypatch):
     assert response.json() == {"id": "u1", "email": "user@example.com", "username": "someone"}
 
 
+# TC-36
 def test_me_returns_null_username_when_no_profile_row(monkeypatch):
     tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
     _install_fake_supabase(monkeypatch, tables={"profiles": []}, tokens=tokens)
@@ -385,6 +408,7 @@ def test_me_returns_null_username_when_no_profile_row(monkeypatch):
     assert response.json()["username"] is None
 
 
+# TC-37
 def test_me_rejects_missing_token(monkeypatch):
     _install_fake_supabase(monkeypatch)
 
@@ -393,6 +417,7 @@ def test_me_rejects_missing_token(monkeypatch):
     assert response.status_code == 401
 
 
+# TC-38
 def test_me_rejects_invalid_token(monkeypatch):
     _install_fake_supabase(monkeypatch, tokens={"good-token": {"id": "u1", "email": "user@example.com"}})
 
