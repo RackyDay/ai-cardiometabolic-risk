@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 1300 1880" width="1300" height="1880" xmlns="http://www.w3.org/2000/svg">
+  <title>The Log In Process</title>
+
+  <style>
+    .bg { fill: #ffffff; }
+    .start-end { fill: #48bb78; }
+    .process { fill: #4299e1; }
+    .decision { fill: #f59e0b; }
+    .error { fill: #e53e3e; }
+    .node-label { fill: #fff; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; text-anchor: middle; }
+    .edge-label { fill: #333; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; text-anchor: middle; font-weight: 600; }
+    .connector { stroke: #666; stroke-width: 2; fill: none; }
+    .connector.dashed { stroke-dasharray: 6 5; }
+    .legend text { fill: #333; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; }
+    .heading { fill: #1a1a2e; font-family: system-ui, -apple-system, sans-serif; font-size: 24px; font-weight: 700; text-anchor: middle; }
+  </style>
+
+  <rect class="bg" x="0" y="0" width="1300" height="1880"/>
+  <text class="heading" x="650" y="30">The Log In Process</text>
+
+  <g transform="translate(0,40)">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#666"/>
+      </marker>
+    </defs>
+
+    <!-- Legend -->
+    <g class="legend">
+      <rect x="20" y="10" width="16" height="16" class="start-end"/>
+      <text x="42" y="23">Start / End</text>
+      <rect x="150" y="10" width="16" height="16" class="process"/>
+      <text x="172" y="23">Process</text>
+      <rect x="260" y="10" width="16" height="16" class="decision"/>
+      <text x="282" y="23">Decision</text>
+      <rect x="370" y="10" width="16" height="16" class="error"/>
+      <text x="392" y="23">Error / Blocked</text>
+    </g>
+
+    <!-- Shared entry -->
+    <rect x="550" y="60" width="200" height="55" rx="27" class="start-end"/>
+    <text class="node-label" x="650" y="93">Wants to log in</text>
+
+    <path class="connector" d="M650,115 L650,145" marker-end="url(#arrow)"/>
+
+    <path class="decision" d="M650,145 L790,210 L650,275 L510,210 Z"/>
+    <text class="node-label" x="650" y="206">Choose sign-in</text>
+    <text class="node-label" x="650" y="222">method</text>
+
+    <path class="connector" d="M510,210 L510,250 L280,250 L280,305" marker-end="url(#arrow)"/>
+    <text class="edge-label" x="395" y="245">Password</text>
+
+    <path class="connector" d="M790,210 L790,250 L850,250 L850,305" marker-end="url(#arrow)"/>
+    <text class="edge-label" x="820" y="245">Google</text>
+
+    <!-- ===================== PASSWORD COLUMN ===================== -->
+
+    <rect x="170" y="305" width="220" height="60" rx="6" class="process"/>
+    <text class="node-label" x="280" y="330">Enter email/username</text>
+    <text class="node-label" x="280" y="346" font-size="11">+ password</text>
+
+    <path class="connector" d="M280,365 L280,395" marker-end="url(#arrow)"/>
+
+    <rect x="170" y="395" width="220" height="60" rx="6" class="process"/>
+    <text class="node-label" x="280" y="430">POST /auth/login</text>
+
+    <path class="connector" d="M280,455 L280,485" marker-end="url(#arrow)"/>
+
+    <path class="decision" d="M280,485 L400,545 L280,605 L160,545 Z"/>
+    <text class="node-label" x="280" y="541">Credentials</text>
+    <text class="node-label" x="280" y="557">valid?</text>
+
+    <path class="connector" d="M160,545 L140,545" marker-end="url(#arrow)"/>
+    <text class="edge-label" x="150" y="533">No</text>
+    <rect x="10" y="520" width="130" height="50" rx="6" class="error"/>
+    <text class="node-label" x="75" y="541">401: Invalid</text>
+    <text class="node-label" x="75" y="557">credentials</text>
+
+    <path class="connector" d="M280,605 L280,635" marker-end="url(#arrow)"/>
+    <text class="edge-label" x="312" y="623">Yes</text>
+
+    <!-- Forgot password side flow -->
+    <path class="connector dashed" d="M390,335 L430,335 L430,690 L280,690 L280,700" marker-end="url(#arrow)"/>
+    <text class="edge-label" x="460" y="515" transform="rotate(90 460 515)">Forgot password?</text>
+
+    <rect x="170" y="700" width="220" height="60" rx="6" class="process"/>
+    <text class="node-label" x="280" y="725">Request reset email</text>
+    <text class="node-label" x="280" y="741" font-size="11">(email only, not username)</text>
+
+    <path class="connector" d="M280,760 L280,790" marker-end="url(#arrow)"/>
+
+    <rect x="170" y="790" width="220" height="60" rx="6" class="process"/>
+    <text class="node-label" x="280" y="815">Click emailed link,</text>
+    <text class="node-label" x="280" y="831" font-size="11">set new password</text>
+
+    <path class="connector" d="M280,850 L280,880" marker-end="url(#arrow)"/>
+
+    <rect x="180" y="880" width="200" height="50" rx="25" class="start-end"/>
+    <text class="node-label" x="280" y="910">Signed in</text>
+
+    <!-- ===================== GOOGLE COLUMN ===================== -->
+
+    <rect x="740" y="305" width="220" height="60" rx="6" class="process"/>
+    <text class="node-label" x="850" y="338">Click "Continue with Google"</text>
+
+    <path class="connector" d="M850,365 L850,395" marker-end="url(#arrow)"/>
+
+    <rect x="740" y="395" width="220" height="60" rx="6" class="process"/>
+    <text class="node-label" x="850" y="428">Redirect to Google</text>
+    <text class="node-label" x="850" y="444" font-size="11">consent screen</text>
+
+    <path class="connector" d="M850,455 L850,485" marker-end="url(#arrow)"/>
+
+    <rect x="740" y="485" width="220" height="60" rx="6" class="process"/>
+    <text class="node-label" x="850" y="518">Authenticate with Google</text>
+
+    <path class="connector" d="M850,545 L850,575" marker-end="url(#arrow)"/>
+
+    <rect x="740" y="575" width="220" height="60" rx="6" class="process"/>
+    <text class="node-label" x="850" y="600">Supabase issues session,</text>
+    <text class="node-label" x="850" y="616" font-size="11">redirects back to app</text>
+
+    <!-- Merge password + google into shared MFA gate -->
+    <path class="connector" d="M280,635 L280,660 L565,660" marker-end="url(#arrow)"/>
+    <path class="connector" d="M850,635 L850,660 L565,660" marker-end="url(#arrow)"/>
+
+    <path class="connector" d="M565,660 L565,690" marker-end="url(#arrow)"/>
+
+    <!-- ===================== SHARED: MFA GATE ===================== -->
+
+    <rect x="415" y="690" width="300" height="60" rx="6" class="process"/>
+    <text class="node-label" x="565" y="715">Session established</text>
+    <text class="node-label" x="565" y="731" font-size="11">(assurance level: aal1)</text>
+
+    <path class="connector" d="M565,750 L565,780" marker-end="url(#arrow)"/>
+
+    <path class="decision" d="M565,780 L715,850 L565,920 L415,850 Z"/>
+    <text class="node-label" x="565" y="846">Verified MFA factor</text>
+    <text class="node-label" x="565" y="862">enrolled?</text>
+
+    <path class="connector" d="M565,920 L565,1300" marker-end="url(#arrow)"/>
+    <text class="edge-label" x="597" y="940">No</text>
+
+    <path class="connector" d="M715,850 L715,890 L1000,890 L1000,920" marker-end="url(#arrow)"/>
+    <text class="edge-label" x="760" y="880">Yes</text>
+
+    <!-- MFA verification lane -->
+    <rect x="880" y="920" width="240" height="70" rx="6" class="process"/>
+    <text class="node-label" x="1000" y="948">Show 6-digit code modal</text>
+    <text class="node-label" x="1000" y="964" font-size="11">(global overlay, any page)</text>
+
+    <path class="connector" d="M1000,990 L1000,1020" marker-end="url(#arrow)"/>
+
+    <rect x="880" y="1020" width="240" height="60" rx="6" class="process"/>
+    <text class="node-label" x="1000" y="1045">mfa.challenge() +</text>
+    <text class="node-label" x="1000" y="1061" font-size="11">mfa.verify()</text>
+
+    <path class="connector" d="M1000,1080 L1000,1110" marker-end="url(#arrow)"/>
+
+    <path class="decision" d="M1000,1110 L1110,1170 L1000,1230 L890,1170 Z"/>
+    <text class="node-label" x="1000" y="1166">Code</text>
+    <text class="node-label" x="1000" y="1182">valid?</text>
+
+    <path class="connector" d="M890,1170 L860,1170" marker-end="url(#arrow)"/>
+    <text class="edge-label" x="875" y="1158">No</text>
+    <rect x="680" y="1145" width="180" height="50" rx="6" class="error"/>
+    <text class="node-label" x="770" y="1166">Show error &#8212;</text>
+    <text class="node-label" x="770" y="1182">retry or cancel</text>
+
+    <path class="connector" d="M1000,1230 L1000,1260" marker-end="url(#arrow)"/>
+    <text class="edge-label" x="1032" y="1248">Yes</text>
+
+    <path class="connector" d="M1000,1260 L1000,1300 L565,1300" marker-end="url(#arrow)"/>
+
+    <!-- ===================== SHARED: FINALIZE ===================== -->
+
+    <path class="connector" d="M565,1300 L565,1330" marker-end="url(#arrow)"/>
+
+    <rect x="405" y="1330" width="320" height="60" rx="6" class="process"/>
+    <text class="node-label" x="565" y="1355">Finalize session</text>
+    <text class="node-label" x="565" y="1371" font-size="11">(persist tokens, sync Supabase client)</text>
+
+    <path class="connector" d="M565,1390 L565,1420" marker-end="url(#arrow)"/>
+
+    <rect x="455" y="1420" width="220" height="55" rx="27" class="start-end"/>
+    <text class="node-label" x="565" y="1453">Signed in</text>
+
+    <!-- ===================== LOGOUT ===================== -->
+
+    <rect x="475" y="1520" width="180" height="50" rx="25" class="start-end"/>
+    <text class="node-label" x="565" y="1550">Signed in</text>
+
+    <path class="connector" d="M565,1570 L565,1600" marker-end="url(#arrow)"/>
+
+    <rect x="425" y="1600" width="280" height="60" rx="6" class="process"/>
+    <text class="node-label" x="565" y="1625">Click Log out</text>
+    <text class="node-label" x="565" y="1641" font-size="11">(MenuBar dropdown)</text>
+
+    <path class="connector" d="M565,1660 L565,1690" marker-end="url(#arrow)"/>
+
+    <rect x="395" y="1690" width="340" height="70" rx="6" class="process"/>
+    <text class="node-label" x="565" y="1718">Revoke backend session +</text>
+    <text class="node-label" x="565" y="1734" font-size="11">clear local &amp; Supabase-client session</text>
+
+    <path class="connector" d="M565,1760 L565,1790" marker-end="url(#arrow)"/>
+
+    <rect x="455" y="1790" width="220" height="50" rx="25" class="start-end"/>
+    <text class="node-label" x="565" y="1820">Logged out (Guest)</text>
+  </g>
+</svg>
