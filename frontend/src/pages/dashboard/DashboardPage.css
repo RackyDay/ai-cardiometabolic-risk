@@ -1,3 +1,7 @@
+/* =========================================================
+   Dashboard
+========================================================= */
+
 .dashboard-page {
   display: flex;
   flex-direction: column;
@@ -8,27 +12,55 @@
   box-sizing: border-box;
 }
 
-/* =========================================
-   General Cards
-========================================= */
+
+/* =========================================================
+   Cards
+========================================================= */
 
 .card {
   background: #ffffff;
   border-radius: 1rem;
   padding: 1.5rem;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
 }
 
 .card-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #111827;
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
 }
 
-/* =========================================
-   Header / Disclaimer
-========================================= */
+
+/* =========================================================
+   Top section
+========================================================= */
+
+.top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.risk-score-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+
+.gauge-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+
+/* =========================================================
+   Card header
+========================================================= */
 
 .card-header-row {
   display: flex;
@@ -41,6 +73,11 @@
   margin: 0;
 }
 
+
+/* =========================================================
+   Disclaimer
+========================================================= */
+
 .disclaimer-wrapper {
   position: relative;
 }
@@ -49,12 +86,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
   width: 2rem;
   height: 2rem;
+
   border-radius: 50%;
   border: none;
+
   background: #fffbeb;
   cursor: pointer;
+
   transition: background 0.15s;
 }
 
@@ -64,9 +105,13 @@
 
 .disclaimer-panel {
   position: absolute;
+
   top: 50%;
   right: calc(100% + 0.625rem);
-  transform: translateY(-50%) translateX(0.5rem);
+
+  transform:
+    translateY(-50%)
+    translateX(0.5rem);
 
   width: 15rem;
   max-width: 60vw;
@@ -74,9 +119,11 @@
   background: #fffbeb;
   border: 1px solid #fde68a;
   border-radius: 0.75rem;
+
   padding: 0.875rem 1rem;
 
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.08);
 
   opacity: 0;
   visibility: hidden;
@@ -94,55 +141,41 @@
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transform: translateY(-50%) translateX(0);
+
+  transform:
+    translateY(-50%)
+    translateX(0);
 }
 
 .disclaimer-title {
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.25rem;
+
   font-size: 0.8125rem;
   font-weight: 700;
+
   color: #92400e;
 }
 
 .disclaimer-text {
   margin: 0;
+
   font-size: 0.75rem;
   color: #78350f;
   line-height: 1.45;
 }
 
-/* =========================================
-   Top Row
-========================================= */
 
-.top-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-}
-
-.risk-score-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.gauge-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  padding: 0.5rem 0;
-}
-
-/* =========================================
+/* =========================================================
    Insights
-========================================= */
+========================================================= */
 
 .insight-subheading {
   font-size: 0.9375rem;
   font-weight: 700;
+
   color: #111827;
-  margin: 0 0 0.625rem 0;
+
+  margin: 0 0 0.625rem;
 }
 
 .stress-heading {
@@ -157,7 +190,9 @@
 
 .insight-item {
   border-radius: 0.625rem;
+
   padding: 0.75rem 0.875rem;
+
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.45;
@@ -173,113 +208,693 @@
   color: #991b1b;
 }
 
-/* =========================================
-   Risk Factor Breakdown
-========================================= */
+
+/* =========================================================
+   Risk contribution / pie chart
+========================================================= */
 
 .risk-contribution-card {
   overflow: hidden;
 }
 
 .risk-chart-description {
-  margin: -0.5rem 0 0.75rem;
+  margin: -0.5rem 0 1rem;
+
   color: #6b7280;
+
   font-size: 0.9rem;
   line-height: 1.5;
 }
 
-/* =========================================
-   Risk Factor List
-========================================= */
+
+/* =========================================================
+   Risk factors header
+========================================================= */
+
+.risk-factors-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  margin-bottom: 1.25rem;
+}
+
+.risk-factors-header .card-title {
+  margin-bottom: 0.35rem;
+}
+
+.risk-factor-helper-text {
+  margin: 0;
+
+  max-width: 700px;
+
+  color: #6b7280;
+
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   Risk factor list
+========================================================= */
 
 .risk-factor-list {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-
-  max-height: calc(
-    var(--visible-rows) * 2.75rem +
-    (var(--visible-rows) - 1) * 0.625rem
-  );
-
-  overflow-y: auto;
-  padding-right: 0.25rem;
+  gap: 0.75rem;
 }
+
+
+/* =========================================================
+   Individual factor
+========================================================= */
+
+.risk-factor-item {
+  border-radius: 0.875rem;
+
+  overflow: hidden;
+
+  box-sizing: border-box;
+
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+/* Changeable */
+
+.risk-factor-item-changeable {
+  background: #f8fafc;
+
+  border: 1px solid #dbe4f0;
+}
+
+.risk-factor-item-changeable:hover {
+  box-shadow:
+    0 3px 12px rgba(30, 64, 175, 0.08);
+}
+
+
+/* Fixed */
+
+.risk-factor-item-locked {
+  background: #f8fafc;
+
+  border: 1px solid #e5e7eb;
+}
+
+
+/* =========================================================
+   Factor header row
+========================================================= */
 
 .risk-factor-row {
   display: flex;
+
   align-items: center;
-  gap: 0.75rem;
-  background: #f3f4f6;
-  border-radius: 0.625rem;
-  padding: 0.75rem 1.125rem;
-  min-height: 2.75rem;
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  min-height: 3.5rem;
+
+  padding: 0.75rem 1rem;
+
   box-sizing: border-box;
-  flex-shrink: 0;
+}
+
+.risk-factor-title-area {
+  display: flex;
+  align-items: center;
+
+  gap: 0.75rem;
+
+  min-width: 0;
 }
 
 .risk-factor-number {
+  flex-shrink: 0;
+
+  width: 1.5rem;
+
   font-weight: 700;
-  color: #374151;
-  font-size: 0.9375rem;
-  min-width: 1.25rem;
+
+  color: #64748b;
+
+  font-size: 0.9rem;
 }
 
 .risk-factor-label {
+  min-width: 0;
+
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #374151;
-  font-size: 0.9375rem;
-  flex: 1;
+
+  color: #1e293b;
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.risk-factor-tag {
+.risk-factor-meta {
+  display: flex;
+  align-items: center;
+
+  gap: 0.5rem;
+
   flex-shrink: 0;
+}
+
+
+/* =========================================================
+   Contribution badge
+========================================================= */
+
+.risk-factor-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 3.5rem;
+
+  padding: 0.3rem 0.6rem;
+
+  border-radius: 999px;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  box-sizing: border-box;
+}
+
+.risk-factor-tag-up {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.risk-factor-tag-down {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+
+/* =========================================================
+   Changeable / Fixed labels
+========================================================= */
+
+.risk-factor-changeable,
+.risk-factor-locked {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 0.3rem 0.65rem;
+
+  border-radius: 999px;
+
+  font-size: 0.7rem;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.risk-factor-changeable {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.risk-factor-locked {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+
+/* =========================================================
+   What-if section
+========================================================= */
+
+.what-if-section {
+  margin: 0 0.75rem 0.75rem;
+
+  padding: 1rem;
+
+  background: #ffffff;
+
+  border-radius: 0.7rem;
+
+  border: 1px solid #e5e7eb;
+
+  box-sizing: border-box;
+}
+
+.what-if-heading {
+  margin-bottom: 1rem;
+}
+
+.what-if-title {
+  display: block;
+
+  color: #334155;
+
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.what-if-subtitle {
+  display: block;
+
+  margin-top: 0.2rem;
+
+  color: #94a3b8;
+
+  font-size: 0.75rem;
+}
+
+
+/* =========================================================
+   Current vs hypothetical values
+========================================================= */
+
+.risk-value-comparison {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto
+    minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 0.75rem;
+
+  margin-bottom: 1rem;
+}
+
+.risk-value-box {
+  display: flex;
+  flex-direction: column;
+
+  gap: 0.25rem;
+
+  min-width: 0;
+}
+
+.risk-value-label {
+  color: #64748b;
+
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.risk-value-box strong {
+  font-size: 1rem;
+  font-weight: 700;
+
+  color: #1e293b;
+}
+
+.risk-value-current {
+  color: #475569 !important;
+}
+
+.risk-value-hypothetical {
+  color: #2563eb !important;
+}
+
+.risk-value-arrow {
+  color: #94a3b8;
+
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   Slider
+========================================================= */
+
+.what-if-slider-wrapper {
+  width: 100%;
+}
+
+.what-if-slider {
+  display: block;
+
+  width: 100%;
+  height: 6px;
+
+  margin: 0.5rem 0 0.4rem;
+
+  appearance: none;
+
+  background: #dbe4f0;
+
   border-radius: 999px;
-  padding: 0.25rem 0.625rem;
+
+  cursor: pointer;
 }
 
-.risk-factor-tag--up {
-  background-color: #fef2f2;
-  color: #991b1b;
+.what-if-slider::-webkit-slider-thumb {
+  appearance: none;
+
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+
+  background: #2563eb;
+
+  border: 3px solid #ffffff;
+
+  box-shadow:
+    0 1px 5px rgba(37, 99, 235, 0.35);
+
+  cursor: pointer;
 }
 
-.risk-factor-tag--down {
-  background-color: #f0fdf4;
-  color: #166534;
+.what-if-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+
+  background: #2563eb;
+
+  border: 3px solid #ffffff;
+
+  box-shadow:
+    0 1px 5px rgba(37, 99, 235, 0.35);
+
+  cursor: pointer;
 }
 
-.risk-factors-empty {
+.what-if-range {
+  display: flex;
+
+  justify-content: space-between;
+
+  color: #94a3b8;
+
+  font-size: 0.7rem;
+}
+
+
+/* =========================================================
+   Toggle
+========================================================= */
+
+.toggle-comparison {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto
+    minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 0.75rem;
+}
+
+.toggle-status {
+  display: flex;
+  flex-direction: column;
+
+  gap: 0.3rem;
+}
+
+.toggle-status strong {
+  color: #1e293b;
+
+  font-size: 0.95rem;
+}
+
+.what-if-toggle {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 0.5rem;
+
+  padding: 0;
+
+  border: none;
+
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.what-if-toggle-track {
+  position: relative;
+
+  width: 42px;
+  height: 24px;
+
+  border-radius: 999px;
+
+  background: #cbd5e1;
+
+  transition:
+    background 0.2s ease;
+}
+
+.what-if-toggle-thumb {
+  position: absolute;
+
+  top: 3px;
+  left: 3px;
+
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.2);
+
+  transition:
+    transform 0.2s ease;
+}
+
+.what-if-toggle-on .what-if-toggle-track {
+  background: #2563eb;
+}
+
+.what-if-toggle-on .what-if-toggle-thumb {
+  transform: translateX(18px);
+}
+
+.what-if-toggle-label {
+  color: #475569;
+
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   What-if summary
+========================================================= */
+
+.what-if-summary {
+  margin-top: 1.25rem;
+
+  padding: 1.25rem;
+
+  border-radius: 0.875rem;
+
+  background: #f8fafc;
+
+  border: 1px solid #dbe4f0;
+
+  box-sizing: border-box;
+}
+
+.what-if-summary-header {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  margin-bottom: 1.25rem;
+}
+
+.what-if-summary-label {
+  display: block;
+
+  color: #1e293b;
+
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.what-if-summary-description {
+  display: block;
+
+  margin-top: 0.25rem;
+
+  color: #64748b;
+
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   Reset
+========================================================= */
+
+.what-if-reset-button {
+  flex-shrink: 0;
+
+  border: 1px solid #cbd5e1;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  border-radius: 0.5rem;
+
+  padding: 0.45rem 0.75rem;
+
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.what-if-reset-button:hover {
+  background: #f1f5f9;
+
+  border-color: #94a3b8;
+}
+
+
+/* =========================================================
+   Risk comparison
+========================================================= */
+
+.what-if-score-row {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 1rem;
+}
+
+.what-if-score {
+  display: flex;
+  flex-direction: column;
+
+  gap: 0.2rem;
+}
+
+.what-if-score span {
+  color: #64748b;
+
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.what-if-score strong {
+  color: #111827;
+
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.what-if-score:nth-of-type(3) strong {
+  color: #2563eb;
+}
+
+.what-if-arrow {
+  color: #94a3b8;
+
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.what-if-difference {
+  padding: 0.35rem 0.65rem;
+
+  border-radius: 999px;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.what-if-improved {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.what-if-increased {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+
+/* =========================================================
+   Empty state
+========================================================= */
+
+.risk-factor-empty {
   color: #6b7280;
+
   font-size: 0.9375rem;
+
   margin: 0;
 }
 
-/* =========================================
-   Risk Factor Header
-========================================= */
 
-.risk-factors-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+/* =========================================================
+   Insights eye button
+========================================================= */
 
 .insight-eye-button {
   display: none;
+
   width: 44px;
   height: 44px;
+
   border: none;
+
   border-radius: 50%;
+
   background: transparent;
+
   color: #8b8fa3;
+
   cursor: pointer;
+
   padding: 0;
+
   place-items: center;
+
   transform: translateY(-7px);
 }
 
@@ -287,33 +902,48 @@
   color: #6b7086;
 }
 
-/* =========================================
-   Insights Modal
-========================================= */
+
+/* =========================================================
+   Modal
+========================================================= */
 
 .insight-modal-backdrop {
   position: fixed;
+
   inset: 0;
+
   background: rgba(17, 24, 39, 0.35);
+
   z-index: 100;
+
   display: grid;
+
   place-items: center;
+
   padding: 1.25rem;
+
   box-sizing: border-box;
 }
 
 .insight-modal {
   width: 100%;
   max-width: 24rem;
+
   background: #ffffff;
+
   border-radius: 1rem;
+
   padding: 1.5rem;
+
   box-sizing: border-box;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.18);
 }
 
 .insight-modal-header {
   display: flex;
+
   align-items: center;
   justify-content: space-between;
 
@@ -322,6 +952,7 @@
 
 .insight-modal-close {
   border: none;
+
   background: transparent;
 
   font-size: 1.75rem;
@@ -330,6 +961,7 @@
   cursor: pointer;
 
   color: #6b7280;
+
   padding: 0;
 }
 
@@ -337,11 +969,17 @@
   color: #111827;
 }
 
-/* =========================================
+
+/* =========================================================
    Responsive
-========================================= */
+========================================================= */
 
 @media (max-width: 48rem) {
+
+  .dashboard-page {
+    padding: 1rem;
+  }
+
   .top-row {
     grid-template-columns: 1fr;
   }
@@ -354,7 +992,78 @@
     display: grid;
   }
 
-  .risk-contribution-card {
-    margin-bottom: 1.5rem;
+  .risk-factor-row {
+    align-items: flex-start;
+  }
+
+  .risk-factor-meta {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .risk-value-comparison,
+  .toggle-comparison {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .risk-value-arrow {
+    display: none;
+  }
+
+  .what-if-score-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .what-if-arrow {
+    display: none;
+  }
+
+  .what-if-difference {
+    grid-column: 1 / -1;
+
+    justify-self: start;
+  }
+
+  .what-if-summary-header {
+    flex-direction: column;
+  }
+
+  .what-if-reset-button {
+    align-self: flex-start;
+  }
+}
+
+
+@media (max-width: 36rem) {
+
+  .card {
+    padding: 1rem;
+  }
+
+  .risk-factor-row {
+    padding: 0.75rem;
+  }
+
+  .risk-factor-label {
+    white-space: normal;
+  }
+
+  .risk-factor-meta {
+    min-width: 75px;
+  }
+
+  .risk-factor-changeable,
+  .risk-factor-locked {
+    font-size: 0.65rem;
+  }
+
+  .what-if-section {
+    margin: 0 0.5rem 0.5rem;
+    padding: 0.875rem;
+  }
+
+  .what-if-score strong {
+    font-size: 1.25rem;
   }
 }
