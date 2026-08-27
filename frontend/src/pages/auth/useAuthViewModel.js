@@ -53,7 +53,14 @@ export function useAuthViewModel() {
           return;
         }
       } else {
-        await logIn({ identifier, password });
+        const result = await logIn({ identifier, password });
+        if (result?.mfaRequired) {
+          // Not actually signed in yet - the global code-entry modal
+          // (rendered from AuthProvider) takes over from here. Stay put;
+          // the effect above navigates away once it resolves and
+          // isAuthenticated flips to true.
+          return;
+        }
       }
       navigate(from);
     } catch (err) {

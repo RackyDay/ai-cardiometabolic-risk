@@ -52,6 +52,43 @@ export function AuthProvider({ children }) {
   // handle we need to clear/replace, not something that should trigger a
   // re-render on its own.
   const toastTimeoutRef = useRef(null);
+  // Dedupes the "signed in" toast when the same access token gets finalized
+  // more than once - see finalizeSession below for why that can happen.
+  const lastToastedTokenRef = useRef(null);
+
+  // Set once a password or Google sign-in comes back at a lower assurance
+  // level than the account requires (i.e. it has a verified TOTP factor
+  // enrolled) - holds everything the step-up modal below needs to finish
+  // the job. Non-null blocks the sign-in from finalizing: isAuthenticated
+  // stays false, nothing is persisted, no toast, until the code is verified.
+  const [pendingMfa, setPendingMfa] = useState(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaVerifying, setMfaVerifying] = useState(false);
+  const [mfaError, setMfaError] = useState("");
+
+  // Hydrates the frontend Supabase client with whatever session was just
+  // restored from localStorage, on mount only. Without this, a page
+  // reload leaves *our* state correctly logged in (loadStoredSession
+  // above) while this client - used directly for Google OAuth, password
+  // reset, and now MFA - stays completely unaware of it, since it's only
+  // ever synced live during an actual login action (checkAssuranceAndFinalize
+  // below). Any mfa.* call made from a page like Settings would otherwise
+  // silently fail against an empty/anonymous session after every reload.
+  // Harmless no-op if there's no stored session, or if it's a Google one
+  // (already synced natively via its own persisted storage).
+  useEffect(() => {
+    if (session?.accessToken && session?.refreshToken) {
+      supabase.auth.setSession({
+        access_token: session.accessToken,
+        refresh_token: session.refreshToken,
+      }).catch(() => {});
+    }
+    // Deliberately empty deps - this is a one-time hydration of whatever
+    // was in localStorage at mount, not a sync that should re-run when
+    // `session` changes afterward (login/logout already keep the client
+    // in sync going forward through their own dedicated code paths).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // useCallback so this has a stable identity - it's used inside the
   // onAuthStateChange effect below, and without a stable identity it'd
@@ -66,29 +103,81 @@ export function AuthProvider({ children }) {
     toastTimeoutRef.current = setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
   }, []);
 
-  // Shared by signUp/logIn: turn a backend AuthResponse into local session
-  // state. Bails out without establishing a session when Supabase requires
-  // email confirmation - there's no access token yet in that case, so
-  // there's nothing to persist and nothing to show a "signed in" toast for.
-  const applySession = (authResponse) => {
+  // The single "this sign-in is actually complete" point, however it got
+  // here - a direct password/Google login with no MFA enrolled, or an MFA
+  // step-up that just got verified. Token-based dedup on the toast because
+  // this can legitimately be called twice for the same sign-in: once when
+  // supabase.auth.setSession() below fires the onAuthStateChange listener,
+  // and again if that listener's own SIGNED_IN handling calls this too.
+  const finalizeSession = useCallback(({ accessToken, refreshToken, user }) => {
+    const next = { accessToken, refreshToken, user };
+    setSession(next);
+    persistSession(next);
+    setPendingMfa(null);
+    setMfaCode("");
+    setMfaError("");
+
+    if (lastToastedTokenRef.current !== accessToken) {
+      lastToastedTokenRef.current = accessToken;
+      showToast(`Signed in as ${user?.username || user?.fullName || user?.email}`);
+    }
+  }, [showToast]);
+
+  // Shared by password login, signup, and Google sign-in: given a fresh set
+  // of tokens, decide whether the account needs an MFA step-up before this
+  // sign-in counts as complete. Returns true if it does (pendingMfa is now
+  // set, caller should stop and let the global modal take over) or false if
+  // the session was finalized directly.
+  const checkAssuranceAndFinalize = useCallback(async ({ accessToken, refreshToken, user }) => {
+    // Make sure the frontend Supabase client actually holds these tokens
+    // before asking it anything about assurance level or factors - required
+    // for the password-login path (this client never saw backend-issued
+    // tokens otherwise); a harmless no-op re-set for the Google path, which
+    // already holds them natively via detectSessionInUrl.
+    await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
+      const { data: factorsData } = await supabase.auth.mfa.listFactors();
+      const factorId = factorsData?.totp?.[0]?.id;
+      if (factorId) {
+        setPendingMfa({ factorId, accessToken, refreshToken, user });
+        return true;
+      }
+      // AAL claims a step-up is needed but no confirmed TOTP factor was
+      // found - degrade gracefully (finalize anyway) rather than locking
+      // the user out over a state that shouldn't be reachable.
+    }
+
+    finalizeSession({ accessToken, refreshToken, user });
+    return false;
+  }, [finalizeSession]);
+
+  const signUpUser = async (credentials) => {
+    const authResponse = await signUp(credentials);
     if (authResponse.email_confirmation_required) {
       return authResponse;
     }
-
-    const next = {
+    // A brand new account can't have an MFA factor enrolled yet, but this
+    // still goes through the shared check rather than a separate direct
+    // path - one extra no-op round trip buys one code path instead of two.
+    await checkAssuranceAndFinalize({
       accessToken: authResponse.access_token,
       refreshToken: authResponse.refresh_token,
       user: authResponse.user,
-    };
-    setSession(next);
-    persistSession(next);
-    showToast(`Signed in as ${next.user?.username || next.user?.email}`);
+    });
     return authResponse;
   };
 
-  const signUpUser = async (credentials) => applySession(await signUp(credentials));
-
-  const logInUser = async (credentials) => applySession(await logIn(credentials));
+  const logInUser = async (credentials) => {
+    const authResponse = await logIn(credentials);
+    const gated = await checkAssuranceAndFinalize({
+      accessToken: authResponse.access_token,
+      refreshToken: authResponse.refresh_token,
+      user: authResponse.user,
+    });
+    return gated ? { mfaRequired: true } : authResponse;
+  };
 
   // Redirects the whole page to Google - nothing after this call runs in
   // the current page load. `from` (e.g. "/" or "/dashboard") is where the
@@ -127,6 +216,84 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   };
 
+  // MFA enrollment/management, used by SettingsPage. All plain passthroughs
+  // to Supabase Auth - acting on whichever session the frontend client
+  // currently holds, same as everything else in this file.
+  const enrollMfa = async () => {
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
+    if (error) throw error;
+    return data; // { id, totp: { qr_code, secret, uri } }
+  };
+
+  // Enrolling alone doesn't activate a factor - Supabase requires one
+  // successful challenge/verify to confirm the user actually captured the
+  // secret correctly before it counts for login gating.
+  const confirmMfaEnrollment = async (factorId, code) => {
+    const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+    if (challengeError) throw challengeError;
+    const { error: verifyError } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.id,
+      code,
+    });
+    if (verifyError) throw verifyError;
+  };
+
+  const unenrollMfa = async (factorId) => {
+    const { error } = await supabase.auth.mfa.unenroll({ factorId });
+    if (error) throw error;
+  };
+
+  const listMfaFactors = async () => {
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (error) throw error;
+    return data; // { totp: [...], phone: [...] }
+  };
+
+  // Submits the code from the global step-up modal - completes whichever
+  // sign-in (password or Google) is currently pending in pendingMfa.
+  const handleMfaVerifySubmit = async (event) => {
+    event.preventDefault();
+    if (!pendingMfa) return;
+
+    setMfaError("");
+    setMfaVerifying(true);
+    try {
+      const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: pendingMfa.factorId,
+      });
+      if (challengeError) throw challengeError;
+
+      const { data, error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: pendingMfa.factorId,
+        challengeId: challenge.id,
+        code: mfaCode,
+      });
+      if (verifyError) throw verifyError;
+
+      // The verified session's tokens (aal2) replace the pending (aal1)
+      // ones - the account identity (pendingMfa.user) doesn't change.
+      finalizeSession({
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        user: pendingMfa.user,
+      });
+    } catch (err) {
+      setMfaError(err.message || "Invalid code. Please try again.");
+    } finally {
+      setMfaVerifying(false);
+    }
+  };
+
+  // Backs out of the whole sign-in attempt rather than leaving a half
+  // authenticated (aal1) session sitting in the frontend Supabase client.
+  const handleMfaCancel = () => {
+    supabase.auth.signOut().catch(() => {});
+    setPendingMfa(null);
+    setMfaCode("");
+    setMfaError("");
+  };
+
   const logOutUser = async () => {
     await logOut(session?.accessToken).catch(() => {});
     // Also clears supabase-js's own separately-persisted session. Without
@@ -139,30 +306,33 @@ export function AuthProvider({ children }) {
     persistSession(null);
   };
 
-  // The other half of the Google flow. This client is never used to sign
-  // in with a password (that goes straight to our backend), so any session
-  // this fires with only ever came from Google - either just now (event
-  // "SIGNED_IN", right after the OAuth redirect completes - toast-worthy),
-  // or restored from supabase-js's own storage on a later page load
-  // ("INITIAL_SESSION" - already-known, no toast) or a background refresh
-  // ("TOKEN_REFRESHED"). A null session here (e.g. a plain "SIGNED_OUT")
-  // is ignored rather than clearing state, so it can't stomp on an
-  // existing password-based session that this client was never party to.
+  // The other half of the Google flow, and now also where a completed MFA
+  // step-up can surface (its exact event name isn't load-bearing here -
+  // finalizeSession's own token-based dedup makes a redundant call
+  // harmless either way). A fresh "SIGNED_IN" goes through the same
+  // assurance-level gate password login uses, so Google sign-ins are
+  // gated too. Anything else (INITIAL_SESSION restore, TOKEN_REFRESHED) is
+  // an already-established session - just keep our state in sync, no
+  // re-gating. A null session (e.g. plain "SIGNED_OUT") is ignored rather
+  // than clearing state, so it can't stomp on an existing password-based
+  // session that this client was never otherwise party to.
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, supabaseSession) => {
       if (!supabaseSession) return;
 
       const next = fromSupabaseSession(supabaseSession);
-      setSession(next);
-      persistSession(next);
 
       if (event === "SIGNED_IN") {
-        showToast(`Signed in as ${next.user.username || next.user.fullName || next.user.email}`);
+        checkAssuranceAndFinalize(next);
+        return;
       }
+
+      setSession(next);
+      persistSession(next);
     });
 
     return () => subscription.unsubscribe();
-  }, [showToast]);
+  }, [checkAssuranceAndFinalize]);
 
   return (
     <AuthContext.Provider
@@ -175,6 +345,10 @@ export function AuthProvider({ children }) {
         signInWithGoogle,
         requestPasswordReset,
         updatePassword,
+        enrollMfa,
+        confirmMfaEnrollment,
+        unenrollMfa,
+        listMfaFactors,
         logOut: logOutUser,
       }}
     >
@@ -201,6 +375,107 @@ export function AuthProvider({ children }) {
           {toastMessage}
         </div>
       )}
+
+      {/* Global, not page-local: a Google sign-in can land the user on any
+          page (wherever redirectTo pointed), so the step-up prompt has to
+          be able to appear there too, not just on the login page. */}
+      {pendingMfa && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(17, 24, 39, 0.45)",
+            display: "grid",
+            placeItems: "center",
+            padding: "1.5rem",
+            boxSizing: "border-box",
+            zIndex: 200,
+          }}
+        >
+          <form
+            onSubmit={handleMfaVerifySubmit}
+            style={{
+              width: "100%",
+              maxWidth: "22rem",
+              background: "#fff",
+              borderRadius: "1.25rem",
+              padding: "2rem",
+              boxSizing: "border-box",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.4rem", color: "#222" }}>
+              Two-factor authentication
+            </h2>
+            <p style={{ margin: "0 0 1.25rem", fontSize: "0.9rem", color: "#6b7280" }}>
+              Enter the 6-digit code from your authenticator app.
+            </p>
+
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={mfaCode}
+              onChange={(event) => setMfaCode(event.target.value)}
+              placeholder="123456"
+              maxLength={6}
+              autoFocus
+              style={{
+                width: "100%",
+                height: "2.9rem",
+                border: "1px solid #d1d5db",
+                borderRadius: "0.6rem",
+                padding: "0 0.9rem",
+                boxSizing: "border-box",
+                fontSize: "1.1rem",
+                letterSpacing: "0.2em",
+                textAlign: "center",
+                marginBottom: "1rem",
+              }}
+            />
+
+            {mfaError && (
+              <p style={{ margin: "0 0 1rem", color: "#d0190f", fontSize: "0.875rem" }}>{mfaError}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={mfaVerifying || mfaCode.length < 6}
+              style={{
+                width: "100%",
+                border: "none",
+                borderRadius: "999px",
+                padding: "0.85rem 1rem",
+                background: "linear-gradient(180deg, #4f7df0, #2f5fc9)",
+                color: "#fff",
+                fontSize: "1rem",
+                fontWeight: 500,
+                cursor: mfaVerifying ? "not-allowed" : "pointer",
+                opacity: mfaVerifying || mfaCode.length < 6 ? 0.7 : 1,
+                marginBottom: "0.75rem",
+              }}
+            >
+              {mfaVerifying ? "Verifying..." : "Verify"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleMfaCancel}
+              style={{
+                width: "100%",
+                border: "none",
+                background: "transparent",
+                color: "#6b7280",
+                fontSize: "0.85rem",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+          </form>
+        </div>
+      )}
+
       {children}
     </AuthContext.Provider>
   );
