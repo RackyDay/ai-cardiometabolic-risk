@@ -81,7 +81,19 @@ export function AuthProvider({ children }) {
       supabase.auth.setSession({
         access_token: session.accessToken,
         refresh_token: session.refreshToken,
-      }).catch(() => {});
+      }).then(({ error }) => {
+        if (error) {
+          // The stored session is no longer valid (e.g. its refresh token
+          // was already rotated/used, or revoked by an earlier global-scope
+          // sign-out) - clear it instead of leaving dead tokens sitting in
+          // state/localStorage, where they'd keep failing on every later
+          // Supabase-direct call (Settings' MFA calls, the next logout, ...)
+          // with a 403 that has nothing to do with whatever the user is
+          // actually doing at that point.
+          setSession(null);
+          persistSession(null);
+        }
+      });
     }
     // Deliberately empty deps - this is a one-time hydration of whatever
     // was in localStorage at mount, not a sync that should re-run when
@@ -128,15 +140,39 @@ export function AuthProvider({ children }) {
   // sign-in counts as complete. Returns true if it does (pendingMfa is now
   // set, caller should stop and let the global modal take over) or false if
   // the session was finalized directly.
-  const checkAssuranceAndFinalize = useCallback(async ({ accessToken, refreshToken, user }) => {
+  const checkAssuranceAndFinalize = useCallback(async (
+    { accessToken, refreshToken, user },
+    { clientAlreadySynced = false } = {},
+  ) => {
     // Make sure the frontend Supabase client actually holds these tokens
     // before asking it anything about assurance level or factors - required
     // for the password-login path (this client never saw backend-issued
-    // tokens otherwise); a harmless no-op re-set for the Google path, which
-    // already holds them natively via detectSessionInUrl.
-    await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    // tokens otherwise). Skipped when the caller is the onAuthStateChange
+    // listener below: the client already holds the session (that's what
+    // fired the event), and calling setSession() again there re-emits
+    // SIGNED_IN straight back into that listener - an infinite loop.
+    if (!clientAlreadySynced) {
+      const { error: setSessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (setSessionError) {
+        // Should be unreachable for a token that just came back from a
+        // successful login/signup, but if the client rejects it for some
+        // reason, don't proceed to check assurance level against a session
+        // it doesn't actually have - surface it as a real login failure
+        // instead of silently mis-gating.
+        throw setSessionError;
+      }
+    }
 
-    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const { data: aal, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aalError) {
+      // The session the client holds isn't actually valid (e.g. a stale
+      // token restored from localStorage that the server now 403s). Don't
+      // finalize it - throw so the caller can clear it instead.
+      throw aalError;
+    }
     if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
       const factorId = factorsData?.totp?.[0]?.id;
@@ -323,7 +359,12 @@ export function AuthProvider({ children }) {
       const next = fromSupabaseSession(supabaseSession);
 
       if (event === "SIGNED_IN") {
-        checkAssuranceAndFinalize(next);
+        // clientAlreadySynced: the client already holds this session (that's
+        // why we're in this callback) - re-setting it would loop straight
+        // back here. No form/page is actively awaiting this (a Google
+        // redirect can land anywhere) - catch rather than let a rejection go
+        // unhandled, since there's no UI here to throw an error into.
+        checkAssuranceAndFinalize(next, { clientAlreadySynced: true }).catch(() => {});
         return;
       }
 
