@@ -5,6 +5,7 @@ import DashboardPage from "./pages/dashboard/DashboardPage";
 import LearnPage from "./pages/learn/LearnPage";
 import WelcomePage from "./pages/welcome/WelcomePage";
 import AuthPage from "./pages/auth/AuthPage";
+import ResetPasswordPage from "./pages/resetPassword/ResetPasswordPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import { RiskProvider } from "./context/RiskContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -49,6 +50,7 @@ function AppLayout() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/learn" element={<LearnPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </main>

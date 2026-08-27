@@ -168,3 +168,37 @@
 .auth-google-btn:hover {
   background: #f9fafb;
 }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  z-index: 100;
+}
+
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 24rem;
+  background: #ffffff;
+  border-radius: 1.25rem;
+  padding: 2rem;
+  box-sizing: border-box;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.9rem;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+}

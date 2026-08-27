@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 export function useAuthViewModel() {
-  const { signUp, logIn, signInWithGoogle, isAuthenticated } = useContext(AuthContext);
+  const { signUp, logIn, signInWithGoogle, requestPasswordReset, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   // Wherever the user navigated here from (e.g. "/" or "/dashboard") -
@@ -27,6 +27,12 @@ export function useAuthViewModel() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [confirmationRequired, setConfirmationRequired] = useState(false);
+
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordSubmitting, setForgotPasswordSubmitting] = useState(false);
+  const [forgotPasswordError, setForgotPasswordError] = useState("");
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
 
   const toggleMode = () => {
     setMode((m) => (m === "login" ? "signup" : "login"));
@@ -70,6 +76,34 @@ export function useAuthViewModel() {
     }
   };
 
+  const openForgotPassword = () => {
+    setForgotPasswordEmail("");
+    setForgotPasswordError("");
+    setForgotPasswordSent(false);
+    setIsForgotPasswordOpen(true);
+  };
+
+  const closeForgotPassword = () => setIsForgotPasswordOpen(false);
+
+  const handleForgotPasswordSubmit = async (event) => {
+    event.preventDefault();
+    setForgotPasswordError("");
+    setForgotPasswordSubmitting(true);
+
+    try {
+      await requestPasswordReset(forgotPasswordEmail);
+      // Always show the same "check your email" result regardless of
+      // whether the address is actually registered - Supabase's own
+      // resetPasswordForEmail already behaves this way (no error either),
+      // so a reset request can't be used to test which emails have accounts.
+      setForgotPasswordSent(true);
+    } catch (err) {
+      setForgotPasswordError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setForgotPasswordSubmitting(false);
+    }
+  };
+
   return {
     mode,
     toggleMode,
@@ -86,5 +120,14 @@ export function useAuthViewModel() {
     confirmationRequired,
     handleSubmit,
     handleGoogleSignIn,
+    isForgotPasswordOpen,
+    openForgotPassword,
+    closeForgotPassword,
+    forgotPasswordEmail,
+    setForgotPasswordEmail,
+    forgotPasswordSubmitting,
+    forgotPasswordError,
+    forgotPasswordSent,
+    handleForgotPasswordSubmit,
   };
 }

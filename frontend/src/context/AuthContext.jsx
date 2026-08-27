@@ -106,6 +106,28 @@ export function AuthProvider({ children }) {
     });
   };
 
+  // Sends a password-reset email. Deliberately email-only, unlike login's
+  // email-or-username: there's no secure way to prove account ownership
+  // from a username alone, so a reset link can only ever be sent to the
+  // address it's actually tied to. Goes straight to Supabase (no backend
+  // endpoint) - resetPasswordForEmail is a plain passthrough with no extra
+  // business logic, same reasoning as the Google OAuth flow.
+  const requestPasswordReset = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  };
+
+  // Only valid while the caller holds the temporary recovery session
+  // Supabase establishes when the emailed reset link is clicked (see
+  // ResetPasswordPage) - there's no "reset someone else's password" API,
+  // this always acts on whoever's session is currently active.
+  const updatePassword = async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  };
+
   const logOutUser = async () => {
     await logOut(session?.accessToken).catch(() => {});
     // Also clears supabase-js's own separately-persisted session. Without
@@ -152,6 +174,8 @@ export function AuthProvider({ children }) {
         signUp: signUpUser,
         logIn: logInUser,
         signInWithGoogle,
+        requestPasswordReset,
+        updatePassword,
         logOut: logOutUser,
       }}
     >

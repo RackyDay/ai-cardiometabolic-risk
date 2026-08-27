@@ -18,6 +18,15 @@ function AuthPage() {
     confirmationRequired,
     handleSubmit,
     handleGoogleSignIn,
+    isForgotPasswordOpen,
+    openForgotPassword,
+    closeForgotPassword,
+    forgotPasswordEmail,
+    setForgotPasswordEmail,
+    forgotPasswordSubmitting,
+    forgotPasswordError,
+    forgotPasswordSent,
+    handleForgotPasswordSubmit,
   } = useAuthViewModel();
 
   const isSignup = mode === "signup";
@@ -115,7 +124,7 @@ function AuthPage() {
         </label>
 
         {!isSignup && (
-          <button type="button" className="forgot-password-btn">
+          <button type="button" className="forgot-password-btn" onClick={openForgotPassword}>
             Forgot password?
           </button>
         )}
@@ -137,6 +146,54 @@ function AuthPage() {
           Continue with Google
         </button>
       </form>
+
+      {isForgotPasswordOpen && (
+        <div className="modal-backdrop" onClick={closeForgotPassword}>
+          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              className="modal-close-btn"
+              aria-label="Close"
+              onClick={closeForgotPassword}
+            >
+              ×
+            </button>
+
+            {forgotPasswordSent ? (
+              <>
+                <h2 className="auth-title">Check your email</h2>
+                <p className="auth-description">
+                  If an account exists for {forgotPasswordEmail}, a password reset link has been sent to it.
+                </p>
+              </>
+            ) : (
+              <form onSubmit={handleForgotPasswordSubmit}>
+                <h2 className="auth-title">Reset your password</h2>
+                <p className="auth-description">
+                  Enter the email address on your account and we'll send you a link to reset your password.
+                </p>
+
+                <label className="auth-field">
+                  <span>Email Address</span>
+                  <input
+                    type="email"
+                    value={forgotPasswordEmail}
+                    onChange={(event) => setForgotPasswordEmail(event.target.value)}
+                    placeholder="jane@example.com"
+                    required
+                  />
+                </label>
+
+                {forgotPasswordError && <p className="auth-error">{forgotPasswordError}</p>}
+
+                <button type="submit" className="auth-submit-btn" disabled={forgotPasswordSubmitting}>
+                  {forgotPasswordSubmitting ? "Sending..." : "Send reset link"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
