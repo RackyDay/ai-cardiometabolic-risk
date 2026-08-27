@@ -16,11 +16,15 @@ client = TestClient(app)
 
 class FakeSelectQuery:
     def __init__(self, rows):
-        self._rows = list(rows)
+        # No copy: a reference to the same list FakeScopedClient stores in
+        # self._tables[name], so an insert() here is visible to the test
+        # afterward via the original `tables` dict it passed in.
+        self._rows = rows
         self._filters = {}
         self._is_maybe_single = False
         self._order_desc = False
         self._limit = None
+        self._insert_row = None
 
     def select(self, *args, **kwargs):
         return self
@@ -41,7 +45,20 @@ class FakeSelectQuery:
         self._is_maybe_single = True
         return self
 
+    def insert(self, row):
+        self._insert_row = row
+        return self
+
     def execute(self):
+        if self._insert_row is not None:
+            # Mirrors the real risk_calculations/risk_inputs tables' default
+            # riskcalc_id (gen_random_uuid()) when the insert doesn't supply
+            # one - main.py's /predict relies on getting one back either way.
+            inserted = dict(self._insert_row)
+            inserted.setdefault("riskcalc_id", f"calc-{len(self._rows) + 1}")
+            self._rows.append(inserted)
+            return SimpleNamespace(data=[inserted])
+
         matches = [
             row for row in self._rows
             if all(row.get(k) == v for k, v in self._filters.items())
@@ -59,7 +76,11 @@ class FakeScopedClient:
         self._tables = tables
 
     def table(self, name):
-        return FakeSelectQuery(self._tables.get(name, []))
+        # setdefault (not .get(name, [])) so the list actually lives in
+        # self._tables and is shared with FakeSelectQuery - required for
+        # insert() to be visible back through the original `tables` dict.
+        self._tables.setdefault(name, [])
+        return FakeSelectQuery(self._tables[name])
 
 
 def _install_fake_auth(monkeypatch, user_id="user-1"):
@@ -71,6 +92,42 @@ def _install_fake_auth(monkeypatch, user_id="user-1"):
 
 def _install_fake_scoped_client(monkeypatch, tables):
     monkeypatch.setattr(main_module, "get_user_scoped_client", lambda token: FakeScopedClient(tables))
+
+
+# --- POST /predict's optional-auth persistence -----------------------
+
+def test_predict_persists_to_account_when_authenticated(monkeypatch):
+    _install_fake_auth(monkeypatch)
+    tables = {"risk_calculations": [], "risk_inputs": []}
+    _install_fake_scoped_client(monkeypatch, tables)
+
+    response = client.post("/predict", json=VALID_PAYLOAD, headers={"Authorization": "Bearer token"})
+
+    assert response.status_code == 200
+    risk_score = response.json()["risk_score"]
+
+    assert len(tables["risk_calculations"]) == 1
+    assert tables["risk_calculations"][0]["risk_score"] == risk_score
+
+    assert len(tables["risk_inputs"]) == 1
+    persisted = tables["risk_inputs"][0]
+    assert persisted["riskcalc_id"] == tables["risk_calculations"][0]["riskcalc_id"]
+    assert persisted["inputs_JSON"] == VALID_PAYLOAD
+
+
+def test_predict_does_not_persist_when_anonymous(monkeypatch):
+    # No Authorization header at all, so get_current_user_optional short-
+    # circuits to None without even calling supabase.auth.get_user - the
+    # scoped client should never be reached for a logged-out submission.
+    scoped_client_calls = []
+    monkeypatch.setattr(
+        main_module, "get_user_scoped_client", lambda token: scoped_client_calls.append(token)
+    )
+
+    response = client.post("/predict", json=VALID_PAYLOAD)
+
+    assert response.status_code == 200
+    assert scoped_client_calls == []
 
 
 def test_latest_prediction_with_no_history(monkeypatch):
