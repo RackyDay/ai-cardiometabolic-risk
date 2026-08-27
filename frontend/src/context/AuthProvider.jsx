@@ -1,8 +1,7 @@
-import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AuthContext } from "./AuthContext";
 import { logIn, logOut, signUp } from "../services/api";
 import { supabase } from "../services/supabaseClient";
-
-export const AuthContext = createContext();
 
 const STORAGE_KEY = "auth";
 const TOAST_DURATION_MS = 3000;

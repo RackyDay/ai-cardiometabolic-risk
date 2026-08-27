@@ -115,7 +115,7 @@ export function useInputViewModel() {
             setRiskScore(result.risk_score);
             setTopContributors(result.top_contributors);
             navigate("/dashboard");
-        } catch (err) {
+        } catch {
             // Network failure or a 4xx/5xx from the API — keep the user on
             // this page and surface a generic, non-technical message.
             setSubmitError("We couldn't calculate your risk score. Please try again.");
