@@ -139,7 +139,7 @@ function DashboardPage() {
       </div>
 
       <div className="card trend-card">
-        <h2 className="card-title">10-year Cardiovascular Health Trend</h2>
+        <h2 className="card-title">Cardiovascular Health Trend</h2>
         <ResponsiveContainer width="100%" height={260}>
           <LineChart
             data={TREND_DATA}
