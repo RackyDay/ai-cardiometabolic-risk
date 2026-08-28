@@ -511,4 +511,218 @@
 
     font-size: 0.8rem;
   }
+/* =========================================================
+   Chart mode indicator
+========================================================= */
+
+.risk-chart-mode {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 0.5rem;
+
+  margin-bottom: 0.35rem;
+
+  font-size: 0.9rem;
+
+  font-weight: 700;
+}
+
+.risk-chart-mode-dot {
+  width: 10px;
+  height: 10px;
+
+  border-radius: 50%;
+
+  display: inline-block;
+}
+
+.risk-chart-mode-original {
+  color: #334155;
+}
+
+.risk-chart-mode-original
+.risk-chart-mode-dot {
+  background: #334155;
+}
+
+.risk-chart-mode-hypothetical {
+  color: #64748b;
+}
+
+.risk-chart-mode-hypothetical
+.risk-chart-mode-dot {
+  background: #94a3b8;
+}
+
+/* =========================================================
+   MERGED RISK BREAKDOWN CARD
+========================================================= */
+
+.risk-breakdown-card {
+  overflow: visible;
+}
+
+.risk-breakdown-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.risk-breakdown-header .card-title {
+  margin-bottom: 0.25rem;
+}
+
+.risk-breakdown-header .risk-chart-description {
+  margin: 0;
+}
+
+
+/* =========================================================
+   Risk factor controls
+========================================================= */
+
+.risk-breakdown-controls {
+  margin-top: 1rem;
+}
+
+.risk-breakdown-controls-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+
+  align-items: center;
+
+  padding: 0 0.75rem 0.5rem;
+
+  color: #6b7280;
+
+  font-size: 0.75rem;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.04em;
+}
+
+
+.merged-risk-factor-list {
+  max-height: calc(
+    var(--visible-rows) * 7rem
+    +
+    (var(--visible-rows) - 1) * 0.625rem
+  );
+
+  overflow-y: auto;
+
+  padding-right: 0.25rem;
+}
+
+
+.merged-risk-factor-item {
+  background: #f8fafc;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 0.75rem;
+
+  padding: 0.15rem 0.75rem 0.75rem;
+
+  flex-shrink: 0;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+
+.merged-risk-factor-item:hover {
+  border-color: #d1d5db;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 6px
+    rgba(0, 0, 0, 0.04);
+}
+
+
+.merged-risk-factor-item
+.risk-factor-row {
+  background: transparent;
+
+  padding-left: 0.35rem;
+  padding-right: 0.35rem;
+}
+
+
+/* =========================================================
+   Changeable factor
+========================================================= */
+
+.merged-risk-factor-changeable {
+  border-left: 3px solid #2563eb;
+}
+
+
+/* =========================================================
+   Fixed factor
+========================================================= */
+
+.merged-risk-factor-fixed {
+  opacity: 0.95;
+}
+
+
+/* =========================================================
+   What-if section
+========================================================= */
+
+.merged-risk-factor-item
+.what-if-section {
+  margin: 0.15rem 0.35rem 0.15rem;
+
+  padding: 0.7rem 0.8rem;
+
+  background: #ffffff;
+
+  border-radius: 0.625rem;
+
+  border: 1px solid #e5e7eb;
+}
+
+
+.merged-risk-factor-item
+.what-if-heading {
+  margin-bottom: 0.65rem;
+}
+
+
+/* =========================================================
+   Responsive
+========================================================= */
+
+@media (max-width: 48rem) {
+
+  .risk-breakdown-controls-header {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .merged-risk-factor-item {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .merged-risk-factor-item
+  .what-if-section {
+    margin-left: 0.15rem;
+    margin-right: 0.15rem;
+  }
+
+}
 }
