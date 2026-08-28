@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import {
   Cell,
   Pie,
@@ -9,22 +10,48 @@ import {
 
 import "./RiskFactorPieChart.css";
 
-const COLORS = [
-  "#2563EB",
-  "#7C3AED",
-  "#EC4899",
-  "#F97316",
-  "#10B981",
-  "#06B6D4",
-  "#F59E0B",
-  "#EF4444",
-  "#6366F1",
-  "#14B8A6",
-];
 
-const RISK_FACTOR_DESCRIPTIONS = {
+/*
+ * Each risk factor has a stable colour.
+ * The colour is based on the factor name rather
+ * than its position in the list.
+ */
+export const RISK_FACTOR_COLORS = {
+  "Body mass index": "#2563EB",
+  "Diastolic blood pressure": "#7C3AED",
+  "Systolic blood pressure": "#EC4899",
+  "Blood pressure medication status": "#F97316",
+  "Total cholesterol level": "#10B981",
+  "Fasting blood glucose level": "#06B6D4",
+  "Smoking status": "#F59E0B",
+  "Number of cigarettes smoked per day": "#EF4444",
+  "Age": "#6366F1",
+  "Gender": "#14B8A6",
+  "Hypertension diagnosis status": "#8B5CF6",
+  "Resting heart rate": "#F43F5E",
+  "Diabetes diagnosis status": "#0EA5E9",
+};
+
+
+export function getRiskFactorColor(name, index = 0) {
+  return (
+    RISK_FACTOR_COLORS[name] ??
+    Object.values(RISK_FACTOR_COLORS)[
+      index %
+        Object.values(RISK_FACTOR_COLORS).length
+    ]
+  );
+}
+
+
+/*
+ * Brief explanations shown in the risk-factor
+ * breakdown when the user hovers over a factor.
+ */
+export const RISK_FACTOR_DESCRIPTIONS = {
+
   "Body mass index":
-    "A higher BMI can be associated with obesity, which can increase the risk of cardiovascular disease and place additional strain on the heart.",
+    "A higher BMI can be associated with obesity, which can increase cardiovascular risk and place additional strain on the heart.",
 
   "Diastolic blood pressure":
     "Higher blood pressure increases the workload on the heart and can damage blood vessels over time, increasing cardiovascular risk.",
@@ -36,7 +63,7 @@ const RISK_FACTOR_DESCRIPTIONS = {
     "Blood pressure medication can indicate a history of hypertension. Well-controlled blood pressure can help reduce cardiovascular risk.",
 
   "Total cholesterol level":
-    "Higher cholesterol levels can contribute to plaque buildup in arteries, which can increase the risk of heart disease and stroke.",
+    "Higher cholesterol levels can contribute to plaque buildup in arteries, increasing the risk of heart disease and stroke.",
 
   "Fasting blood glucose level":
     "Elevated blood glucose can be associated with insulin resistance and diabetes, conditions that can increase cardiovascular risk.",
@@ -57,36 +84,46 @@ const RISK_FACTOR_DESCRIPTIONS = {
     "A history of hypertension is an important cardiovascular risk factor because persistently high blood pressure can damage the heart and blood vessels.",
 
   "Resting heart rate":
-    "Resting heart rate can provide information about cardiovascular health, although its contribution to risk depends on the individual's overall health and other factors.",
+    "Resting heart rate can provide information about cardiovascular health, although its contribution depends on the individual's overall health and other factors.",
 
   "Diabetes diagnosis status":
     "Diabetes can damage blood vessels and is associated with a higher risk of heart disease and stroke.",
 };
 
-function getRiskFactorDescription(name) {
-  if (RISK_FACTOR_DESCRIPTIONS[name]) {
-    return RISK_FACTOR_DESCRIPTIONS[name];
-  }
 
-  return "This factor is included by the risk model because it can provide information relevant to cardiovascular risk.";
+function getRiskFactorDescription(name) {
+  return (
+    RISK_FACTOR_DESCRIPTIONS[name] ||
+    "This factor is included by the risk model because it can provide information relevant to cardiovascular risk."
+  );
 }
 
 
 /* =========================================================
-   Chart tooltip
+   Tooltip
 ========================================================= */
 
-function RiskFactorTooltip({ active, payload }) {
-  if (!active || !payload || payload.length === 0) {
+function RiskFactorTooltip({
+  active,
+  payload,
+}) {
+  if (
+    !active ||
+    !payload ||
+    payload.length === 0
+  ) {
     return null;
   }
 
   const factor = payload[0].payload;
 
-  const contribution = Number(factor.value);
+  const contribution = Number(
+    factor.value
+  );
 
   return (
     <div className="risk-chart-tooltip">
+
       <div className="risk-chart-tooltip-title">
         {factor.name}
       </div>
@@ -94,18 +131,27 @@ function RiskFactorTooltip({ active, payload }) {
       <div className="risk-chart-tooltip-divider" />
 
       <div className="risk-chart-tooltip-row">
-        <span>Contribution</span>
+
+        <span>
+          Contribution
+        </span>
 
         <strong>
           {Number.isFinite(contribution)
             ? `${contribution.toFixed(2)}%`
             : "N/A"}
         </strong>
+
       </div>
 
-      {typeof factor.raisesRisk === "boolean" && (
+      {typeof factor.raisesRisk ===
+        "boolean" && (
+
         <div className="risk-chart-tooltip-row">
-          <span>Impact</span>
+
+          <span>
+            Impact
+          </span>
 
           <strong
             className={
@@ -118,73 +164,124 @@ function RiskFactorTooltip({ active, payload }) {
               ? "Raises risk"
               : "Lowers risk"}
           </strong>
+
         </div>
       )}
+
     </div>
   );
 }
 
 
 /* =========================================================
-   Risk Factor Pie Chart
+   Pie Chart
 ========================================================= */
 
 function RiskFactorPieChart({
   data,
   hypotheticalData,
+  isHypotheticalActive = false,
 }) {
-  const [activeIndex, setActiveIndex] = useState(null);
-  const [selectedIndex, setSelectedIndex] = useState(null);
 
-  if (!data || data.length === 0) {
+  const [
+    activeIndex,
+    setActiveIndex,
+  ] = useState(null);
+
+  const [
+    selectedIndex,
+    setSelectedIndex,
+  ] = useState(null);
+
+
+  /*
+   * Only one chart is displayed at a time.
+   */
+  const chartData =
+    isHypotheticalActive &&
+    hypotheticalData &&
+    hypotheticalData.length > 0
+      ? hypotheticalData
+      : data;
+
+
+  if (
+    !chartData ||
+    chartData.length === 0
+  ) {
     return (
       <p className="risk-factors-empty">
-        Submit your health information to see your risk factors.
+        Submit your health information
+        to see your risk factors.
       </p>
     );
   }
+
 
   const highlightedIndex =
     selectedIndex !== null
       ? selectedIndex
       : activeIndex;
 
-  const handleMouseEnter = (_, index) => {
+
+  const handleMouseEnter = (
+    _,
+    index
+  ) => {
     setActiveIndex(index);
   };
+
 
   const handleMouseLeave = () => {
     setActiveIndex(null);
   };
 
-  const handleFactorClick = (_, index) => {
-    setSelectedIndex((current) =>
-      current === index ? null : index
+
+  const handleClick = (
+    _,
+    index
+  ) => {
+    setSelectedIndex(
+      (current) =>
+        current === index
+          ? null
+          : index
     );
   };
-
-  /*
-   * If hypothetical data is not available yet,
-   * simply display the original contribution chart.
-   */
-  const hasHypotheticalData =
-    hypotheticalData &&
-    hypotheticalData.length > 0;
 
 
   return (
     <div className="risk-chart-container">
 
       {/* =====================================================
-          Chart area
+          Chart
       ====================================================== */}
 
       <div className="risk-donut-section">
 
-        {/* Small instruction above the chart */}
+        <div
+          className={`risk-chart-mode ${
+            isHypotheticalActive
+              ? "risk-chart-mode-hypothetical"
+              : "risk-chart-mode-original"
+          }`}
+        >
+
+          <span className="risk-chart-mode-dot" />
+
+          {isHypotheticalActive
+            ? "What-if scenario"
+            : "Original assessment"}
+
+        </div>
+
 
         <div className="risk-chart-hint">
-          Hover over a factor to see its contribution.
+
+          {isHypotheticalActive
+            ? "Showing the estimated contribution after your changes."
+            : "Hover over a factor to see its contribution."}
+
         </div>
 
 
@@ -197,81 +294,34 @@ function RiskFactorPieChart({
 
             <PieChart>
 
-              {/* =================================================
-                  What-if / hypothetical contribution
-                  OUTER RING
-              ================================================== */}
-
-              {hasHypotheticalData && (
-                <Pie
-                  data={hypotheticalData}
-                  dataKey="value"
-                  nameKey="name"
-
-                  cx="50%"
-                  cy="52%"
-
-                  innerRadius={155}
-                  outerRadius={185}
-
-                  paddingAngle={2}
-
-                  stroke="#ffffff"
-                  strokeWidth={2}
-
-                  activeIndex={highlightedIndex ?? undefined}
-
-                  onMouseEnter={handleMouseEnter}
-                  onMouseLeave={handleMouseLeave}
-                  onClick={handleFactorClick}
-                >
-                  {hypotheticalData.map(
-                    (entry, index) => (
-                      <Cell
-                        key={`hypothetical-${entry.name}`}
-                        fill={
-                          COLORS[
-                            index % COLORS.length
-                          ]
-                        }
-
-                        opacity={
-                          highlightedIndex === null ||
-                          highlightedIndex === index
-                            ? 0.25
-                            : 0.08
-                        }
-                      />
-                    )
-                  )}
-                </Pie>
-              )}
-
-
-              {/* =================================================
-                  Original contribution
-                  INNER RING
-              ================================================== */}
-
               <Pie
-                data={data}
+                data={chartData}
+
                 dataKey="value"
+
                 nameKey="name"
 
                 cx="50%"
-                cy="52%"
+
+                cy="50%"
 
                 innerRadius={90}
-                outerRadius={145}
+
+                outerRadius={155}
 
                 paddingAngle={2}
 
                 stroke="#ffffff"
+
                 strokeWidth={2}
 
-                activeIndex={highlightedIndex ?? undefined}
+                activeIndex={
+                  highlightedIndex ??
+                  undefined
+                }
 
                 activeShape={(props) => {
+
                   const {
                     cx,
                     cy,
@@ -281,6 +331,7 @@ function RiskFactorPieChart({
                     endAngle,
                     fill,
                   } = props;
+
 
                   return (
                     <path
@@ -294,17 +345,18 @@ function RiskFactorPieChart({
                                 180
                             )
                         }
-                          ${
-                            cy +
-                            outerRadius *
-                              Math.sin(
-                                (-startAngle *
-                                  Math.PI) /
-                                  180
-                              )
-                          }
+                        ${
+                          cy +
+                          outerRadius *
+                            Math.sin(
+                              (-startAngle *
+                                Math.PI) /
+                                180
+                            )
+                        }
 
-                        A ${outerRadius} ${outerRadius}
+                        A ${outerRadius}
+                          ${outerRadius}
                           0 0 0
                           ${
                             cx +
@@ -334,17 +386,18 @@ function RiskFactorPieChart({
                                 180
                             )
                         }
-                          ${
-                            cy +
-                            innerRadius *
-                              Math.sin(
-                                (-endAngle *
-                                  Math.PI) /
-                                  180
-                              )
-                          }
+                        ${
+                          cy +
+                          innerRadius *
+                            Math.sin(
+                              (-endAngle *
+                                Math.PI) /
+                                180
+                            )
+                        }
 
-                        A ${innerRadius} ${innerRadius}
+                        A ${innerRadius}
+                          ${innerRadius}
                           0 0 1
                           ${
                             cx +
@@ -371,11 +424,13 @@ function RiskFactorPieChart({
                       fill={fill}
 
                       stroke="#ffffff"
+
                       strokeWidth={3}
 
                       style={{
                         filter:
                           "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12))",
+
                         transition:
                           "all 0.2s ease",
                       }}
@@ -383,47 +438,55 @@ function RiskFactorPieChart({
                   );
                 }}
 
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                onClick={handleFactorClick}
+                onMouseEnter={
+                  handleMouseEnter
+                }
+
+                onMouseLeave={
+                  handleMouseLeave
+                }
+
+                onClick={
+                  handleClick
+                }
               >
 
-                {data.map(
+                {chartData.map(
                   (entry, index) => (
+
                     <Cell
-                      key={`original-${entry.name}`}
-                      fill={
-                        COLORS[
-                          index % COLORS.length
-                        ]
-                      }
+                      key={`cell-${entry.name}`}
+
+                      /*
+                       * Stable colour based on
+                       * the actual factor name.
+                       */
+                      fill={getRiskFactorColor(
+                        entry.name,
+                        index
+                      )}
 
                       opacity={
-                        highlightedIndex === null ||
-                        highlightedIndex === index
+                        highlightedIndex ===
+                          null ||
+                        highlightedIndex ===
+                          index
                           ? 1
                           : 0.35
                       }
                     />
+
                   )
                 )}
 
               </Pie>
 
 
-              {/* =================================================
-                  Tooltip
-              ================================================== */}
-
               <Tooltip
                 content={
                   <RiskFactorTooltip />
                 }
 
-                /*
-                 * Keep the tooltip away from the
-                 * centre of the donut.
-                 */
                 position={{
                   x: 15,
                   y: 8,
@@ -431,7 +494,9 @@ function RiskFactorPieChart({
 
                 wrapperStyle={{
                   zIndex: 50,
-                  pointerEvents: "none",
+                  pointerEvents:
+                    "none",
+                  position: "absolute",
                 }}
               />
 
@@ -447,11 +512,15 @@ function RiskFactorPieChart({
           <div className="risk-chart-center-text">
 
             <strong>
-              Risk contribution
+
+              {isHypotheticalActive
+                ? "What-if"
+                : "Original"}
+
             </strong>
 
             <span>
-              Original → What-if
+              Risk contribution
             </span>
 
           </div>
@@ -460,154 +529,38 @@ function RiskFactorPieChart({
 
 
         {/* =====================================================
-            Legend
+            Chart legend
         ====================================================== */}
 
         <div className="risk-chart-legend">
 
           <div className="risk-chart-legend-item">
 
-            <span className="risk-chart-legend-dot original" />
+            <span
+              className={`risk-chart-legend-dot ${
+                isHypotheticalActive
+                  ? "hypothetical"
+                  : "original"
+              }`}
+            />
 
             <span>
-              Original assessment
+
+              {isHypotheticalActive
+                ? "What-if scenario"
+                : "Original assessment"}
+
             </span>
 
           </div>
 
-
-          {hasHypotheticalData && (
-            <div className="risk-chart-legend-item">
-
-              <span className="risk-chart-legend-dot hypothetical" />
-
-              <span>
-                What-if scenario
-              </span>
-
-            </div>
-          )}
-
         </div>
-
-      </div>
-
-
-      {/* =====================================================
-          Risk Factor Breakdown
-      ====================================================== */}
-
-      <div className="risk-factor-breakdown">
-
-        <div className="risk-factor-breakdown-header">
-
-          <span>
-            Risk factor
-          </span>
-
-          <span>
-            Contribution
-          </span>
-
-        </div>
-
-
-        {data.map(
-          (entry, index) => {
-
-            const isActive =
-              activeIndex === index;
-
-
-            return (
-              <button
-                key={entry.name}
-                type="button"
-
-                className={`risk-factor-breakdown-row ${
-                  isActive
-                    ? "risk-factor-breakdown-row-active"
-                    : ""
-                }`}
-
-                onMouseEnter={() =>
-                  setActiveIndex(index)
-                }
-
-                onMouseLeave={() =>
-                  setActiveIndex(null)
-                }
-
-                onClick={() =>
-                  handleFactorClick(
-                    null,
-                    index
-                  )
-                }
-              >
-
-                <div className="risk-factor-row-content">
-
-                  <div className="risk-factor-name">
-
-                    <span
-                      className="risk-factor-color"
-
-                      style={{
-                        backgroundColor:
-                          COLORS[
-                            index %
-                              COLORS.length
-                          ],
-                      }}
-                    />
-
-                    <span
-                      title={entry.name}
-                    >
-                      {entry.name}
-                    </span>
-
-                  </div>
-
-
-                  {isActive && (
-                    <div className="risk-factor-explanation">
-
-                      <span className="risk-factor-explanation-label">
-                        Why it matters:
-                      </span>
-
-                      <span className="risk-factor-explanation-text">
-                        {getRiskFactorDescription(
-                          entry.name
-                        )}
-                      </span>
-
-                    </div>
-                  )}
-
-                </div>
-
-
-                <span className="risk-factor-percentage">
-
-                  {Number(
-                    entry.value
-                  ).toFixed(2)}
-                  %
-
-                </span>
-
-              </button>
-            );
-          }
-        )}
 
       </div>
 
     </div>
   );
 }
+
 
 export default RiskFactorPieChart;
