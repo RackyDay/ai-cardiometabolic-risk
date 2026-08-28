@@ -5,6 +5,8 @@ import UserIcon from "../../icons/UserIcon"
 import useMenuBarViewModel from "./useMenuBarViewModel";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
+import HistoryDropdown from "../HistoryDropdown/HistoryDropdown";
+
 
 function MenuBar({ showMenuButton, onMenuClick }) {
   const { pageTitle } = useMenuBarViewModel();
@@ -101,6 +103,7 @@ function MenuBar({ showMenuButton, onMenuClick }) {
       <h1 className="menu-bar-title">{pageTitle}</h1>
 
       <div className="menu-bar-actions">
+        <HistoryDropdown/>
         <div className="menu-profile-wrapper" ref={dropdownRef}>
           <button
             className="menu-profile-name"
