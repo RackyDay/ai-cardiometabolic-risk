@@ -17,21 +17,20 @@ import "./RiskFactorPieChart.css";
  * than its position in the list.
  */
 export const RISK_FACTOR_COLORS = {
-  "Body mass index": "#2563EB",
-  "Diastolic blood pressure": "#7C3AED",
-  "Systolic blood pressure": "#EC4899",
-  "Blood pressure medication status": "#F97316",
-  "Total cholesterol level": "#10B981",
-  "Fasting blood glucose level": "#06B6D4",
-  "Smoking status": "#F59E0B",
-  "Number of cigarettes smoked per day": "#EF4444",
-  "Age": "#6366F1",
-  "Gender": "#14B8A6",
-  "Hypertension diagnosis status": "#8B5CF6",
-  "Resting heart rate": "#F43F5E",
-  "Diabetes diagnosis status": "#0EA5E9",
+  "Body mass index": "#2563EB",                         // Blue
+  "Diastolic blood pressure": "#9333EA",                // Purple
+  "Systolic blood pressure": "#EA580C",                 // Orange
+  "Blood pressure medication status": "#0F766E",        // Teal
+  "Total cholesterol level": "#DB2777",                // Pink
+  "Fasting blood glucose level": "#16A34A",             // Green
+  "Smoking status": "#DC2626",                         // Red
+  "Number of cigarettes smoked per day": "#0891B2",    // Cyan
+  "Age": "#D97706",                                    // Amber
+  "Gender": "#4F46E5",                                 // Indigo
+  "Hypertension diagnosis status": "#854D0E",          // Brown
+  "Resting heart rate": "#BE123C",                     // Dark rose
+  "Diabetes diagnosis status": "#0369A1",              // Dark blue
 };
-
 
 export function getRiskFactorColor(name, index = 0) {
   return (
