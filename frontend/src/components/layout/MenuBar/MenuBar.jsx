@@ -1,6 +1,7 @@
 import "./MenuBar.css";
 import { useContext, useEffect, useRef, useState } from "react";
 import HeartECGIcon from "../../icons/HeartECGIcon";
+import UserIcon from "../../icons/UserIcon"
 import useMenuBarViewModel from "./useMenuBarViewModel";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
@@ -119,7 +120,7 @@ function MenuBar({ showMenuButton, onMenuClick }) {
             aria-label={isAuthenticated ? `Account menu (${displayName})` : "Log in or sign up"}
             title={isAuthenticated ? displayName : "Log in or sign up"}
           >
-            ⋯
+            <UserIcon />
           </button>
 
           {isDropdownOpen && (
