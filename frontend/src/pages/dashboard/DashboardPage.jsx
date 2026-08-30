@@ -348,6 +348,7 @@ function DashboardPage() {
           </div>
 
         </div>
+      </div>
 
 
       {/* =====================================================
@@ -384,645 +385,608 @@ function DashboardPage() {
 
         </div>
 
+        <div className="risk-breakdown-layout">
+          <div className="risk-breakdown-list-panel">
+            {/* ===================================================
+                RISK FACTOR LIST
+            ==================================================== */}
 
-        {/* ===================================================
-            PIE CHART
-        ==================================================== */}
+            {riskFactors.length > 0 && (
+              <div className="risk-breakdown-controls">
+                <div className="risk-breakdown-controls-header">
+                  <span>
+                    Risk factor
+                  </span>
 
-        <RiskFactorPieChart
+                  <span>
+                    Contribution
+                  </span>
+                </div>
 
-          data={pieData}
+                <div
+                  className="risk-factor-list merged-risk-factor-list"
+                  style={{
+                    "--visible-rows": VISIBLE_RISK_FACTOR_ROWS,
+                  }}
+                >
+                  {riskFactors.map((factor, i) => {
 
-          hypotheticalData={
-            hypotheticalPieData
-          }
+                    /* -----------------------------------------
+                      Determine whether factor is changeable
+                    ------------------------------------------ */
 
-          isHypotheticalActive={
-            isHypotheticalActive
-          }
-
-        />
-
-
-        {/* ===================================================
-            RISK FACTOR LIST
-        ==================================================== */}
-
-        {riskFactors.length > 0 && (
-
-          <div className="risk-breakdown-controls">
-
-
-            <div className="risk-breakdown-controls-header">
-
-              <span>
-                Risk factor
-              </span>
-
-
-              <span>
-                Contribution
-              </span>
-
-            </div>
-
-
-            <div
-              className="risk-factor-list merged-risk-factor-list"
-
-              style={{
-                "--visible-rows":
-                  VISIBLE_RISK_FACTOR_ROWS,
-              }}
-            >
-
-              {riskFactors.map(
-                (factor, i) => {
-
-                  /* -----------------------------------------
-                     Determine whether factor is changeable
-                  ------------------------------------------ */
-
-                  const config =
-                    changeableRiskFactors[
-                      factor.feature
-                    ];
-
-
-                  const isChangeable =
-                    Boolean(config);
-
-
-                  /* -----------------------------------------
-                     Map backend feature names
-                     to frontend schema names
-                  ------------------------------------------ */
-
-                  const schemaKey =
-                    factor.feature ===
-                    "male"
-
-                      ? "gender"
-
-                      : factor.feature ===
-                        "BPMeds"
-
-                      ? "bpMeds"
-
-                      : factor.feature;
-
-
-                  /* -----------------------------------------
-                     Current value
-                  ------------------------------------------ */
-
-                  const currentValue =
-                    hypotheticalInputs?.[
-                      schemaKey
-                    ] ??
-                    originalInputs?.[
-                      schemaKey
-                    ] ??
-                    null;
-
-
-                  /* -----------------------------------------
-                     Expansion state
-                  ------------------------------------------ */
-
-                  const isExpanded =
-                    expandedFactor ===
-                    factor.feature;
-
-
-                  return (
-
-                    <div
-
-                      key={
+                    const config =
+                      changeableRiskFactors[
                         factor.feature
-                      }
-
-                      className={`merged-risk-factor-item ${
-                        isChangeable
-                          ? "merged-risk-factor-changeable"
-                          : "merged-risk-factor-fixed"
-                      } ${
-                        isExpanded
-                          ? "merged-risk-factor-expanded"
-                          : ""
-                      }`}
-
-                    >
+                      ];
 
 
-                      {/* =====================================
-                          MAIN FACTOR ROW
-                      ====================================== */}
-
-                      <div className="risk-factor-row">
+                    const isChangeable =
+                      Boolean(config);
 
 
-                        {/* Number */}
+                    /* -----------------------------------------
+                      Map backend feature names
+                      to frontend schema names
+                    ------------------------------------------ */
 
-                        <span className="risk-factor-number">
+                    const schemaKey =
+                      factor.feature ===
+                      "male"
 
-                          {i + 1}.
+                        ? "gender"
 
-                        </span>
+                        : factor.feature ===
+                          "BPMeds"
 
+                        ? "bpMeds"
 
-                        {/* Pie chart colour */}
-
-                        <span
-
-                          className="risk-factor-color"
-
-                          style={{
-                            backgroundColor:
-                              getRiskFactorColor(
-                                factor.label,
-                                i
-                              ),
-                          }}
-
-                        />
+                        : factor.feature;
 
 
-                        {/* Name */}
+                    /* -----------------------------------------
+                      Current value
+                    ------------------------------------------ */
 
-                        <span
-
-                          className="risk-factor-label"
-
-                          title={
-                            factor.label
-                          }
-
-                        >
-
-                          {factor.label}
-
-                        </span>
+                    const currentValue =
+                      hypotheticalInputs?.[
+                        schemaKey
+                      ] ??
+                      originalInputs?.[
+                        schemaKey
+                      ] ??
+                      null;
 
 
-                        {/* Contribution */}
+                    /* -----------------------------------------
+                      Expansion state
+                    ------------------------------------------ */
 
-                        <span
-
-                          className={`risk-factor-tag ${
-                            factor.raisesRisk
-                              ? "risk-factor-tag-up"
-                              : "risk-factor-tag-down"
-                          }`}
-
-                        >
-
-                          {factor.raisesRisk
-                            ? "+"
-                            : "-"}
-
-                          {Math.round(
-                            factor.weightPercent
-                          )}
-
-                          %
-
-                        </span>
+                    const isExpanded =
+                      expandedFactor ===
+                      factor.feature;
 
 
-                        {/* Fixed label */}
+                    return (
 
-                        {!isChangeable && (
+                      <div
 
-                          <span className="risk-factor-locked">
+                        key={
+                          factor.feature
+                        }
 
-                            Fixed
+                        className={`merged-risk-factor-item ${
+                          isChangeable
+                            ? "merged-risk-factor-changeable"
+                            : "merged-risk-factor-fixed"
+                        } ${
+                          isExpanded
+                            ? "merged-risk-factor-expanded"
+                            : ""
+                        }`}
+
+                      >
+
+
+                        {/* =====================================
+                            MAIN FACTOR ROW
+                        ====================================== */}
+
+                        <div className="risk-factor-row">
+
+
+                          {/* Number */}
+
+                          <span className="risk-factor-number">
+
+                            {i + 1}.
 
                           </span>
 
-                        )}
+
+                          {/* Pie chart colour */}
+
+                          <span
+
+                            className="risk-factor-color"
+
+                            style={{
+                              backgroundColor:
+                                getRiskFactorColor(
+                                  factor.label,
+                                  i
+                                ),
+                            }}
+
+                          />
 
 
-                        {/* =================================
-                            DROPDOWN FOR CHANGEABLE FACTORS
-                        ================================== */}
+                          {/* Name */}
 
-                        {isChangeable && (
+                          <span
 
-                          <button
+                            className="risk-factor-label"
 
-                            type="button"
-
-                            className="risk-factor-expand-button"
-
-                            aria-label={
-                              isExpanded
-                                ? `Collapse ${factor.label}`
-                                : `Expand ${factor.label}`
-                            }
-
-                            aria-expanded={
-                              isExpanded
-                            }
-
-                            onClick={() =>
-                              setExpandedFactor(
-                                (current) =>
-                                  current ===
-                                  factor.feature
-                                    ? null
-                                    : factor.feature
-                              )
+                            title={
+                              factor.label
                             }
 
                           >
 
-                            <span
+                            {factor.label}
 
-                              className={`risk-factor-chevron ${
-                                isExpanded
-                                  ? "risk-factor-chevron-open"
-                                  : ""
-                              }`}
+                          </span>
 
-                            >
 
-                              ▼
+                          {/* Contribution */}
+
+                          <span
+
+                            className={`risk-factor-tag ${
+                              factor.raisesRisk
+                                ? "risk-factor-tag-up"
+                                : "risk-factor-tag-down"
+                            }`}
+
+                          >
+
+                            {factor.raisesRisk
+                              ? "+"
+                              : "-"}
+
+                            {Math.round(
+                              factor.weightPercent
+                            )}
+
+                            %
+
+                          </span>
+
+
+                          {/* Fixed label */}
+
+                          {!isChangeable && (
+
+                            <span className="risk-factor-locked">
+
+                              Fixed
 
                             </span>
 
-                          </button>
-
-                        )}
-
-                      </div>
+                          )}
 
 
-                      {/* =====================================
-                          NON-CHANGEABLE FACTOR DESCRIPTION
+                          {/* =================================
+                              DROPDOWN FOR CHANGEABLE FACTORS
+                          ================================== */}
 
-                          Appears only when hovering
-                      ====================================== */}
+                          {isChangeable && (
 
-                      {!isChangeable && (
+                            <button
 
-                        <div className="fixed-factor-description">
+                              type="button"
 
-                          <span className="risk-factor-description-label">
+                              className="risk-factor-expand-button"
 
-                            Why it matters:
+                              aria-label={
+                                isExpanded
+                                  ? `Collapse ${factor.label}`
+                                  : `Expand ${factor.label}`
+                              }
 
-                          </span>
+                              aria-expanded={
+                                isExpanded
+                              }
 
+                              onClick={() =>
+                                setExpandedFactor(
+                                  (current) =>
+                                    current ===
+                                    factor.feature
+                                      ? null
+                                      : factor.feature
+                                )
+                              }
 
-                          <span className="risk-factor-description-text">
+                            >
 
-                            {RISK_FACTOR_DESCRIPTIONS[
-                              factor.label
-                            ] ||
-                              "This factor is included by the risk model because it can provide information relevant to cardiovascular risk."}
+                              <span
 
-                          </span>
+                                className={`risk-factor-chevron ${
+                                  isExpanded
+                                    ? "risk-factor-chevron-open"
+                                    : ""
+                                }`}
+
+                              >
+
+                                ▼
+
+                              </span>
+
+                            </button>
+
+                          )}
 
                         </div>
 
-                      )}
+
+                        {/* =====================================
+                            NON-CHANGEABLE FACTOR DESCRIPTION
+
+                            Appears only when hovering
+                        ====================================== */}
+
+                        {!isChangeable && (
+
+                          <div className="fixed-factor-description">
+
+                            <span className="risk-factor-description-label">
+
+                              Why it matters:
+
+                            </span>
 
 
-                      {/* =====================================
-                          CHANGEABLE FACTOR CONTENT
+                            <span className="risk-factor-description-text">
 
-                          Only visible when dropdown
-                          is opened.
-                      ====================================== */}
+                              {RISK_FACTOR_DESCRIPTIONS[
+                                factor.label
+                              ] ||
+                                "This factor is included by the risk model because it can provide information relevant to cardiovascular risk."}
 
-                      {isChangeable &&
-                        isExpanded && (
+                            </span>
 
-                          <div className="risk-factor-expanded-content">
+                          </div>
 
-
-                            {/* =================================
-                                WHY IT MATTERS
-                            ================================== */}
-
-                            <div className="risk-factor-description">
-
-                              <span className="risk-factor-description-label">
-
-                                Why it matters:
-
-                              </span>
+                        )}
 
 
-                              <span className="risk-factor-description-text">
+                        {/* =====================================
+                            CHANGEABLE FACTOR CONTENT
 
-                                {RISK_FACTOR_DESCRIPTIONS[
-                                  factor.label
-                                ] ||
-                                  "This factor is included by the risk model because it can provide information relevant to cardiovascular risk."}
+                            Only visible when dropdown
+                            is opened.
+                        ====================================== */}
 
-                              </span>
+                        {isChangeable &&
+                          isExpanded && (
 
-                            </div>
+                            <div className="risk-factor-expanded-content">
 
 
-                            {/* =================================
-                                WHAT-IF CONTROL
-                            ================================== */}
+                              {/* =================================
+                                  WHY IT MATTERS
+                              ================================== */}
 
-                            <div className="what-if-section">
+                              <div className="risk-factor-description">
 
-                              <div className="what-if-heading">
+                                <span className="risk-factor-description-label">
 
-                                <span>
-                                  What-if adjustment
+                                  Why it matters:
+
                                 </span>
 
 
-                                <span className="what-if-badge">
+                                <span className="risk-factor-description-text">
 
-                                  Changeable
+                                  {RISK_FACTOR_DESCRIPTIONS[
+                                    factor.label
+                                  ] ||
+                                    "This factor is included by the risk model because it can provide information relevant to cardiovascular risk."}
 
                                 </span>
 
                               </div>
 
 
-                              {config.type ===
-                                "slider" && (
+                              {/* =================================
+                                  WHAT-IF CONTROL
+                              ================================== */}
 
-                                <RiskFactorSlider
+                              <div className="what-if-section">
 
-                                  factor={
-                                    factor
-                                  }
+                                <div className="what-if-heading">
 
-                                  value={
-                                    currentValue
-                                  }
-
-                                  config={
-                                    config
-                                  }
-
-                                  onChange={
-                                    updateHypotheticalInput
-                                  }
-
-                                />
-
-                              )}
+                                  <span>
+                                    What-if adjustment
+                                  </span>
 
 
-                              {config.type ===
-                                "toggle" && (
+                                  <span className="what-if-badge">
 
-                                <RiskFactorToggle
+                                    Changeable
 
-                                  factor={
-                                    factor
-                                  }
+                                  </span>
 
-                                  value={
-                                    currentValue
-                                  }
+                                </div>
 
-                                  onChange={
-                                    updateHypotheticalInput
-                                  }
 
-                                />
+                                {config.type ===
+                                  "slider" && (
 
-                              )}
+                                  <RiskFactorSlider
+
+                                    factor={
+                                      factor
+                                    }
+
+                                    value={
+                                      currentValue
+                                    }
+
+                                    config={
+                                      config
+                                    }
+
+                                    onChange={
+                                      updateHypotheticalInput
+                                    }
+
+                                  />
+
+                                )}
+
+
+                                {config.type ===
+                                  "toggle" && (
+
+                                  <RiskFactorToggle
+
+                                    factor={
+                                      factor
+                                    }
+
+                                    value={
+                                      currentValue
+                                    }
+
+                                    onChange={
+                                      updateHypotheticalInput
+                                    }
+
+                                  />
+
+                                )}
+
+                              </div>
 
                             </div>
 
-                          </div>
+                          )}
 
-                        )}
+                      </div>
+
+                    );
+
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Keep your what-if summary here too */}
+            {isHypotheticalActive &&
+              hypotheticalScore !== null &&
+              hypotheticalScore !== undefined && (
+                <div className="what-if-summary">
+                  <div className="what-if-summary-header">
+
+                    <div>
+
+                      <span className="what-if-summary-label">
+
+                        What-if scenario
+
+                      </span>
+
+
+                      <span className="what-if-summary-description">
+
+                        Your original assessment
+                        remains unchanged.
+
+                      </span>
 
                     </div>
 
-                  );
 
-                }
+                    <button
+
+                      type="button"
+
+                      className="what-if-reset-button"
+
+                      onClick={
+                        resetHypothetical
+                      }
+
+                    >
+
+                      Reset
+
+                    </button>
+
+                  </div>
+
+
+                  <div className="what-if-score-row">
+
+
+                    <div className="what-if-score">
+
+                      <span>
+                        Original
+                      </span>
+
+
+                      <strong>
+
+                        {Number(
+                          displayScore
+                        ).toFixed(1)}
+
+                        %
+
+                      </strong>
+
+                    </div>
+
+
+                    <div className="what-if-arrow">
+
+                      →
+
+                    </div>
+
+
+                    <div className="what-if-score">
+
+                      <span>
+                        What-if
+                      </span>
+
+
+                      <strong>
+
+                        {Number(
+                          hypotheticalScore
+                        ).toFixed(1)}
+
+                        %
+
+                      </strong>
+
+                    </div>
+
+
+                    <div
+
+                      className={`what-if-difference ${
+                        hypotheticalScore <
+                        displayScore
+
+                          ? "what-if-improved"
+
+                          : hypotheticalScore >
+                            displayScore
+
+                          ? "what-if-increased"
+
+                          : ""
+                      }`}
+
+                    >
+
+                      {hypotheticalScore <
+                      displayScore
+
+                        ? `${(
+                            displayScore -
+                            hypotheticalScore
+                          ).toFixed(
+                            1
+                          )}% lower`
+
+                        : hypotheticalScore >
+                          displayScore
+
+                        ? `${(
+                            hypotheticalScore -
+                            displayScore
+                          ).toFixed(
+                            1
+                          )}% higher`
+
+                        : "No change"}
+
+                    </div>
+                  </div>
+                </div>
               )}
-
-            </div>
-
           </div>
 
-        )}
-
-
-        {/* ===================================================
-            WHAT-IF SUMMARY
-        ==================================================== */}
-
-        {isHypotheticalActive &&
-          hypotheticalScore !== null &&
-          hypotheticalScore !== undefined && (
-
-            <div className="what-if-summary">
-
-
-              <div className="what-if-summary-header">
-
-                <div>
-
-                  <span className="what-if-summary-label">
-
-                    What-if scenario
-
-                  </span>
-
-
-                  <span className="what-if-summary-description">
-
-                    Your original assessment
-                    remains unchanged.
-
-                  </span>
-
-                </div>
-
-
-                <button
-
-                  type="button"
-
-                  className="what-if-reset-button"
-
-                  onClick={
-                    resetHypothetical
-                  }
-
-                >
-
-                  Reset
-
-                </button>
-
-              </div>
-
-
-              <div className="what-if-score-row">
-
-
-                <div className="what-if-score">
-
-                  <span>
-                    Original
-                  </span>
-
-
-                  <strong>
-
-                    {Number(
-                      displayScore
-                    ).toFixed(1)}
-
-                    %
-
-                  </strong>
-
-                </div>
-
-
-                <div className="what-if-arrow">
-
-                  →
-
-                </div>
-
-
-                <div className="what-if-score">
-
-                  <span>
-                    What-if
-                  </span>
-
-
-                  <strong>
-
-                    {Number(
-                      hypotheticalScore
-                    ).toFixed(1)}
-
-                    %
-
-                  </strong>
-
-                </div>
-
-
-                <div
-
-                  className={`what-if-difference ${
-                    hypotheticalScore <
-                    displayScore
-
-                      ? "what-if-improved"
-
-                      : hypotheticalScore >
-                        displayScore
-
-                      ? "what-if-increased"
-
-                      : ""
-                  }`}
-
-                >
-
-                  {hypotheticalScore <
-                  displayScore
-
-                    ? `${(
-                        displayScore -
-                        hypotheticalScore
-                      ).toFixed(
-                        1
-                      )}% lower`
-
-                    : hypotheticalScore >
-                      displayScore
-
-                    ? `${(
-                        hypotheticalScore -
-                        displayScore
-                      ).toFixed(
-                        1
-                      )}% higher`
-
-                    : "No change"}
-
-                </div>
-
-              </div>
-
-            </div>
-
-          )}
-
+          <div className="risk-breakdown-chart-panel">
+            <RiskFactorPieChart
+              data={pieData}
+              hypotheticalData={hypotheticalPieData}
+              isHypotheticalActive={isHypotheticalActive}
+            />
+          </div>
+        </div>
       </div>
 
       {/* ===================================================
             INSIGHTS
         ==================================================== */}
 
-        <div className="card insights-card">
+      <div className="card insights-card">
 
-          <h2 className="card-title">
-            Insights
-          </h2>
-
-
-          <p className="insight-subheading">
-            Since the last assessment:
-          </p>
+        <h2 className="card-title">
+          Insights
+        </h2>
 
 
-          <div className="insight-list">
-
-            {INSIGHTS.map(
-              (text, i) => (
-
-                <div
-                  key={i}
-                  className="insight-item insight-green"
-                >
-
-                  {text}
-
-                </div>
-
-              )
-            )}
-
-          </div>
+        <p className="insight-subheading">
+          Since the last assessment:
+        </p>
 
 
-          <p className="insight-subheading stress-heading">
-            Stress
-          </p>
+        <div className="insight-list">
+
+          {INSIGHTS.map(
+            (text, i) => (
+
+              <div
+                key={i}
+                className="insight-item insight-green"
+              >
+
+                {text}
+
+              </div>
+
+            )
+          )}
+
+        </div>
 
 
-          <div className="insight-item insight-red">
+        <p className="insight-subheading stress-heading">
+          Stress
+        </p>
 
-            Your data shows traits that
-            are usually associated with
-            stress. This could suggest
-            that you may be experiencing
-            high stress.
 
-          </div>
+        <div className="insight-item insight-red">
+
+          Your data shows traits that
+          are usually associated with
+          stress. This could suggest
+          that you may be experiencing
+          high stress.
 
         </div>
 
       </div>
-
 
       {/* =====================================================
           10-YEAR CARDIOVASCULAR HEALTH TREND

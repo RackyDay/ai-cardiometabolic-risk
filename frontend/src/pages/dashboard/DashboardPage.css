@@ -231,14 +231,32 @@
   line-height: 1.5;
 }
 
+.risk-breakdown-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.65fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.risk-breakdown-list-panel {
+  min-width: 0;
+}
+
+.risk-breakdown-chart-panel {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.risk-breakdown-controls {
+  margin-top: 0;
+}
+
 
 /* =========================================================
    Risk factor list header
 ========================================================= */
-
-.risk-breakdown-controls {
-  margin-top: 1.25rem;
-}
 
 .risk-breakdown-controls-header {
   display: grid;
@@ -1317,7 +1335,16 @@ strong {
     align-self: flex-start;
   }
 
+  .risk-breakdown-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .risk-breakdown-chart-panel {
+    order: -1;
+  }
 }
+
+
 
 
 @media (max-width: 36rem) {
