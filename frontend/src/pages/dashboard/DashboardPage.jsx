@@ -10,7 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 
-import EyeIcon from "../../components/icons/EyeIcon";
+// import EyeIcon from "../../components/icons/EyeIcon";
 import AlertTriangleIcon from "../../components/icons/AlertTriangleIcon";
 import RiskGauge from "./components/RiskGauge";
 
@@ -33,7 +33,7 @@ const INSIGHTS = [
   "BMI result is now closer to the ideal value",
 ];
 
-
+// Tempoorary
 const TREND_DATA = [
   { year: 1, risk: 35 },
   { year: 2, risk: 92 },
@@ -348,62 +348,6 @@ function DashboardPage() {
           </div>
 
         </div>
-
-
-        {/* ===================================================
-            INSIGHTS
-        ==================================================== */}
-
-        <div className="card insights-card">
-
-          <h2 className="card-title">
-            Insights
-          </h2>
-
-
-          <p className="insight-subheading">
-            Since the last assessment:
-          </p>
-
-
-          <div className="insight-list">
-
-            {INSIGHTS.map(
-              (text, i) => (
-
-                <div
-                  key={i}
-                  className="insight-item insight-green"
-                >
-
-                  {text}
-
-                </div>
-
-              )
-            )}
-
-          </div>
-
-
-          <p className="insight-subheading stress-heading">
-            Stress
-          </p>
-
-
-          <div className="insight-item insight-red">
-
-            Your data shows traits that
-            are usually associated with
-            stress. This could suggest
-            that you may be experiencing
-            high stress.
-
-          </div>
-
-        </div>
-
-      </div>
 
 
       {/* =====================================================
@@ -1021,6 +965,61 @@ function DashboardPage() {
             </div>
 
           )}
+
+      </div>
+
+      {/* ===================================================
+            INSIGHTS
+        ==================================================== */}
+
+        <div className="card insights-card">
+
+          <h2 className="card-title">
+            Insights
+          </h2>
+
+
+          <p className="insight-subheading">
+            Since the last assessment:
+          </p>
+
+
+          <div className="insight-list">
+
+            {INSIGHTS.map(
+              (text, i) => (
+
+                <div
+                  key={i}
+                  className="insight-item insight-green"
+                >
+
+                  {text}
+
+                </div>
+
+              )
+            )}
+
+          </div>
+
+
+          <p className="insight-subheading stress-heading">
+            Stress
+          </p>
+
+
+          <div className="insight-item insight-red">
+
+            Your data shows traits that
+            are usually associated with
+            stress. This could suggest
+            that you may be experiencing
+            high stress.
+
+          </div>
+
+        </div>
 
       </div>
 
