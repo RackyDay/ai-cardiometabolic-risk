@@ -1,6 +1,7 @@
 import "./MenuBar.css";
 import { useContext, useEffect, useRef, useState } from "react";
 import HeartECGIcon from "../../icons/HeartECGIcon";
+import UserIcon from "../../icons/UserIcon"
 import useMenuBarViewModel from "./useMenuBarViewModel";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
@@ -19,7 +20,7 @@ function MenuBar({ showMenuButton, onMenuClick }) {
   // last-resort fallback for the rare case neither is available.
   const displayName = isAuthenticated
     ? (user?.username || user?.fullName || user?.email)
-    : "Guest";
+    : "Log in or sign up";
 
   // Only listen for outside clicks while the dropdown is actually open -
   // otherwise every click anywhere in the app would run this handler for no
@@ -43,12 +44,21 @@ function MenuBar({ showMenuButton, onMenuClick }) {
   // there's nothing to put in a dropdown (no settings, nothing to log out
   // of), so it goes straight to the auth page instead, same as before this
   // control had a dropdown at all.
-  const handleProfileClick = () => {
+  const handleDesktopProfileClick = () => {
     if (isAuthenticated) {
       setIsDropdownOpen((open) => !open);
     } else {
       navigate("/auth", { state: { from: location.pathname } });
     }
+  };
+
+  const handleMobileProfileClick = () => {
+    setIsDropdownOpen((open) => !open);
+  };
+
+  const handleAuthClick = () => {
+    setIsDropdownOpen(false);
+    navigate("/auth", { state: { from: location.pathname } });
   };
 
   const handleSettingsClick = () => {
@@ -93,31 +103,49 @@ function MenuBar({ showMenuButton, onMenuClick }) {
       <div className="menu-bar-actions">
         <div className="menu-profile-wrapper" ref={dropdownRef}>
           <button
-            className="menu-profile-button"
-            onClick={handleProfileClick}
+            className="menu-profile-name"
+            onClick={handleDesktopProfileClick}
             aria-haspopup={isAuthenticated ? "menu" : undefined}
             aria-expanded={isAuthenticated ? isDropdownOpen : undefined}
             aria-label={isAuthenticated ? `Account menu (${displayName})` : "Log in or sign up"}
             title={isAuthenticated ? displayName : "Log in or sign up"}
           >
-            ⋯
+            {displayName}
+          </button>
+          <button
+            className="menu-profile-button"
+            onClick={handleMobileProfileClick}
+            aria-haspopup={isAuthenticated ? "menu" : undefined}
+            aria-expanded={isAuthenticated ? isDropdownOpen : undefined}
+            aria-label={isAuthenticated ? `Account menu (${displayName})` : "Log in or sign up"}
+            title={isAuthenticated ? displayName : "Log in or sign up"}
+          >
+            <UserIcon />
           </button>
 
-          {isAuthenticated && isDropdownOpen && (
+          {isDropdownOpen && (
             <div className="menu-profile-dropdown" role="menu">
-              <div className="menu-profile-dropdown-header">
-                <span>Signed in as</span>
-                <strong>{displayName}</strong>
-              </div>
+              {isAuthenticated ? (
+                <>
+                  <div className="menu-profile-dropdown-header">
+                    <span>Signed in as</span>
+                    <strong>{displayName}</strong>
+                  </div>
 
-              <div className="menu-profile-dropdown-divider" />
+                  <div className="menu-profile-dropdown-divider" />
 
-              <button role="menuitem" onClick={handleSettingsClick}>
-                Settings
-              </button>
-              <button role="menuitem" onClick={handleLogoutClick}>
-                Log out
-              </button>
+                  <button role="menuitem" onClick={handleSettingsClick}>
+                    Settings
+                  </button>
+                  <button role="menuitem" onClick={handleLogoutClick}>
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <button role="menuitem" onClick={handleAuthClick}>
+                  Log in or sign up
+                </button>
+              )}
             </div>
           )}
         </div>

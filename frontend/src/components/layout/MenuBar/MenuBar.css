@@ -67,18 +67,30 @@
 }
 
 .menu-profile-name {
-  height: 34px;
+  display: none;
+}
+
+.menu-profile-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #111827;
+  cursor: pointer;
   display: grid;
   place-items: center;
-  cursor: pointer;
-  padding: 0 10px;
-  border: none;
-  border-radius: 17px;
-  background: transparent;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-h);
-  white-space: nowrap;
+  padding: 0;
+}
+
+.menu-profile-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+.menu-profile-button:hover {
+  background: rgba(63, 115, 246, 0.08);
+  color: #3f73f6;
 }
 
 .menu-profile-dropdown {
@@ -98,6 +110,7 @@
 }
 
 .menu-profile-dropdown button {
+  width: 100%;
   border: none;
   background: transparent;
   text-align: left;
@@ -110,26 +123,6 @@
 .menu-profile-dropdown button:hover {
   background: #f0f3fa;
 }
-
-.menu-profile-button {
-    width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: #111827;
-    font-size: 1.8rem;
-    line-height: 1;
-    cursor: pointer;
-    display: grid;
-    place-items: center;
-    padding: 0;
-  }
-
-  .menu-profile-button:hover {
-    background: rgba(63, 115, 246, 0.08);
-    color: #3f73f6;
-  }
 
   .menu-profile-dropdown-header {
     padding: 0.75rem 1rem;
@@ -173,40 +166,37 @@
 }
 
 @media (min-width: 768px) {
-  .menu-drawer-button {
+  .menu-profile-button {
     display: none;
-  }
-
-  .menu-bar {
-    height: 70px;
-    padding: 0 1.5rem;
-  }
-
-  .menu-bar-title {
-    font-size: 1.75rem;
-  }
-
-  .menu-icon-button {
-    width: 40px;
-    height: 40px;
-  }
-
-  .menu-icon-button svg {
-    width: 26px;
-    height: 26px;
   }
 
   .menu-profile-name {
     height: 40px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    padding: 0 10px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
     font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-h);
+    white-space: nowrap;
   }
 
-  .menu-logo-button {
-    margin-left: -16px;
+  .menu-profile-name:hover {
+    background: rgba(63, 115, 246, 0.08);
+    color: #3f73f6;
   }
 
-  .menu-logo-button svg {
-    width: 52px;
-    height: 52px;
-  } 
+  .menu-profile-dropdown {
+    min-width: 140px;
+    max-width: 180px;
+  }
+
+  .menu-profile-dropdown-header,
+  .menu-profile-dropdown-divider {
+    display: none;
+  }
 }
