@@ -10,7 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 
-// import EyeIcon from "../../components/icons/EyeIcon";
+
 import AlertTriangleIcon from "../../components/icons/AlertTriangleIcon";
 import RiskGauge from "./components/RiskGauge";
 
@@ -22,6 +22,9 @@ import RiskFactorPieChart, {
 import { useDashboardViewModel } from "./useDashboardViewModel";
 
 import "./DashboardPage.css";
+
+import PencilIcon from "../../components/icons/PencilIcon";
+import EditAssessmentModal from "./EditAssessmentModal";
 
 
 const VISIBLE_RISK_FACTOR_ROWS = 5;
@@ -67,6 +70,8 @@ function RiskFactorSlider({
     value === undefined
       ? config.min
       : Number(value);
+
+  console.log("riskFactors with savedValue:", riskFactors);
 
   return (
     <div className="what-if-control">
@@ -256,6 +261,11 @@ function DashboardPage() {
   ] = useState(null);
 
 
+  const [
+    isEditOpen,
+    setIsEditOpen,
+  ] = useState(false);
+
   return (
     <div className="dashboard-page">
 
@@ -382,6 +392,20 @@ function DashboardPage() {
             </p>
 
           </div>
+                    {/*  */}
+
+          <button
+            type="button"
+            className="edit-assessment-button"
+            aria-label="Edit risk assessment"
+            onClick={() => setIsEditOpen(true)}
+          >
+
+            <PencilIcon size={15} />
+
+            <span>Edit assessment</span>
+
+          </button>
 
         </div>
 
@@ -521,19 +545,31 @@ function DashboardPage() {
                           />
 
 
-                          {/* Name */}
+                          {/* Name + saved input value */}
 
                           <span
 
                             className="risk-factor-label"
 
                             title={
-                              factor.label
+                              factor.savedValue
+                                ? `${factor.label}: ${factor.savedValue}`
+                                : factor.label
                             }
 
                           >
 
                             {factor.label}
+
+                            {factor.savedValue && (
+
+                              <span className="risk-factor-value">
+
+                                : {factor.savedValue}
+
+                              </span>
+
+                            )}
 
                           </span>
 
@@ -1157,6 +1193,7 @@ function DashboardPage() {
 
         >
 
+        
           <div
 
             className="insight-modal"
@@ -1245,6 +1282,12 @@ function DashboardPage() {
         </div>
 
       )}
+    
+    {isEditOpen && (
+          <EditAssessmentModal
+            onClose={() => setIsEditOpen(false)}
+          />
+    ) }
 
     </div>
   );
