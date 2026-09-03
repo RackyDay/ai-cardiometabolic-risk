@@ -11,6 +11,8 @@ import { predictRisk } from "../../services/api";
 import { buildPredictionPayload } from "../input/riskInputTransform";
 
 import { CHANGEABLE_RISK_FACTORS } from "./changeableRiskFactors";
+import { formatSavedValue } from "./formatSavedValue";
+
 
 
 /* =========================================================
@@ -38,7 +40,7 @@ function labelForFeature(feature) {
    Build dashboard risk factors
 ========================================================= */
 
-function buildRiskFactors(contributors) {
+function buildRiskFactors(contributors, originalInputs) {
   const safeContributors =
     contributors ?? [];
 
@@ -60,29 +62,43 @@ function buildRiskFactors(contributors) {
         b.contribution -
         a.contribution
     )
-    .map((contributor) => ({
-      feature:
-        contributor.feature,
+    .map((contributor) => {
 
-      label:
-        labelForFeature(
+      const schemaKey =
+        FEATURE_TO_SCHEMA_KEY[
           contributor.feature
-        ),
+        ] || contributor.feature;
 
-      raisesRisk:
-        contributor.contribution > 0,
+      return {
+        feature:
+          contributor.feature,
 
-      weightPercent:
-        totalAbsContribution === 0
-          ? 0
-          : (
-              Math.abs(
-                contributor.contribution
-              ) /
-              totalAbsContribution
-            ) *
-            100,
-    }));
+        label:
+          labelForFeature(
+            contributor.feature
+          ),
+
+        raisesRisk:
+          contributor.contribution > 0,
+
+        weightPercent:
+          totalAbsContribution === 0
+            ? 0
+            : (
+                Math.abs(
+                  contributor.contribution
+                ) /
+                totalAbsContribution
+              ) *
+              100,
+
+        savedValue:
+          formatSavedValue(
+            schemaKey,
+            originalInputs?.[schemaKey]
+          ),
+      };
+    });
 }
 
 
@@ -156,6 +172,8 @@ export function useDashboardViewModel() {
     riskInputs,
   } = useContext(RiskContext);
 
+  console.log("riskInputs from context:", riskInputs);
+
 
   const contributors =
     topContributors ?? [];
@@ -224,9 +242,11 @@ export function useDashboardViewModel() {
 
   const riskFactors =
     buildRiskFactors(
-      contributors
+      contributors,
+      originalInputsRef.current
     );
 
+  
 
   const pieData =
     buildPieData(
