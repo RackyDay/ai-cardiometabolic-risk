@@ -4,9 +4,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from supabase_client import supabase, supabase_admin
 from schemas import AuthResponse, LoginRequest, SignUpRequest, UserOut
 
-security = HTTPBearer()
-optional_security = HTTPBearer(auto_error=False)
-
+security = HTTPBearer(auto_error=False)
 
 def _maybe_single_data(query) -> dict | None:
     """.maybe_single().execute() returns None outright (not a response
@@ -17,59 +15,23 @@ def _maybe_single_data(query) -> dict | None:
     result = query.execute()
     return result.data if result is not None else None
 
+def get_optional_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)):
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    token = credentials.credentials
-
-    try:
-        response = supabase.auth.get_user(token)
-        return response.user
-    except Exception:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or expired token"
-        )
-
-
-def get_current_user_and_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """Like get_current_user, but also returns the raw access token - for
-    endpoints that need to make RLS-scoped requests as this user (via
-    get_user_scoped_client) in addition to just knowing who they are.
-    """
+    if credentials is None:
+        return None #non logged in user
     token = credentials.credentials
 
     try:
         response = supabase.auth.get_user(token)
         return response.user, token
     except Exception:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or expired token"
-        )
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-
-def get_current_user_optional(
-    credentials: HTTPAuthorizationCredentials | None = Depends(optional_security)
-):
-    """Like get_current_user, but returns None instead of raising when no
-    token is supplied or the token doesn't validate - for endpoints (like
-    /predict) that work anonymously but tie their result to an account when
-    the caller happens to be logged in. Returns (user, access_token) so the
-    caller can also make RLS-scoped requests as this user.
-    """
-    if credentials is None:
-        return None
-
-    try:
-        response = supabase.auth.get_user(credentials.credentials)
-        return response.user, credentials.credentials
-    except Exception:
-        return None
-
+def get_current_user_and_token(auth = Depends(get_optional_user)):
+    if auth is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user, token = auth
+    return (user, token)
 
 def _resolve_login_email(identifier: str) -> str:
     """Accept either an email or a username and return the email to

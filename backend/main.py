@@ -16,9 +16,8 @@ from schemas import (
 
 from auth import (
     _maybe_single_data,
-    get_current_user,
     get_current_user_and_token,
-    get_current_user_optional,
+    get_optional_user,
     log_in,
     log_out,
     sign_up,
@@ -26,6 +25,10 @@ from auth import (
 from supabase_client import get_user_scoped_client, supabase_admin
 
 logger = logging.getLogger("uvicorn.error")
+from schemas import PredictionResponse, RiskInputData
+
+from uuid import UUID
+import database as db
 
 app = FastAPI()
 
@@ -54,31 +57,44 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 @app.post("/predict", response_model=PredictionResponse)
-def predict(data: RiskInputData, auth=Depends(get_current_user_optional)):
+def predict(data: RiskInputData, auth=Depends(get_optional_user)):
     # data is already validated/coerced against RiskInputData's field
     # constraints by FastAPI before this line runs. response_model in turn
     # validates/serializes predict_risk()'s return value on the way out.
     result = predict_risk(data)
 
     if auth is not None:
-        # Logged in: persist this submission to the user's account. Uses a
-        # client scoped to their access token (not the service-role key) so
-        # the existing RLS policies (auth.uid() = user_id) enforce that a
-        # user can only ever write their own rows.
-        _, access_token = auth
-        scoped_client = get_user_scoped_client(access_token)
-        calc = (
-            scoped_client.table("risk_calculations")
-            .insert({"risk_score": result["risk_score"]})
-            .execute()
-        )
-        riskcalc_id = calc.data[0]["riskcalc_id"]
-        scoped_client.table("risk_inputs").insert({
-            "riskcalc_id": riskcalc_id,
-            "inputs_JSON": data.model_dump(),
-        }).execute()
+        user, token = auth
+        riskcalc_id = db.save_assessment(user.id, result["risk_score"], "1", data.model_dump(), token)
 
+    #return riskcalc_id also if signed in
     return result
+
+@app.post("/delete")
+def delete(assessment_id, auth = Depends(get_optional_user)):
+    if auth is not None:
+        _, token = auth
+        db.delete_assessment(assessment_id, token)
+
+@app.post("/edit")
+def edit(assessment_id, data: RiskInputData, auth = Depends(get_optional_user)):
+    if auth is not None:
+        _, token = auth
+        db.edit_assessment(assessment_id, data.model_dump(), token)
+
+    predict(data, auth)
+
+@app.get("/api/risk-calculations")
+async def get_assessment_history(auth = Depends(get_optional_user)):
+    if auth is not None:
+        _, token = auth
+        risk_calculations = db.fetch_assessment_history(token)
+
+@app.get("/api/risk-calculations/{calculation_id}")
+async def get_risk_calculation(calculation_id: UUID, auth = Depends(get_optional_user)):
+    if auth is not None:
+        _, token = auth
+        risk_calc, risk_inputs = db.fetch_risk_calculation(calculation_id, token)
 
 @app.get("/predictions/latest", response_model=LatestPredictionResponse)
 def latest_prediction(auth=Depends(get_current_user_and_token)):
@@ -87,35 +103,25 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
     every visit. RLS (via the user-scoped client) is what actually limits
     this to the caller's own data - there's no explicit user_id filter here.
     """
-    _, access_token = auth
-    scoped_client = get_user_scoped_client(access_token)
 
-    calc = (
-        scoped_client.table("risk_calculations")
-        .select("riskcalc_id, risk_score, riskcalc_timestamp")
-        .order("riskcalc_timestamp", desc=True)
-        .limit(1)
-        .execute()
-    )
-    if not calc.data:
+    _, token = auth
+
+    latest = db.fetch_latest_risk_calculation(token)
+
+    if not latest:
         return LatestPredictionResponse(has_history=False)
 
-    latest = calc.data[0]
+    calculation, inputs = latest
 
     # top_contributors isn't persisted (only risk_score is) - recompute it
     # from the stored inputs via predict_risk(), which is deterministic
     # (see test_predict_is_deterministic), so this matches what was shown
     # at submission time.
-    inputs_row = _maybe_single_data(
-        scoped_client.table("risk_inputs")
-        .select("inputs_JSON")
-        .eq("riskcalc_id", latest["riskcalc_id"])
-        .maybe_single()
-    )
+
     top_contributors = None
-    if inputs_row and inputs_row.get("inputs_JSON"):
+    if inputs and inputs.get("inputs_JSON"):
         try:
-            reconstructed = RiskInputData(**inputs_row["inputs_JSON"])
+            reconstructed = RiskInputData(**inputs["inputs_JSON"])
             top_contributors = predict_risk(reconstructed)["top_contributors"]
         except Exception:
             # Stored inputs don't match the current RiskInputData shape
@@ -125,18 +131,14 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
 
     return LatestPredictionResponse(
         has_history=True,
-        risk_score=latest["risk_score"],
+        risk_score=calculation["risk_score"],
         top_contributors=top_contributors,
-        riskcalc_timestamp=latest["riskcalc_timestamp"],
+        riskcalc_timestamp=calculation["riskcalc_timestamp"],
     )
 
 @app.get("/learn")
 def learn():
     pass
-
-@app.post("/test")
-def test_endpoint(data: RiskInputData):
-    return {"message": f"Received age: {data.age}"}
 
 @app.get("/")
 def root():
@@ -170,7 +172,8 @@ def logout(authorization: str | None = Header(default=None)):
     return {"message": "Logged out"}
 
 @app.get("/me")
-def me(user=Depends(get_current_user)):
+def me(auth=Depends(get_current_user_and_token)):
+    user, _ = auth
     profile = _maybe_single_data(
         supabase_admin.table("profiles").select("user_displayname").eq("user_id", user.id).maybe_single()
     )
@@ -179,3 +182,4 @@ def me(user=Depends(get_current_user)):
         "email": user.email,
         "username": profile.get("user_displayname") if profile else None,
     }
+

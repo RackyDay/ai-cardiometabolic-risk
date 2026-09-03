@@ -47,6 +47,22 @@ export const predictRisk = async (inputData, accessToken) => {
   return res.json();
 };
 
+export const editRisk = async (inputData) => {
+  const rest = await fetch(`${API_URL}/predict`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json" },
+    body: JSON.stringify(inputData)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => null);
+    const detail = errorBody?.detail ? JSON.stringify(errorBody.detail) : res.statusText;
+    throw new Error(`Error during updating risk inputs (${res.status}): ${detail}`);  
+  }
+
+  return res.json()
+}
+
 export const getLearningContent = async () => {
   const res = await fetch(`${API_URL}/learn`);
   return res.json();
