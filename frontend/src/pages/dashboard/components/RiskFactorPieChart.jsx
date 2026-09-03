@@ -6,6 +6,7 @@ import {
   PieChart,
   ResponsiveContainer,
   Tooltip,
+  Sector,
 } from "recharts";
 
 import "./RiskFactorPieChart.css";
@@ -295,159 +296,35 @@ function RiskFactorPieChart({
 
               <Pie
                 data={chartData}
-
                 dataKey="value"
-
                 nameKey="name"
-
                 cx="50%"
-
                 cy="50%"
-
                 innerRadius={90}
-
                 outerRadius={155}
-
                 paddingAngle={2}
-
                 stroke="#ffffff"
-
                 strokeWidth={2}
-
                 activeIndex={
                   highlightedIndex ??
                   undefined
                 }
 
-                activeShape={(props) => {
-
-                  const {
-                    cx,
-                    cy,
-                    innerRadius,
-                    outerRadius,
-                    startAngle,
-                    endAngle,
-                    fill,
-                  } = props;
-
-
-                  return (
-                    <path
-                      d={`
-                        M ${
-                          cx +
-                          outerRadius *
-                            Math.cos(
-                              (-startAngle *
-                                Math.PI) /
-                                180
-                            )
-                        }
-                        ${
-                          cy +
-                          outerRadius *
-                            Math.sin(
-                              (-startAngle *
-                                Math.PI) /
-                                180
-                            )
-                        }
-
-                        A ${outerRadius}
-                          ${outerRadius}
-                          0 0 0
-                          ${
-                            cx +
-                            outerRadius *
-                              Math.cos(
-                                (-endAngle *
-                                  Math.PI) /
-                                  180
-                              )
-                          }
-                          ${
-                            cy +
-                            outerRadius *
-                              Math.sin(
-                                (-endAngle *
-                                  Math.PI) /
-                                  180
-                              )
-                          }
-
-                        L ${
-                          cx +
-                          innerRadius *
-                            Math.cos(
-                              (-endAngle *
-                                Math.PI) /
-                                180
-                            )
-                        }
-                        ${
-                          cy +
-                          innerRadius *
-                            Math.sin(
-                              (-endAngle *
-                                Math.PI) /
-                                180
-                            )
-                        }
-
-                        A ${innerRadius}
-                          ${innerRadius}
-                          0 0 1
-                          ${
-                            cx +
-                            innerRadius *
-                              Math.cos(
-                                (-startAngle *
-                                  Math.PI) /
-                                  180
-                              )
-                          }
-                          ${
-                            cy +
-                            innerRadius *
-                              Math.sin(
-                                (-startAngle *
-                                  Math.PI) /
-                                  180
-                              )
-                          }
-
-                        Z
-                      `}
-
-                      fill={fill}
-
-                      stroke="#ffffff"
-
-                      strokeWidth={3}
-
-                      style={{
-                        filter:
-                          "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12))",
-
-                        transition:
-                          "all 0.2s ease",
-                      }}
-                    />
-                  );
-                }}
-
-                onMouseEnter={
-                  handleMouseEnter
-                }
-
-                onMouseLeave={
-                  handleMouseLeave
-                }
-
-                onClick={
-                  handleClick
-                }
+               activeShape={(props) => (
+              <Sector {...props}
+              outerRadius={props.outerRadius + 6}
+              stroke="#ffffff"
+              strokeWidth={3}
+              style={{
+              filter:
+              "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12))",
+              transition: "all 0.2s ease",
+              }}
+              />                                  // Bug fix when the pie becomes deformed when one sector is a major factor.
+              )}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={ handleMouseLeave}
+                onClick={ handleClick}
               >
 
                 {chartData.map(
@@ -455,15 +332,11 @@ function RiskFactorPieChart({
 
                     <Cell
                       key={`cell-${entry.name}`}
-
                       /*
                        * Stable colour based on
                        * the actual factor name.
                        */
-                      fill={getRiskFactorColor(
-                        entry.name,
-                        index
-                      )}
+                      fill={getRiskFactorColor(entry.name,index)}
 
                       opacity={
                         highlightedIndex ===
