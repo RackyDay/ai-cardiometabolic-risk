@@ -231,6 +231,32 @@
   line-height: 1.5;
 }
 
+.edit-assessment-button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+
+  padding: 0.5rem 0.9rem;
+
+  border: none;
+  border-radius: 999px;
+
+  background: rgba(63, 115, 246, 0.08);
+  color: #3f73f6;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.edit-assessment-button:hover {
+  background: rgba(63, 115, 246, 0.16);
+}
+
+
 .risk-breakdown-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.65fr);
@@ -420,6 +446,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.risk-factor-value {
+  font-weight: 500;
+  color: #64748b;
+  margin-left: 0.15rem;
 }
 
 
@@ -1202,6 +1234,86 @@ strong {
   padding: 1.25rem;
 
   box-sizing: border-box;
+}
+
+.edit-assessment-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.35);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.edit-assessment-modal {
+  width: 100%;
+  max-width: 40rem;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem 2rem;
+  box-sizing: border-box;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.edit-assessment-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.discard-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.discard-confirm-panel {
+  width: 100%;
+  max-width: 22rem;
+  background: #ffffff;
+  border-radius: 0.875rem;
+  padding: 1.25rem;
+  box-sizing: border-box;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.discard-confirm-text {
+  margin: 0 0 1rem;
+  color: #111827;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.discard-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.discard-confirm-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.discard-confirm-btn:hover {
+  background: #b91c1c;
 }
 
 .insight-modal {
