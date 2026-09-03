@@ -10,7 +10,6 @@ import {
   CartesianGrid,
 } from "recharts";
 
-
 import AlertTriangleIcon from "../../components/icons/AlertTriangleIcon";
 import RiskGauge from "./components/RiskGauge";
 
