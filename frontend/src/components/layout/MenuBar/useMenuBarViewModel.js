@@ -8,6 +8,7 @@ function useMenuBarViewModel() {
     "/inputs": "My Health Information",
     "/dashboard": "Overview",
     "/learn": "Learn",
+    "/settings": "Account Settings",
   };
 
   const pageTitle = pageTitles[location.pathname] || "";

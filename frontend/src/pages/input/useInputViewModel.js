@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RiskContext } from "../../context/RiskContext";
+import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { buildPredictionPayload } from "./riskInputTransform";
 import { predictRisk } from "../../services/api";
@@ -10,6 +11,7 @@ export function useInputViewModel() {
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
     const { riskInputs, setRiskInputs, setRiskScore, setTopContributors } = useContext(RiskContext);
+    const { accessToken } = useContext(AuthContext);
     const [page, setPage] = useState(0);
     // Tracks the in-flight /predict request so the View can disable the
     // submit button and avoid duplicate submissions.
@@ -106,14 +108,14 @@ export function useInputViewModel() {
 
         try {
             const payload = buildPredictionPayload(riskInputs, riskInputSchema);
-            const result = await predictRisk(payload);
+            const result = await predictRisk(payload, accessToken);
             // Persist the score and its explanation on the shared
             // RiskContext (Model) so DashboardPage can read them after
             // navigation.
             setRiskScore(result.risk_score);
             setTopContributors(result.top_contributors);
             navigate("/dashboard");
-        } catch (err) {
+        } catch {
             // Network failure or a 4xx/5xx from the API — keep the user on
             // this page and surface a generic, non-technical message.
             setSubmitError("We couldn't calculate your risk score. Please try again.");

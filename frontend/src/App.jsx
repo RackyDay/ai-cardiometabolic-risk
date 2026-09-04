@@ -4,7 +4,11 @@ import InputPage from "./pages/input/InputPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import LearnPage from "./pages/learn/LearnPage";
 import WelcomePage from "./pages/welcome/WelcomePage";
-import { RiskProvider } from "./context/RiskContext";
+import AuthPage from "./pages/auth/AuthPage";
+import ResetPasswordPage from "./pages/resetPassword/ResetPasswordPage";
+import SettingsPage from "./pages/settings/SettingsPage";
+import { RiskProvider } from "./context/RiskProvider";
+import { AuthProvider } from "./context/AuthProvider";
 import MenuBar from "./components/layout/MenuBar/MenuBar";
 import SideNav from "./components/layout/SideNav/SideNav";
 import useAppLayoutViewModel from "./viewmodels/useAppLayoutViewModel";
@@ -45,6 +49,9 @@ function AppLayout() {
             <Route path="/inputs" element={<InputPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/learn" element={<LearnPage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </main>
       </div>
@@ -55,9 +62,11 @@ function AppLayout() {
 function App() {
   return (
     <BrowserRouter>
-      <RiskProvider>
-        <AppLayout />
-      </RiskProvider>
+      <AuthProvider>
+        <RiskProvider>
+          <AppLayout />
+        </RiskProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

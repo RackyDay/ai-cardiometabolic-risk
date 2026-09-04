@@ -3,7 +3,7 @@
 # validated on both sides of the API boundary.
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class RiskInputData(BaseModel):
@@ -42,3 +42,50 @@ class FeatureContribution(BaseModel):
 class PredictionResponse(BaseModel):
     risk_score: float
     top_contributors: list[FeatureContribution]
+
+
+class SignUpRequest(BaseModel):
+    email: EmailStr
+    # Restricted charset (no spaces/punctuation) so a username can never be
+    # confused with an email at login time - auth.py's _resolve_login_email
+    # decides which one it's looking at purely by checking for "@".
+    username: str = Field(min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_]+$")
+    # Supabase Auth enforces its own minimum too; this just fails fast with
+    # a field-level error instead of a round trip to Supabase for it.
+    password: str = Field(min_length=8)
+
+
+class LoginRequest(BaseModel):
+    # Either an email or a username - resolved to an email server-side.
+    identifier: str = Field(min_length=1)
+    password: str = Field(min_length=1)
+
+
+class UserOut(BaseModel):
+    id: str  # Supabase auth.users UUID, as a string
+    email: str
+    # None is possible (not just a defensive default): a profiles row whose
+    # username lookup failed or predates this feature would have no value
+    # here - the frontend already falls back to email for display in that case.
+    username: Optional[str] = None
+
+
+class AuthResponse(BaseModel):
+    # access_token/refresh_token are None when Supabase requires email
+    # confirmation before a session is issued - the frontend should show a
+    # "check your email" state in that case instead of treating this as an
+    # error.
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    user: Optional[UserOut] = None
+    email_confirmation_required: bool = False
+
+
+class LatestPredictionResponse(BaseModel):
+    has_history: bool
+    risk_score: Optional[float] = None
+    # Not persisted in risk_calculations - recomputed from the stored
+    # risk_inputs row via predict_risk() (deterministic, so this matches
+    # what was shown at submission time).
+    top_contributors: Optional[list[FeatureContribution]] = None
+    riskcalc_timestamp: Optional[str] = None

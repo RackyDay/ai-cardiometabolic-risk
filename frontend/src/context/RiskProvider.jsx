@@ -1,8 +1,7 @@
-import { createContext, useState } from "react";
+import { useState } from "react";
+import { RiskContext } from "./RiskContext";
 import { createInitalRiskInputs } from "../schemas/createInitialRiskInputs";
 import { riskInputSchema } from "../schemas/riskInputSchema";
-
-export const RiskContext = createContext();
 
 export function RiskProvider({ children }) {
   const [riskInputs, setRiskInputs] = useState(

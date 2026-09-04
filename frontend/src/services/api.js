@@ -7,26 +7,102 @@
 const API_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-export const predictRisk = async (inputData) => {
+// FastAPI validation errors (422) come back as { detail: [{ loc, msg, ... }] }
+// - one entry per invalid field. Turn that into a single plain-English line
+// (e.g. "Password: String should have at least 8 characters") instead of
+// dumping the raw JSON at the user.
+const formatValidationErrors = (detail) =>
+  detail
+    .map((err) => {
+      const field = Array.isArray(err.loc) ? err.loc[err.loc.length - 1] : "value";
+      const label = String(field).charAt(0).toUpperCase() + String(field).slice(1);
+      return `${label}: ${err.msg}`;
+    })
+    .join(" ");
+
+// Shared error-shaping: FastAPI validation errors (422) come back as
+// { detail: [...] }; auth/other errors as { detail: "..." }. Fall back to
+// the status text if the body isn't JSON.
+const throwForStatus = async (res, action) => {
+  if (res.ok) return;
+  const errorBody = await res.json().catch(() => null);
+
+  if (Array.isArray(errorBody?.detail)) {
+    throw new Error(formatValidationErrors(errorBody.detail));
+  }
+  throw new Error(errorBody?.detail || `${action} failed - please try again.`);
+};
+
+export const predictRisk = async (inputData, accessToken) => {
   const res = await fetch(`${API_URL}/predict`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(inputData)
+  });
+
+  await throwForStatus(res, "Prediction request");
+  return res.json();
+};
+
+export const editRisk = async (inputData) => {
+  const rest = await fetch(`${API_URL}/predict`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json" },
     body: JSON.stringify(inputData)
   });
 
   if (!res.ok) {
-    // FastAPI validation errors (422) come back as { detail: [...] };
-    // fall back to the status text if the body isn't JSON.
     const errorBody = await res.json().catch(() => null);
     const detail = errorBody?.detail ? JSON.stringify(errorBody.detail) : res.statusText;
-    throw new Error(`Prediction request failed (${res.status}): ${detail}`);
+    throw new Error(`Error during updating risk inputs (${res.status}): ${detail}`);  
   }
 
-  return res.json();
-};
+  return res.json()
+}
 
 export const getLearningContent = async () => {
   const res = await fetch(`${API_URL}/learn`);
+  return res.json();
+};
+
+export const signUp = async ({ email, username, password }) => {
+  const res = await fetch(`${API_URL}/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, username, password }),
+  });
+
+  await throwForStatus(res, "Sign up");
+  return res.json();
+};
+
+export const logIn = async ({ identifier, password }) => {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identifier, password }),
+  });
+
+  await throwForStatus(res, "Log in");
+  return res.json();
+};
+
+export const logOut = async (accessToken) => {
+  await fetch(`${API_URL}/auth/logout`, {
+    method: "POST",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+};
+
+export const getLatestPrediction = async (accessToken) => {
+  const res = await fetch(`${API_URL}/predictions/latest`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  await throwForStatus(res, "Loading your latest risk evaluation");
   return res.json();
 };
 
