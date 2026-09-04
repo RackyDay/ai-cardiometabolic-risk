@@ -106,3 +106,24 @@ export const getLatestPrediction = async (accessToken) => {
   return res.json();
 };
 
+export const getRiskCalculationHistory = async (accessToken) => {
+  const res = await fetch(`${API_URL}/api/risk-calculations`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  await throwForStatus(res, "Loading risk calculation history");
+  return res.json();
+};
+
+export const getRiskCalculation = async (accessToken, calculationId) => {
+  const res = await fetch(
+    `${API_URL}/api/risk-calculations/${calculationId}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+
+  await throwForStatus(res, "Loading risk calculation");
+  return res.json();
+};
+

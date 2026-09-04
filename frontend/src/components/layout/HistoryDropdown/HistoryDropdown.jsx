@@ -1,47 +1,74 @@
 import "./HistoryDropdown.css";
 import useHistoryDropdownViewModel from "./useHistoryDropdownViewModel";
 
-const HistoryDropdown = ({ onLoadCalculation }) => {
+const HistoryDropdown = () => {
   const {
     history,
     selectedId,
     setSelectedId,
+    isOpen,
+    setIsOpen,
     signedIn,
     viewCalculation,
-  } = useHistoryDropdownViewModel(onLoadCalculation);
+  } = useHistoryDropdownViewModel();
 
   return (
-    <div className={`history-dropdown ${!signedIn ? "locked" : ""}`}>
-      <label>History</label>
-
-      <select
-        disabled={!signedIn}
-        value={selectedId}
-        onChange={(e) => setSelectedId(e.target.value)}
-      >
-        <option value="">
-          {signedIn ? "Select calculation" : "Sign in to view history"}
-        </option>
-
-        {history.map((calculation) => (
-          <option
-            key={calculation.riskcalc_id}
-            value={calculation.riskcalc_id}
-          >
-            {calculation.risk_score} —{" "}
-            {new Date(calculation.riskcalc_timestamp).toLocaleString()}
-          </option>
-        ))}
-      </select>
-
+    <div className="history-dropdown">
       <button
-        onClick={viewCalculation}
-        disabled={!signedIn || !selectedId}
+        className="history-dropdown-trigger"
+        disabled={!signedIn}
+        onClick={() => setIsOpen(!isOpen)}
       >
-        View
+        <span>
+          {signedIn
+            ? "History"
+            : "🔒 Sign in to track heart health history"}
+        </span>
+        <span className="history-chevron">⌄</span>
       </button>
+
+      {isOpen && signedIn && (
+        <div className="history-menu">
+          <div className="history-list">
+            {history.map((calculation) => (
+              <label
+                key={calculation.riskcalc_id}
+                className="history-item"
+              >
+                <input
+                  type="radio"
+                  name="history"
+                  value={calculation.riskcalc_id}
+                  checked={selectedId === calculation.riskcalc_id}
+                  onChange={() =>
+                    setSelectedId(calculation.riskcalc_id)
+                  }
+                />
+
+                <span>
+                  {calculation.risk_score}
+                </span>
+
+                <span>
+                  {new Date(
+                    calculation.riskcalc_timestamp
+                  ).toLocaleString()}
+                </span>
+              </label>
+            ))}
+          </div>
+
+          <button
+            className="history-view-button"
+            disabled={!selectedId}
+            onClick={viewCalculation}
+          >
+            View
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
-export default HistoryDropdown;
+export default HistoryDropdown
