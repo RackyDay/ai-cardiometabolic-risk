@@ -30,14 +30,14 @@ VALID_PAYLOAD = {
 
 def test_UT_BE_001_predict_returns_valid_risk_score():
     response = client.post("/predict", json=VALID_PAYLOAD)
-    assert response.status_code == 200
+    assert response.status_code == 200         # means successful response
 
     body = response.json()
-    assert "risk_score" in body
+    assert "risk_score" in body               #returnoing API response contains the risk score
 
     risk_score = body["risk_score"]
-    assert isinstance(risk_score, float)
-    assert 0.0 <= risk_score <= 100.0
+    assert isinstance(risk_score, float)                        #must be float
+    assert 0.0 <= risk_score <= 100.0                            #must be between 0 and 100
 
 
 def test_UT_BE_002_predict_is_deterministic():
