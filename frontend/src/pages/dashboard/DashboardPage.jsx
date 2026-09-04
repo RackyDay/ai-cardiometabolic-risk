@@ -71,7 +71,6 @@ function RiskFactorSlider({
       ? config.min
       : Number(value);
 
-  console.log("riskFactors with savedValue:", riskFactors);
 
   return (
     <div className="what-if-control">
