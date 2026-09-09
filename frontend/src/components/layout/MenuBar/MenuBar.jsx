@@ -1,5 +1,5 @@
 import "./MenuBar.css";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import HeartECGIcon from "../../icons/HeartECGIcon";
 import UserIcon from "../../icons/UserIcon"
 import useMenuBarViewModel from "./useMenuBarViewModel";
@@ -78,6 +78,11 @@ function MenuBar({ showMenuButton, onMenuClick }) {
     }
   };
 
+  const handleLoadCalculation = useCallback((calculation) => {
+    console.log("Loaded calculation:", calculation);
+    // update whatever state controls the displayed calculation
+  }, []);
+
   return (
     <header className="menu-bar">
       <div className="menu-bar-left">
@@ -103,7 +108,7 @@ function MenuBar({ showMenuButton, onMenuClick }) {
       <h1 className="menu-bar-title">{pageTitle}</h1>
 
       <div className="menu-bar-actions">
-        <HistoryDropdown/>
+        <HistoryDropdown onLoadCalculation={handleLoadCalculation}/>
         <div className="menu-profile-wrapper" ref={dropdownRef}>
           <button
             className="menu-profile-name"
