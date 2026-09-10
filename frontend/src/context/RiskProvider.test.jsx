@@ -19,7 +19,7 @@ function App({ page = "dashboard", userId = "user-a" }) {
     <RiskProvider>{page === "dashboard" ? <Dashboard /> : <div>Another screen</div>}</RiskProvider>
   </AuthContext.Provider>;
 }
-
+//TC064
 it("keeps a selected calculation when the dashboard unmounts and resets for a new calculation", () => {
   const { rerender } = render(<App />);
   fireEvent.click(screen.getByText("Select older"));
@@ -30,6 +30,7 @@ it("keeps a selected calculation when the dashboard unmounts and resets for a ne
   expect(screen.getByText("latest")).toBeInTheDocument();
 });
 
+//TC065
 it("does not carry a selection across accounts or sign-out", () => {
   const { rerender } = render(<App />);
   fireEvent.click(screen.getByText("Select older"));

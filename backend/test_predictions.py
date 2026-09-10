@@ -18,7 +18,7 @@ import database as database_module
 
 client = TestClient(app)
 
-
+#T69
 def test_selected_calculation_returns_its_saved_score_and_inputs(monkeypatch):
     _install_fake_auth(monkeypatch)
     calculation_id = "00000000-0000-0000-0000-000000000001"

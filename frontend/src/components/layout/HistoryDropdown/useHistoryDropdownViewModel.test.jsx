@@ -9,6 +9,7 @@ vi.mock("../../../services/api.js", () => ({
 }));
 
 describe("history loading", () => {
+  //TC062
   it("shows an error and recovers when retried", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     getRiskCalculationHistory.mockRejectedValueOnce(new Error("Backend unavailable"));
@@ -21,7 +22,7 @@ describe("history loading", () => {
     expect(result.current.error).toBe("");
     log.mockRestore();
   });
-
+  //TC063
   it("ignores an earlier session's response and clears history on logout", async () => {
     let resolveOld;
     getRiskCalculationHistory.mockImplementationOnce(() => new Promise((resolve) => {

@@ -8,12 +8,15 @@ const history = [
 ];
 
 describe("risk trend", () => {
+  //TC066
   it("includes the selected calculation and earlier scores in time order", () => {
     expect(buildRiskTrend(history, "selected").map((point) => point.risk)).toEqual([0, 20]);
   });
+  //TC067
   it("uses the displayed latest assessment's timestamp as the cutoff", () => {
     expect(buildRiskTrend(history, null, history[0].riskcalc_timestamp)).toHaveLength(3);
   });
+  //TC068
   it("does not substitute another assessment when the selection is missing", () => {
     expect(buildRiskTrend(history, "missing")).toEqual([]);
   });
