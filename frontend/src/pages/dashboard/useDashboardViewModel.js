@@ -167,18 +167,22 @@ function inputsHaveChanged(
 export function useDashboardViewModel() {
 
   const {
-    riskScore,
+    riskScore: contextRiskScore,
     setRiskScore,
-    topContributors,
+    topContributors: contextTopContributors,
     setTopContributors,
-    riskInputs,
+    riskInputs: contextRiskInputs,
+    selectedCalculation,
   } = useContext(RiskContext);
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
 
   const location = useLocation();
-  const fromHistory = location?.state?.fromHistory;
-  const calculationId = location?.state?.calculationId;
+  const fromHistory = Boolean(selectedCalculation);
+  const calculationId = selectedCalculation?.riskcalc_id;
+  const riskScore = selectedCalculation?.risk_score ?? contextRiskScore;
+  const topContributors = selectedCalculation?.top_contributors ?? contextTopContributors;
+  const riskInputs = selectedCalculation?.inputs ?? contextRiskInputs;
   const [trendResponse, setTrendResponse] = useState(null);
   const [trendRetry, setTrendRetry] = useState(0);
   const trendKey = `${accessToken}:${location.key}:${trendRetry}`;

@@ -19,6 +19,7 @@ function MenuBar({ showMenuButton, onMenuClick }) {
 
   const {
     setRiskInputs,
+    selectCalculation,
     setRiskScore,
     setTopContributors,
   } = useContext(RiskContext);
@@ -86,13 +87,14 @@ function MenuBar({ showMenuButton, onMenuClick }) {
   };
 
   const handleLoadCalculation = useCallback((calculation) => {
+    selectCalculation(calculation);
     setRiskInputs(calculation.inputs);
     setRiskScore(calculation.risk_score);
     setTopContributors(calculation.top_contributors ?? []);
 
-    navigate("/dashboard", {state: {fromHistory: true, calculationId: calculation.riskcalc_id}});
+    navigate("/dashboard");
 
-  }, [setRiskInputs, setRiskScore, setTopContributors, navigate]);
+  }, [selectCalculation, setRiskInputs, setRiskScore, setTopContributors, navigate]);
 
   return (
     <header className="menu-bar">
