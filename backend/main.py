@@ -40,7 +40,8 @@ import database as db
 app = FastAPI()
 
 origins = ["https://ai-cardiometabolic-risk.onrender.com",
-           "http://localhost:5173"]
+           "http://localhost:5173",
+           "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
