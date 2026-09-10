@@ -216,17 +216,20 @@ export function AuthProvider({ children }) {
   };
 
   // Redirects the whole page to Google - nothing after this call runs in
-  // the current page load. `from` (e.g. "/" or "/dashboard") is where the
-  // user started, same idea as the password flow's location.state.from,
-  // but it has to survive an actual cross-site navigation here, so it's
-  // baked into redirectTo instead of React Router state. Coming back is
-  // handled entirely by the onAuthStateChange listener below - Supabase
-  // redirects the browser straight back to that URL with a session already
-  // established, and supabase-js's default detectSessionInUrl notices it.
+  // the current page load. Always comes back to /auth/callback rather than
+  // straight to `from`: that route waits for the session to finalize (incl.
+  // any MFA step-up) and then decides where to land - a returning Google
+  // user goes to the dashboard, a first-time sign-up resumes `from`. `from`
+  // (e.g. "/" or "/dashboard") is where the user started; it has to survive
+  // an actual cross-site navigation, so it rides along as a query param
+  // instead of React Router state. The session itself is picked up by the
+  // onAuthStateChange listener below via supabase-js's detectSessionInUrl.
   const signInWithGoogle = async (from) => {
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("from", from);
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${from}` },
+      options: { redirectTo: callbackUrl.toString() },
     });
   };
 
