@@ -94,6 +94,66 @@
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
 }
 
+.input-content-layout {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--form-max-width) minmax(0, 1fr);
+  column-gap: 1.5rem;
+  align-items: start;
+}
+
+.form-card {
+  position: relative;
+  grid-column: 2;
+}
+
+.input-disclaimer-card {
+  grid-column: 3;
+  width: 18rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-sizing: border-box;
+  box-shadow: 0 2px 12px rgba(217, 119, 6, 0.08);
+}
+
+.input-disclaimer-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: #92400e;
+}
+
+.input-disclaimer-card p {
+  margin: 0 0 0.75rem;
+  color: #78350f;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.input-disclaimer-card p:last-child {
+  margin-bottom: 0;
+}
+
+.input-disclaimer-trigger {
+  display: none;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: #fffbeb;
+  color: #d97706;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.input-disclaimer-trigger:hover {
+  background: #fef3c7;
+}
+
 /* Form fields */
 .form-field {
   margin-bottom: 1.5rem;
@@ -386,9 +446,85 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
+.input-disclaimer-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.35);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.input-disclaimer-modal {
+  width: 100%;
+  max-width: 24rem;
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.input-disclaimer-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.input-disclaimer-modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #111827;
+}
+
+.input-disclaimer-modal-close {
+  border: none;
+  background: transparent;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+}
+
+.input-disclaimer-modal-close:hover {
+  color: #111827;
+}
+
+.input-disclaimer-modal p {
+  margin: 0 0 0.9rem;
+  color: #5f6780;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.input-disclaimer-modal p:last-child {
+  margin-bottom: 0;
+}
+
 @media (max-width: 767px) {
   .inputs-page {
     --form-max-width: 100%;
     --form-horizontal-padding: 2rem;
+  }
+
+  .input-content-layout {
+    display: block;
+  }
+
+  .input-disclaimer-card {
+    display: none;
+  }
+
+  .input-disclaimer-trigger {
+    display: grid;
+    place-items: center;
+  }
+
+  .form-card {
+    padding-top: 3.5rem;
   }
 }
