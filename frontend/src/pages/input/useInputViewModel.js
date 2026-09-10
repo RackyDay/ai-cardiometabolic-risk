@@ -10,7 +10,7 @@ export function useInputViewModel() {
 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
-    const { riskInputs, setRiskInputs, setRiskScore, setTopContributors } = useContext(RiskContext);
+    const { riskInputs, setRiskInputs, setRiskScore, setTopContributors, selectCalculation } = useContext(RiskContext);
     const { accessToken } = useContext(AuthContext);
     const [page, setPage] = useState(0);
     // Tracks the in-flight /predict request so the View can disable the
@@ -113,6 +113,7 @@ export function useInputViewModel() {
             // RiskContext (Model) so DashboardPage can read them after
             // navigation.
             setRiskScore(result.risk_score);
+            selectCalculation(null);
             setTopContributors(result.top_contributors);
             navigate("/dashboard");
         } catch {

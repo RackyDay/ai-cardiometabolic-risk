@@ -8,13 +8,12 @@ import {
 import { RiskContext } from "../../context/RiskContext";
 import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
-import { getLatestPrediction, predictRisk } from "../../services/api";
+import { getLatestPrediction, getRiskCalculationHistory, predictRisk } from "../../services/api";
+import { buildRiskTrend } from "./buildRiskTrend";
 import { buildPredictionPayload } from "../input/riskInputTransform";
-
+import { useLocation } from "react-router-dom";
 import { CHANGEABLE_RISK_FACTORS } from "./changeableRiskFactors";
 import { formatSavedValue } from "./formatSavedValue";
-
-
 
 /* =========================================================
    EBM feature name -> frontend schema name
@@ -168,14 +167,40 @@ function inputsHaveChanged(
 export function useDashboardViewModel() {
 
   const {
-    riskScore,
+    riskScore: contextRiskScore,
     setRiskScore,
-    topContributors,
+    topContributors: contextTopContributors,
     setTopContributors,
-    riskInputs,
+    riskInputs: contextRiskInputs,
+    selectedCalculation,
   } = useContext(RiskContext);
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
+
+  const location = useLocation();
+  const fromHistory = Boolean(selectedCalculation);
+  const calculationId = selectedCalculation?.riskcalc_id;
+  const riskScore = selectedCalculation?.risk_score ?? contextRiskScore;
+  const topContributors = selectedCalculation?.top_contributors ?? contextTopContributors;
+  const riskInputs = selectedCalculation?.inputs ?? contextRiskInputs;
+  const [trendResponse, setTrendResponse] = useState(null);
+  const [trendRetry, setTrendRetry] = useState(0);
+  const trendKey = `${accessToken}:${location.key}:${trendRetry}`;
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+    let cancelled = false;
+    getRiskCalculationHistory(accessToken).then((history) => {
+      if (!Array.isArray(history)) throw new Error("Invalid history response");
+      if (!cancelled) setTrendResponse({ key: trendKey, history });
+    }).catch(() => {
+      if (!cancelled) setTrendResponse({ key: trendKey, error: "Couldn't load risk history." });
+    });
+    return () => { cancelled = true; };
+  }, [isAuthenticated, accessToken, trendKey]);
+  const [latestRequest, setLatestRequest] = useState(null);
+  const isLoadingAssessment = isAuthenticated && !fromHistory && latestRequest?.token !== accessToken;
+  const assessmentError = !fromHistory && latestRequest?.token === accessToken
+    ? latestRequest.error : "";
 
 
   const contributors =
@@ -193,24 +218,29 @@ export function useDashboardViewModel() {
   // re-syncs on mount/auth-change rather than only filling in a gap - that
   // also means switching accounts can't leak the previous user's score.
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || fromHistory) return;
 
     let cancelled = false;
     getLatestPrediction(accessToken)
       .then((result) => {
-        if (cancelled || !result.has_history) return;
+          if (cancelled) return;
+          setLatestRequest({ token: accessToken, error: "", timestamp: result.riskcalc_timestamp });
+          if (!result.has_history) {
+            setRiskScore(null);
+            setTopContributors([]);
+            return;
+          }
         setRiskScore(result.risk_score);
         setTopContributors(result.top_contributors ?? []);
       })
       .catch(() => {
-        // Best-effort: leave whatever's already in RiskContext (e.g. a
-        // just-submitted score) rather than blocking the dashboard on this.
+        if (!cancelled) setLatestRequest({ token: accessToken, error: "Couldn't load your assessment. Please refresh to try again." });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, setRiskScore, setTopContributors]);
+  }, [isAuthenticated, accessToken, fromHistory, setRiskScore, setTopContributors]);
 
 
   /* =======================================================
@@ -436,11 +466,20 @@ export function useDashboardViewModel() {
   ======================================================== */
 
   return {
+    isAuthenticated,
+    trendData: isAuthenticated && trendResponse?.key === trendKey
+      ? buildRiskTrend(trendResponse.history ?? [], fromHistory ? calculationId : null, latestRequest?.timestamp)
+      : [],
+    isLoadingTrend: isAuthenticated && trendResponse?.key !== trendKey,
+    trendError: trendResponse?.key === trendKey ? trendResponse.error : "",
+    retryTrend: () => setTrendRetry((value) => value + 1),
+    isLoadingAssessment,
+    assessmentError,
 
     /* Original assessment */
 
     displayScore:
-      riskScore ?? 50,
+      riskScore,
 
     riskFactors,
 

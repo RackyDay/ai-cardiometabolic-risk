@@ -1,10 +1,13 @@
 import "./MenuBar.css";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import HeartECGIcon from "../../icons/HeartECGIcon";
 import UserIcon from "../../icons/UserIcon"
 import useMenuBarViewModel from "./useMenuBarViewModel";
 import { useLocation, useNavigate } from "react-router-dom";
+import { RiskContext } from "../../../context/RiskContext";
 import { AuthContext } from "../../../context/AuthContext";
+import HistoryDropdown from "../HistoryDropdown/HistoryDropdown";
+
 
 function MenuBar({ showMenuButton, onMenuClick }) {
   const { pageTitle } = useMenuBarViewModel();
@@ -13,6 +16,13 @@ function MenuBar({ showMenuButton, onMenuClick }) {
   const { user, isAuthenticated, logOut } = useContext(AuthContext);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const {
+    setRiskInputs,
+    selectCalculation,
+    setRiskScore,
+    setTopContributors,
+  } = useContext(RiskContext);
 
   // Username first (what the account is actually called); fullName is
   // Google-only (see AuthContext's fromSupabaseSession) and reads better
@@ -76,6 +86,16 @@ function MenuBar({ showMenuButton, onMenuClick }) {
     }
   };
 
+  const handleLoadCalculation = useCallback((calculation) => {
+    selectCalculation(calculation);
+    setRiskInputs(calculation.inputs);
+    setRiskScore(calculation.risk_score);
+    setTopContributors(calculation.top_contributors ?? []);
+
+    navigate("/dashboard");
+
+  }, [selectCalculation, setRiskInputs, setRiskScore, setTopContributors, navigate]);
+
   return (
     <header className="menu-bar">
       <div className="menu-bar-left">
@@ -101,6 +121,7 @@ function MenuBar({ showMenuButton, onMenuClick }) {
       <h1 className="menu-bar-title">{pageTitle}</h1>
 
       <div className="menu-bar-actions">
+        <HistoryDropdown onLoadCalculation={handleLoadCalculation}/>
         <div className="menu-profile-wrapper" ref={dropdownRef}>
           <button
             className="menu-profile-name"

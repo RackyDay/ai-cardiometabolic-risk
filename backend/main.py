@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import Depends, FastAPI, Header, Request
+from fastapi import Depends, FastAPI, Header, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -88,6 +88,8 @@ def edit(assessment_id, data: RiskInputData, auth = Depends(get_optional_user)):
     if auth is not None:
         _, token = auth
         db.edit_assessment(assessment_id, data.model_dump(), token)
+    else:
+        raise HTTPException(status_code=401, detail="Not signed in")
 
     predict(data, auth)
 
@@ -96,12 +98,22 @@ async def get_assessment_history(auth = Depends(get_optional_user)):
     if auth is not None:
         _, token = auth
         risk_calculations = db.fetch_assessment_history(token)
+        return risk_calculations
 
 @app.get("/api/risk-calculations/{calculation_id}")
-async def get_risk_calculation(calculation_id: UUID, auth = Depends(get_optional_user)):
-    if auth is not None:
-        _, token = auth
-        risk_calc, risk_inputs = db.fetch_risk_calculation(calculation_id, token)
+def get_risk_calculation(calculation_id: UUID, auth = Depends(get_current_user_and_token)):
+    _, token = auth
+    risk_calc, risk_inputs = db.fetch_risk_calculation(str(calculation_id), token)
+    if not risk_calc or not risk_inputs:
+        raise HTTPException(status_code=404, detail="Calculation not found")
+    inputs = risk_inputs[0]["inputs_JSON"]
+    prediction = predict_risk(RiskInputData(**inputs))
+    return {
+        "riskcalc_id": risk_calc[0]["riskcalc_id"],
+        "risk_score": risk_calc[0]["risk_score"],
+        "inputs": inputs,
+        "top_contributors": prediction.get("top_contributors", []),
+    }
 
 @app.get("/predictions/latest", response_model=LatestPredictionResponse)
 def latest_prediction(auth=Depends(get_current_user_and_token)):
