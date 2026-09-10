@@ -433,36 +433,7 @@ function RiskFactorPieChart({
             )}
           </div>
         )}
-
-
-        {/* =====================================================
-            Chart legend
-        ====================================================== */}
-
-        <div className="risk-chart-legend">
-
-          <div className="risk-chart-legend-item">
-
-            <span
-              className={`risk-chart-legend-dot ${
-                isHypotheticalActive
-                  ? "hypothetical"
-                  : "original"
-              }`}
-            />
-
-            <span>
-
-              {isHypotheticalActive
-                ? "What-if scenario"
-                : "Original assessment"}
-
-            </span>
-
-          </div>
-
-        </div>
-
+        
       </div>
 
     </div>
