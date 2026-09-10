@@ -22,14 +22,16 @@ function InputPage() {
 
         <div className="input-content-layout">
           <div className="form-card">
-            <button
-              type="button"
-              className="input-disclaimer-trigger"
-              aria-label="Input page disclaimer"
-              onClick={() => setIsDisclaimerOpen(true)}
-            >
-              !
-            </button>
+            {isLastPage && (
+              <button
+                type="button"
+                className="input-disclaimer-trigger"
+                aria-label="Input page disclaimer"
+                onClick={() => setIsDisclaimerOpen(true)}
+              >
+                !
+              </button>
+            )}
 
             {currentFields.map(field => (
               <RiskField
@@ -79,16 +81,18 @@ function InputPage() {
             </nav>
           </div>
 
-          <aside className="input-disclaimer-card">
-            <h2>Important note</h2>
-            <p>
-              Although these fields are optional, missing measurements
-              may reduce the accuracy of the risk calculation.
-            </p>
-          </aside>
+          {isLastPage && (
+            <aside className="input-disclaimer-card">
+              <h2>Important note</h2>
+              <p>
+                Although these fields are optional, providing these measurements can help
+                improve the accuracy of the risk calculation.
+              </p>
+            </aside>
+          )}
         </div>
 
-        {isDisclaimerOpen && (
+        {isLastPage && isDisclaimerOpen && (
           <div
             className="input-disclaimer-modal-backdrop"
             onClick={() => setIsDisclaimerOpen(false)}
@@ -111,14 +115,8 @@ function InputPage() {
               </div>
 
               <p>
-                This assessment provides an estimated cardiovascular risk score based on
-                the information you enter. It is not a medical diagnosis.
-              </p>
-
-              <p>
-                Some fields are optional, but missing information may affect the accuracy
-                of the estimate. For medical advice, speak with a qualified healthcare
-                professional.
+                Although these fields are optional, providing these measurements can help
+                improve the accuracy of the risk calculation.
               </p>
             </div>
           </div>
