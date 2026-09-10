@@ -261,6 +261,27 @@
   margin: 0;
 }
 
+.form-input:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.form-input:disabled::placeholder {
+  color: #c0c6d3;
+}
+
+.form-field-disabled {
+  opacity: 0.85;
+}
+
+.disabled-helper-text {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
 /* Field tags */
 .field-tag {
   display: inline-block;
