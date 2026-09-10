@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthContext } from "./AuthContext";
-import { logIn, logOut, signUp } from "../services/api";
+import {
+  logIn,
+  logOut,
+  signUp,
+  updatePassword as apiUpdatePassword,
+  updateUsername as apiUpdateUsername,
+} from "../services/api";
 import { supabase } from "../services/supabaseClient";
 
 const STORAGE_KEY = "auth";
@@ -255,6 +261,34 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   };
 
+  // Account edits from SettingsPage. Unlike updatePassword above (which runs
+  // on the temporary recovery session), these go through our backend on the
+  // live logged-in session - the backend re-checks username uniqueness and
+  // the current password, neither of which the frontend can do on its own.
+  const changeUsername = async (newUsername) => {
+    const updated = await apiUpdateUsername({
+      username: newUsername,
+      accessToken: session?.accessToken,
+    });
+    // Reflect the new name immediately everywhere `user` is read (menu bar,
+    // this page, the sign-in toast on next login) without a round trip.
+    setSession((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, user: { ...prev.user, username: updated.username } };
+      persistSession(next);
+      return next;
+    });
+    return updated;
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    await apiUpdatePassword({
+      currentPassword,
+      newPassword,
+      accessToken: session?.accessToken,
+    });
+  };
+
   // MFA enrollment/management, used by SettingsPage. All plain passthroughs
   // to Supabase Auth - acting on whichever session the frontend client
   // currently holds, same as everything else in this file.
@@ -389,6 +423,8 @@ export function AuthProvider({ children }) {
         signInWithGoogle,
         requestPasswordReset,
         updatePassword,
+        changeUsername,
+        changePassword,
         enrollMfa,
         confirmMfaEnrollment,
         unenrollMfa,

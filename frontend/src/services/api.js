@@ -90,6 +90,33 @@ export const logIn = async ({ identifier, password }) => {
   return res.json();
 };
 
+export const updateUsername = async ({ username, accessToken }) => {
+  const res = await fetch(`${API_URL}/me/username`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ username }),
+  });
+
+  await throwForStatus(res, "Updating your username");
+  return res.json();
+};
+
+export const updatePassword = async ({ currentPassword, newPassword, accessToken }) => {
+  const res = await fetch(`${API_URL}/me/password`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+
+  await throwForStatus(res, "Updating your password");
+};
+
 export const logOut = async (accessToken) => {
   await fetch(`${API_URL}/auth/logout`, {
     method: "POST",

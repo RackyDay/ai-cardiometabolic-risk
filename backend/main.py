@@ -12,6 +12,9 @@ from schemas import (
     PredictionResponse,
     RiskInputData,
     SignUpRequest,
+    UpdatePasswordRequest,
+    UpdateUsernameRequest,
+    UserOut,
 )
 
 from auth import (
@@ -21,6 +24,8 @@ from auth import (
     log_in,
     log_out,
     sign_up,
+    update_password,
+    update_username,
 )
 from supabase_client import get_user_scoped_client, supabase_admin
 
@@ -182,4 +187,23 @@ def me(auth=Depends(get_current_user_and_token)):
         "email": user.email,
         "username": profile.get("user_displayname") if profile else None,
     }
+
+
+@app.patch("/me/username", response_model=UserOut)
+def update_my_username(req: UpdateUsernameRequest, auth=Depends(get_current_user_and_token)):
+    """Change the caller's own display name. See auth.update_username for the
+    uniqueness check and the two stores it writes.
+    """
+    user, _ = auth
+    return update_username(user, req.username)
+
+
+@app.patch("/me/password")
+def update_my_password(req: UpdatePasswordRequest, auth=Depends(get_current_user_and_token)):
+    """Change the caller's own password after re-verifying the current one.
+    See auth.update_password.
+    """
+    user, _ = auth
+    update_password(user, req.current_password, req.new_password)
+    return {"message": "Password updated"}
 
