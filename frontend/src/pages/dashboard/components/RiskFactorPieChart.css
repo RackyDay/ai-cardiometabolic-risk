@@ -776,6 +776,42 @@
     margin-left: 0.15rem;
     margin-right: 0.15rem;
   }
+/* =========================================================
+   Tooltip colour indicator
+========================================================= */
 
+.risk-chart-tooltip-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.risk-chart-tooltip-colour {
+  width: 10px;
+  height: 10px;
+
+  flex-shrink: 0;
+
+  border-radius: 3px;
+}
+
+
+/* =========================================================
+   Selected factor colour
+========================================================= */
+
+.risk-chart-selected-factor-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.risk-chart-selected-factor-colour {
+  width: 11px;
+  height: 11px;
+
+  flex-shrink: 0;
+
+  border-radius: 3px;
 }
 }

@@ -1595,3 +1595,46 @@ strong {
   color: #737b84;
   text-align: center;
 }
+
+/* =========================================================
+   Pie chart -> factor list highlight
+========================================================= */
+
+.risk-factor-pie-highlight {
+  background: #ffffff;
+  border-color: #94a3b8;
+
+  box-shadow:
+    0 3px 12px
+    rgba(15, 23, 42, 0.12);
+}
+
+
+/* Make the corresponding factor name slightly stronger */
+
+.risk-factor-pie-highlight
+.risk-factor-label {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+
+/* Enlarge the matching colour indicator */
+
+.risk-factor-pie-highlight
+.risk-factor-color {
+  transform: scale(1.45);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(148, 163, 184, 0.2);
+}
+
+
+/* Smooth transition */
+
+.risk-factor-color {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
