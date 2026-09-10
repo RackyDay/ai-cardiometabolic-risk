@@ -223,6 +223,11 @@ function RiskFactorPieChart({
       ? selectedIndex
       : activeIndex;
 
+  const highlightedFactor =
+    highlightedIndex !== null
+      ? chartData[highlightedIndex]
+      : null;
+
 
   const handleMouseEnter = (
     _,
@@ -280,7 +285,7 @@ function RiskFactorPieChart({
 
           {isHypotheticalActive
             ? "Showing the estimated contribution after your changes."
-            : "Hover over a factor to see its contribution."}
+            : "Hover or tap a factor to see its contribution."}
 
         </div>
 
@@ -289,7 +294,7 @@ function RiskFactorPieChart({
 
           <ResponsiveContainer
             width="100%"
-            height={430}
+            height="100%"
           >
 
             <PieChart>
@@ -300,8 +305,8 @@ function RiskFactorPieChart({
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                innerRadius={90}
-                outerRadius={155}
+                innerRadius="48%"
+                outerRadius="78%"
                 paddingAngle={2}
                 stroke="#ffffff"
                 strokeWidth={2}
@@ -398,6 +403,36 @@ function RiskFactorPieChart({
           </div>
 
         </div>
+
+        {highlightedFactor && (
+          <div className="risk-chart-selected-factor">
+            <div className="risk-chart-selected-factor-title">
+              {highlightedFactor.name}
+            </div>
+
+            <div className="risk-chart-selected-factor-row">
+              <span>Contribution</span>
+              <strong>
+                {Number(highlightedFactor.value).toFixed(2)}%
+              </strong>
+            </div>
+
+            {typeof highlightedFactor.raisesRisk === "boolean" && (
+              <div className="risk-chart-selected-factor-row">
+                <span>Impact</span>
+                <strong
+                  className={
+                    highlightedFactor.raisesRisk
+                      ? "risk-tooltip-positive"
+                      : "risk-tooltip-negative"
+                  }
+                >
+                  {highlightedFactor.raisesRisk ? "Raises risk" : "Lowers risk"}
+                </strong>
+              </div>
+            )}
+          </div>
+        )}
 
 
         {/* =====================================================
