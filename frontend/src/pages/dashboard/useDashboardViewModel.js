@@ -8,7 +8,8 @@ import {
 import { RiskContext } from "../../context/RiskContext";
 import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
-import { getLatestPrediction, predictRisk } from "../../services/api";
+import { getLatestPrediction, getRiskCalculationHistory, predictRisk } from "../../services/api";
+import { buildRiskTrend } from "./buildRiskTrend";
 import { buildPredictionPayload } from "../input/riskInputTransform";
 import { useLocation } from "react-router-dom";
 import { CHANGEABLE_RISK_FACTORS } from "./changeableRiskFactors";
@@ -177,6 +178,21 @@ export function useDashboardViewModel() {
 
   const location = useLocation();
   const fromHistory = location?.state?.fromHistory;
+  const calculationId = location?.state?.calculationId;
+  const [trendResponse, setTrendResponse] = useState(null);
+  const [trendRetry, setTrendRetry] = useState(0);
+  const trendKey = `${accessToken}:${location.key}:${trendRetry}`;
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+    let cancelled = false;
+    getRiskCalculationHistory(accessToken).then((history) => {
+      if (!Array.isArray(history)) throw new Error("Invalid history response");
+      if (!cancelled) setTrendResponse({ key: trendKey, history });
+    }).catch(() => {
+      if (!cancelled) setTrendResponse({ key: trendKey, error: "Couldn't load risk history." });
+    });
+    return () => { cancelled = true; };
+  }, [isAuthenticated, accessToken, trendKey]);
   const [latestRequest, setLatestRequest] = useState(null);
   const isLoadingAssessment = isAuthenticated && !fromHistory && latestRequest?.token !== accessToken;
   const assessmentError = !fromHistory && latestRequest?.token === accessToken
@@ -204,7 +220,7 @@ export function useDashboardViewModel() {
     getLatestPrediction(accessToken)
       .then((result) => {
           if (cancelled) return;
-          setLatestRequest({ token: accessToken, error: "" });
+          setLatestRequest({ token: accessToken, error: "", timestamp: result.riskcalc_timestamp });
           if (!result.has_history) {
             setRiskScore(null);
             setTopContributors([]);
@@ -446,6 +462,13 @@ export function useDashboardViewModel() {
   ======================================================== */
 
   return {
+    isAuthenticated,
+    trendData: isAuthenticated && trendResponse?.key === trendKey
+      ? buildRiskTrend(trendResponse.history ?? [], fromHistory ? calculationId : null, latestRequest?.timestamp)
+      : [],
+    isLoadingTrend: isAuthenticated && trendResponse?.key !== trendKey,
+    trendError: trendResponse?.key === trendKey ? trendResponse.error : "",
+    retryTrend: () => setTrendRetry((value) => value + 1),
     isLoadingAssessment,
     assessmentError,
 

@@ -90,7 +90,7 @@ function MenuBar({ showMenuButton, onMenuClick }) {
     setRiskScore(calculation.risk_score);
     setTopContributors(calculation.top_contributors ?? []);
 
-    navigate("/dashboard", {state: {fromHistory: true}});
+    navigate("/dashboard", {state: {fromHistory: true, calculationId: calculation.riskcalc_id}});
 
   }, [setRiskInputs, setRiskScore, setTopContributors, navigate]);
 

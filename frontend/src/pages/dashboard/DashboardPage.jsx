@@ -35,19 +35,6 @@ const INSIGHTS = [
   "BMI result is now closer to the ideal value",
 ];
 
-// Tempoorary
-const TREND_DATA = [
-  { year: 1, risk: 35 },
-  { year: 2, risk: 92 },
-  { year: 3, risk: 80 },
-  { year: 4, risk: 95 },
-  { year: 5, risk: 40 },
-  { year: 6, risk: 78 },
-  { year: 7, risk: 60 },
-  { year: 8, risk: 8 },
-  { year: 9, risk: 42 },
-  { year: 10, risk: 68 },
-];
 
 
 const RISK_SCORE_DISCLAIMER =
@@ -218,6 +205,11 @@ function DashboardPage() {
 
   const {
     displayScore,
+    isAuthenticated,
+    trendData,
+    isLoadingTrend,
+    trendError,
+    retryTrend,
     isLoadingAssessment,
     assessmentError,
     riskFactors,
@@ -1033,25 +1025,36 @@ function DashboardPage() {
       </div>
 
       {/* =====================================================
-          10-YEAR CARDIOVASCULAR HEALTH TREND
+          Historical risk trend
       ====================================================== */}
 
-      <div className="card trend-card">
+      <div className={`card trend-card${!isAuthenticated ? " trend-card-disabled" : ""}`} aria-disabled={!isAuthenticated}>
         <h2 className="card-title">
 
-          10-year Cardiovascular Health Trend
+          How has my risk changed over time?
 
         </h2>
 
 
-        <ResponsiveContainer
+        {!isAuthenticated ? (
+          <div className="trend-message">Sign in to track your risk over time.</div>
+        ) : isLoadingTrend ? (
+          <div className="trend-message" role="status">Loading risk history…</div>
+        ) : trendError ? (
+          <div className="trend-message" role="alert">
+            <p>{trendError}</p>
+            <button type="button" onClick={retryTrend}>Retry</button>
+          </div>
+        ) : trendData.length === 0 ? (
+          <div className="trend-message">No saved risk history for this assessment.</div>
+        ) : <ResponsiveContainer
           width="100%"
           height={260}
         >
 
           <LineChart
 
-            data={TREND_DATA}
+            data={trendData}
 
             margin={{
               top: 10,
@@ -1075,10 +1078,14 @@ function DashboardPage() {
 
             <XAxis
 
-              dataKey="year"
+              dataKey="timestamp"
+              type="number"
+              scale="time"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(value) => new Date(value).toLocaleDateString()}
 
               label={{
-                value: "Year",
+                value: "Calculation date",
                 position:
                   "insideBottom",
                 offset: -4,
@@ -1114,7 +1121,7 @@ function DashboardPage() {
               ]}
 
               label={{
-                value: "Risk score",
+                value: "Risk score (%)",
                 angle: -90,
                 position:
                   "insideLeft",
@@ -1145,12 +1152,12 @@ function DashboardPage() {
               }}
 
               formatter={(value) => [
-                `${value}`,
+                `${value}%`,
                 "Risk Score",
               ]}
 
               labelFormatter={(label) =>
-                `Year ${label}`
+                new Date(label).toLocaleString()
               }
 
             />
@@ -1158,7 +1165,7 @@ function DashboardPage() {
 
             <Line
 
-              type="monotone"
+              type="linear"
 
               dataKey="risk"
 
@@ -1180,7 +1187,7 @@ function DashboardPage() {
 
           </LineChart>
 
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
 
       </div>
 
