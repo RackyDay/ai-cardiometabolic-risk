@@ -218,6 +218,8 @@ function DashboardPage() {
 
   const {
     displayScore,
+    isLoadingAssessment,
+    assessmentError,
     riskFactors,
     pieData,
 
@@ -263,6 +265,14 @@ function DashboardPage() {
     isEditOpen,
     setIsEditOpen,
   ] = useState(false);
+
+  if (isLoadingAssessment || assessmentError || displayScore == null) {
+    return (
+      <div className="dashboard-page" role={assessmentError ? "alert" : "status"}>
+        {isLoadingAssessment ? "Loading assessment…" : assessmentError || "No assessment to display. Complete a risk calculation to get started."}
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-page">

@@ -4,6 +4,7 @@ import HeartECGIcon from "../../icons/HeartECGIcon";
 import UserIcon from "../../icons/UserIcon"
 import useMenuBarViewModel from "./useMenuBarViewModel";
 import { useLocation, useNavigate } from "react-router-dom";
+import { RiskContext } from "../../../context/RiskContext";
 import { AuthContext } from "../../../context/AuthContext";
 import HistoryDropdown from "../HistoryDropdown/HistoryDropdown";
 
@@ -15,6 +16,12 @@ function MenuBar({ showMenuButton, onMenuClick }) {
   const { user, isAuthenticated, logOut } = useContext(AuthContext);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const {
+    setRiskInputs,
+    setRiskScore,
+    setTopContributors,
+  } = useContext(RiskContext);
 
   // Username first (what the account is actually called); fullName is
   // Google-only (see AuthContext's fromSupabaseSession) and reads better
@@ -79,9 +86,13 @@ function MenuBar({ showMenuButton, onMenuClick }) {
   };
 
   const handleLoadCalculation = useCallback((calculation) => {
-    console.log("Loaded calculation:", calculation);
-    // update whatever state controls the displayed calculation
-  }, []);
+    setRiskInputs(calculation.inputs);
+    setRiskScore(calculation.risk_score);
+    setTopContributors(calculation.top_contributors ?? []);
+
+    navigate("/dashboard", {state: {fromHistory: true}});
+
+  }, [setRiskInputs, setRiskScore, setTopContributors, navigate]);
 
   return (
     <header className="menu-bar">

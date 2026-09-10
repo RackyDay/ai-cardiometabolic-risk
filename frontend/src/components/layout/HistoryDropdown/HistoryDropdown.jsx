@@ -1,11 +1,10 @@
 import "./HistoryDropdown.css";
 import useHistoryDropdownViewModel from "./useHistoryDropdownViewModel";
 import { AuthContext } from "../../../context/AuthContext";
-import ActionButton from "../../common/ActionButton";
 import { useContext } from "react";
 
 const HistoryDropdown = ({ onLoadCalculation }) => {
-  const { accessToken } = useContext(AuthContext);
+  const { accessToken, isAuthenticated: signedIn } = useContext(AuthContext);
 
   const {
     history,
@@ -13,8 +12,13 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
     setSelectedId,
     isOpen,
     setIsOpen,
-    signedIn,
+    isLoading,
+    error,
+    retryHistory,
+    isViewing,
+    viewError,
     viewCalculation,
+    dropdownRef,
   } = useHistoryDropdownViewModel(accessToken, onLoadCalculation);
 
   const formatDate = (timestamp) => {
@@ -28,8 +32,9 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
   };
 
   return (
-    <div className="history-dropdown">
+    <div className="history-dropdown" ref={dropdownRef}>
       <button
+        type="button"
         className="history-dropdown-trigger"
         disabled={!signedIn}
         onClick={() => setIsOpen(!isOpen)}
@@ -75,7 +80,7 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
                 </span>
 
                 <span className="history-trigger-subtitle">
-                  {history.length
+                  {isLoading ? "Loading calculations…" : error ? "Couldn't load history" : history.length
                     ? `${history.length} saved calculation${
                         history.length === 1 ? "" : "s"
                       }`
@@ -128,7 +133,16 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
           </div>
 
           <div className="history-list">
-            {history.length === 0 ? (
+            {isLoading ? (
+              <div className="history-empty" role="status">Loading calculations…</div>
+            ) : error ? (
+              <div className="history-empty">
+                <p role="alert">{error}</p>
+                <button type="button" className="history-view-button" onClick={retryHistory}>
+                  Retry
+                </button>
+              </div>
+            ) : history.length === 0 ? (
               <div className="history-empty">
                 No saved calculations yet.
               </div>
@@ -185,13 +199,15 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
             )}
           </div>
 
+          {viewError && <p className="history-empty" role="alert">{viewError}</p>}
           {history.length > 0 && (
             <button
+              type="button"
               className="history-view-button"
-              disabled={!selectedId}
+              disabled={!selectedId || isViewing}
               onClick={viewCalculation}
             >
-              View selected calculation
+              {isViewing ? "Loading calculation…" : "View selected calculation"}
             </button>
           )}
         </div>

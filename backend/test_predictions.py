@@ -14,8 +14,26 @@ import auth as auth_module
 import main as main_module
 from main import app
 from test_main import VALID_PAYLOAD
+import database as database_module
 
 client = TestClient(app)
+
+
+def test_selected_calculation_returns_its_saved_score_and_inputs(monkeypatch):
+    _install_fake_auth(monkeypatch)
+    calculation_id = "00000000-0000-0000-0000-000000000001"
+    def fetch_selected(selected_id, token):
+        assert selected_id == calculation_id
+        assert token == "token"
+        return ([{"riskcalc_id": selected_id, "risk_score": 12.3}],
+                [{"inputs_JSON": VALID_PAYLOAD}])
+    monkeypatch.setattr(database_module, "fetch_risk_calculation", fetch_selected)
+    monkeypatch.setattr(main_module, "predict_risk", lambda inputs: {"top_contributors": []})
+    response = client.get(f"/api/risk-calculations/{calculation_id}",
+                          headers={"Authorization": "Bearer token"})
+    assert response.status_code == 200
+    assert response.json() == {"riskcalc_id": calculation_id, "risk_score": 12.3,
+                               "inputs": VALID_PAYLOAD, "top_contributors": []}
 
 
 class FakeSelectQuery:

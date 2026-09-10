@@ -10,11 +10,9 @@ import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { getLatestPrediction, predictRisk } from "../../services/api";
 import { buildPredictionPayload } from "../input/riskInputTransform";
-
+import { useLocation } from "react-router-dom";
 import { CHANGEABLE_RISK_FACTORS } from "./changeableRiskFactors";
 import { formatSavedValue } from "./formatSavedValue";
-
-
 
 /* =========================================================
    EBM feature name -> frontend schema name
@@ -177,6 +175,13 @@ export function useDashboardViewModel() {
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
 
+  const location = useLocation();
+  const fromHistory = location?.state?.fromHistory;
+  const [latestRequest, setLatestRequest] = useState(null);
+  const isLoadingAssessment = isAuthenticated && !fromHistory && latestRequest?.token !== accessToken;
+  const assessmentError = !fromHistory && latestRequest?.token === accessToken
+    ? latestRequest.error : "";
+
 
   const contributors =
     topContributors ?? [];
@@ -193,24 +198,29 @@ export function useDashboardViewModel() {
   // re-syncs on mount/auth-change rather than only filling in a gap - that
   // also means switching accounts can't leak the previous user's score.
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || fromHistory) return;
 
     let cancelled = false;
     getLatestPrediction(accessToken)
       .then((result) => {
-        if (cancelled || !result.has_history) return;
+          if (cancelled) return;
+          setLatestRequest({ token: accessToken, error: "" });
+          if (!result.has_history) {
+            setRiskScore(null);
+            setTopContributors([]);
+            return;
+          }
         setRiskScore(result.risk_score);
         setTopContributors(result.top_contributors ?? []);
       })
       .catch(() => {
-        // Best-effort: leave whatever's already in RiskContext (e.g. a
-        // just-submitted score) rather than blocking the dashboard on this.
+        if (!cancelled) setLatestRequest({ token: accessToken, error: "Couldn't load your assessment. Please refresh to try again." });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, setRiskScore, setTopContributors]);
+  }, [isAuthenticated, accessToken, fromHistory, setRiskScore, setTopContributors]);
 
 
   /* =======================================================
@@ -436,11 +446,13 @@ export function useDashboardViewModel() {
   ======================================================== */
 
   return {
+    isLoadingAssessment,
+    assessmentError,
 
     /* Original assessment */
 
     displayScore:
-      riskScore ?? 50,
+      riskScore,
 
     riskFactors,
 

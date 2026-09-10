@@ -1,85 +1,107 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   getRiskCalculationHistory,
   getRiskCalculation,
 } from "../../../services/api.js"
 
 function useHistoryDropdownViewModel(accessToken, onLoadCalculation) {
-  const [history, setHistory] = useState([]);
+  const [result, setResult] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [selectedId, setSelectedId] = useState("");
-  const [signedIn, setSignedIn] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isViewing, setIsViewing] = useState(false);
+  const [viewError, setViewError] = useState("");
+  const dropdownRef = useRef(null);
+  const requestVersion = useRef(0);
+  const currentResult = result?.accessToken === accessToken &&
+    result?.retryCount === retryCount ? result : null;
+  const history = currentResult?.history ?? [];
+  const isLoading = Boolean(accessToken) && !currentResult;
+  const error = currentResult?.error ?? "";
+  const retryHistory = () => setRetryCount((count) => count + 1);
 
   useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    requestVersion.current += 1;
     const fetchHistory = async () => {
       if (!accessToken) {
-        setSignedIn(false);
-        setHistory([]);
         return;
       }
-
-      let data;
-
       try {
-        data = await getRiskCalculationHistory(accessToken);
-
-        console.log("History:", data);
-
-        setSignedIn(true);
-        setHistory(data);
-      } catch (error) {
-        console.error("Failed to load history:", error);
-        setSignedIn(false);
-        return;
-      }
-
-      if (data.length > 0) {
-        try {
-          const latest = await getRiskCalculation(
-            accessToken,
-            data[0].riskcalc_id
-          );
-
-          console.log("Latest:", latest);
-
-          onLoadCalculation(latest);
-        } catch (error) {
-          console.error(
-            "Failed to load latest calculation:",
-            error
-          );
+        const data = await getRiskCalculationHistory(accessToken);
+        if (!Array.isArray(data)) throw new Error("Invalid history response");
+        if (!cancelled) {
+          setResult({ accessToken, retryCount, history: data, error: "" });
         }
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Failed to load history:", error);
+        setResult({ accessToken, retryCount, history: [],
+          error: "Couldn't load history. Please try again." });
       }
     };
 
     fetchHistory();
-  }, [accessToken, onLoadCalculation]);
+    return () => {
+      cancelled = true;
+      requestVersion.current += 1;
+    };
+  }, [accessToken, retryCount]);
 
   const viewCalculation = async () => {
-    if (!selectedId || !accessToken) return;
+    if (isViewing || !accessToken || !history.some((item) => item.riskcalc_id === selectedId)) return;
+    const version = requestVersion.current;
+    setIsViewing(true);
+    setViewError("");
 
     try {
       const data = await getRiskCalculation(
         accessToken,
         selectedId
       );
-
-      console.log("Fetched calculation:", data);
-      onLoadCalculation(data);
+      if (version === requestVersion.current) {
+        onLoadCalculation(data);
+        setIsOpen(false);
+      }
 
     } catch (error) {
       console.error("Failed to load calculation:", error);
+      if (version === requestVersion.current) setViewError("Couldn't load this calculation. Please try again.");
+    } finally {
+      setIsViewing(false);
     }
   };
 
   return {
     history,
-    selectedId,
+    selectedId: history.some((item) => item.riskcalc_id === selectedId) ? selectedId : "",
     setSelectedId,
     isOpen,
     setIsOpen,
-    signedIn,
+    isLoading,
+    error,
+    retryHistory,
+    isViewing,
+    viewError,
     viewCalculation,
+    dropdownRef,
   };
 }
 
