@@ -416,6 +416,10 @@
   margin: 1rem 0;
 }
 
+.risk-chart-selected-factor {
+  display: none;
+}
+
 
 /* =========================================================
    Responsive layout
@@ -424,17 +428,28 @@
 @media (max-width: 768px) {
 
   .risk-donut-wrapper {
-    height: 390px;
+    max-width: 320px;
+    height: 320px;
+    margin: 1.25rem auto 0;
   }
 
   .risk-chart-center-text {
-    top: 52%;
+    top: 50%;
+    width: 115px;
+  }
+
+  .risk-chart-center-text strong {
+    font-size: 0.9rem;
+  }
+
+  .risk-chart-center-text span {
+    font-size: 0.75rem;
   }
 
   .risk-chart-legend {
     gap: 1rem;
-
-    margin-top: -0.25rem;
+    margin-top: 0.75rem;
+    margin-bottom: 1.25rem;
   }
 
   .risk-factor-breakdown-header,
@@ -456,6 +471,42 @@
     margin-left: 1.5rem;
   }
 
+  .risk-chart-selected-factor {
+    display: block;
+    width: 100%;
+    max-width: 18rem;
+    margin: 0.75rem auto 1rem;
+    padding: 0.85rem 1rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.85rem;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    box-sizing: border-box;
+  }
+
+  .risk-chart-selected-factor-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+  }
+
+  .risk-chart-selected-factor-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.85rem;
+    margin-top: 0.35rem;
+  }
+
+  .risk-chart-selected-factor-row span {
+    color: #64748b;
+  }
+
+  .risk-chart-selected-factor-row strong {
+    color: #111827;
+  }
+
 }
 
 
@@ -466,7 +517,8 @@
 @media (max-width: 480px) {
 
   .risk-donut-wrapper {
-    height: 350px;
+    max-width: 280px;
+    height: 280px;
   }
 
   .risk-chart-center-text {
@@ -511,6 +563,7 @@
 
     font-size: 0.8rem;
   }
+}
 /* =========================================================
    Chart mode indicator
 ========================================================= */
