@@ -106,9 +106,19 @@ function buildRiskFactors(contributors, originalInputs) {
    Build pie chart data
 ========================================================= */
 
-function buildPieData(riskFactors) {
-  return riskFactors.map(
+function buildPieData(riskFactors, referenceFactors = riskFactors) {
+  // Keep slices in the original assessment's order as contributions change.
+  const factorOrder = new Map(
+    referenceFactors.map((factor, index) => [factor.feature, index])
+  );
+
+  return [...riskFactors].sort((a, b) =>
+    (factorOrder.get(a.feature) ?? Infinity) -
+      (factorOrder.get(b.feature) ?? Infinity) ||
+    a.feature.localeCompare(b.feature)
+  ).map(
     (factor) => ({
+      feature: factor.feature,
       name: factor.label,
       value: factor.weightPercent,
       raisesRisk:
@@ -430,7 +440,8 @@ export function useDashboardViewModel() {
 
   const hypotheticalPieData =
     buildPieData(
-      hypotheticalRiskFactors
+      hypotheticalRiskFactors,
+      riskFactors
     );
 
 
