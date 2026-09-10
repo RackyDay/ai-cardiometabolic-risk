@@ -33,6 +33,18 @@ function SettingsPage() {
     passwordError,
     passwordSuccess,
     handlePasswordSubmit,
+    deleteOpen,
+    deleteConfirmPhrase,
+    deletePassword,
+    setDeletePassword,
+    deleteConfirmInput,
+    setDeleteConfirmInput,
+    deleteConfirmed,
+    deleteSubmitting,
+    deleteError,
+    openDeleteConfirm,
+    cancelDeleteConfirm,
+    handleDeleteAccount,
   } = useSettingsViewModel();
 
   if (!user) return null;
@@ -276,6 +288,83 @@ function SettingsPage() {
                 : "Disable two-factor authentication"}
             </button>
           </div>
+        )}
+      </section>
+
+      <section className="settings-card settings-card-danger">
+        <div className="settings-card-header">
+          <div>
+            <h2>Delete Account</h2>
+            <p>
+              Permanently delete your account and every risk assessment tied
+              to it. This can't be undone.
+            </p>
+          </div>
+        </div>
+
+        {!deleteOpen && (
+          <div className="mfa-action-box">
+            <button
+              type="button"
+              className="settings-danger-button"
+              onClick={openDeleteConfirm}
+            >
+              Delete my account
+            </button>
+          </div>
+        )}
+
+        {deleteOpen && (
+          <form className="settings-edit-form" onSubmit={handleDeleteAccount}>
+            <p className="settings-muted">
+              Your username, email, password and all saved assessments will be
+              erased. To confirm, enter your password and type{" "}
+              <strong>{deleteConfirmPhrase}</strong> below.
+            </p>
+
+            <label className="settings-field">
+              <span>Password</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={deletePassword}
+                onChange={(event) => setDeletePassword(event.target.value)}
+                required
+              />
+            </label>
+
+            <label className="settings-field">
+              <span>Type "{deleteConfirmPhrase}" to confirm</span>
+              <input
+                type="text"
+                autoComplete="off"
+                value={deleteConfirmInput}
+                onChange={(event) => setDeleteConfirmInput(event.target.value)}
+                required
+              />
+            </label>
+
+            {deleteError && <p className="settings-error">{deleteError}</p>}
+
+            <div className="settings-button-row">
+              <button
+                type="submit"
+                className="settings-danger-button"
+                disabled={deleteSubmitting || !deleteConfirmed || !deletePassword}
+              >
+                {deleteSubmitting ? "Deleting..." : "Permanently delete account"}
+              </button>
+
+              <button
+                type="button"
+                className="settings-secondary-button"
+                onClick={cancelDeleteConfirm}
+                disabled={deleteSubmitting}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         )}
       </section>
     </main>

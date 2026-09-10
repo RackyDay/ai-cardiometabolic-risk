@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from risk_model import predict_risk
 from schemas import (
     AuthResponse,
+    DeleteAccountRequest,
     LatestPredictionResponse,
     LoginRequest,
     PredictionResponse,
@@ -19,6 +20,7 @@ from schemas import (
 
 from auth import (
     _maybe_single_data,
+    delete_account,
     get_current_user_and_token,
     get_optional_user,
     log_in,
@@ -206,4 +208,17 @@ def update_my_password(req: UpdatePasswordRequest, auth=Depends(get_current_user
     user, _ = auth
     update_password(user, req.current_password, req.new_password)
     return {"message": "Password updated"}
+
+
+@app.post("/me/delete")
+def delete_my_account(req: DeleteAccountRequest, auth=Depends(get_current_user_and_token)):
+    """Permanently delete the caller's own account (auth.users row + profiles
+    row, which cascades to their risk_calculations and risk_inputs) after
+    re-verifying the current password. POST, not DELETE, to stay consistent
+    with the other mutating endpoints here and to carry a JSON body cleanly.
+    See auth.delete_account.
+    """
+    user, _ = auth
+    delete_account(user, req.current_password)
+    return {"message": "Account deleted"}
 

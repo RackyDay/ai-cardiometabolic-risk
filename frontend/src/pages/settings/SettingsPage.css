@@ -169,6 +169,14 @@
   border-top: none;
 }
 
+.settings-card-danger {
+  border-color: #f3c6c6;
+}
+
+.settings-card-danger .settings-card-header h2 {
+  color: #b91c1c;
+}
+
 .qr-section {
   display: grid;
   grid-template-columns: auto 1fr;

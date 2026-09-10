@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import {
+  deleteAccount as apiDeleteAccount,
   logIn,
   logOut,
   signUp,
@@ -289,6 +290,16 @@ export function AuthProvider({ children }) {
     });
   };
 
+  const deleteAccount = async (currentPassword) => {
+    await apiDeleteAccount({ currentPassword, accessToken: session?.accessToken });
+    // The account - and the user this token belonged to - no longer exists,
+    // so there's nothing to revoke server-side (no /auth/logout call): just
+    // tear down local session state, same as the tail of logOutUser.
+    await supabase.auth.signOut().catch(() => {});
+    setSession(null);
+    persistSession(null);
+  };
+
   // MFA enrollment/management, used by SettingsPage. All plain passthroughs
   // to Supabase Auth - acting on whichever session the frontend client
   // currently holds, same as everything else in this file.
@@ -425,6 +436,7 @@ export function AuthProvider({ children }) {
         updatePassword,
         changeUsername,
         changePassword,
+        deleteAccount,
         enrollMfa,
         confirmMfaEnrollment,
         unenrollMfa,

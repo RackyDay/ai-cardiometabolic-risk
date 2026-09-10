@@ -39,6 +39,10 @@ class FakeQuery:
         self._update = values
         return self
 
+    def delete(self):
+        self._delete = True
+        return self
+
     def execute(self):
         matches = [
             row for row in self._rows
@@ -49,6 +53,11 @@ class FakeQuery:
             # object the fake's table store holds, so this persists.
             for row in matches:
                 row.update(self._update)
+            return SimpleNamespace(data=matches)
+        if getattr(self, "_delete", False):
+            # Same aliasing trick - splice the list in place so the removal
+            # is visible through the fake's table store.
+            self._rows[:] = [row for row in self._rows if row not in matches]
             return SimpleNamespace(data=matches)
         if self._is_maybe_single:
             # Real postgrest-py quirk: .maybe_single().execute() returns
@@ -95,6 +104,13 @@ class FakeAuthAdminAPI:
                 if "user_metadata" in attributes:
                     record.setdefault("user_metadata", {}).update(attributes["user_metadata"])
                 return SimpleNamespace(user=SimpleNamespace(id=uid))
+        raise Exception("user not found")
+
+    def delete_user(self, uid):
+        for email, record in list(self._users.items()):
+            if record["id"] == uid:
+                del self._users[email]
+                return SimpleNamespace(user=None)
         raise Exception("user not found")
 
 
@@ -582,3 +598,77 @@ def test_update_password_rejects_missing_token(monkeypatch):
     )
 
     assert response.status_code == 401
+
+
+# --- POST /me/delete --------------------------------------------------
+
+# TC-48
+def test_delete_account_removes_user_and_profile(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    users = {"user@example.com": {"password": "secret12", "id": "u1", "username": "someone"}}
+    tables = {"profiles": [
+        {"user_id": "u1", "user_displayname": "someone"},
+        {"user_id": "u2", "user_displayname": "other"},
+    ]}
+    tables, users, _ = _install_fake_supabase(monkeypatch, tables=tables, users=users, tokens=tokens)
+
+    response = client.post(
+        "/me/delete",
+        headers={"Authorization": "Bearer good-token"},
+        json={"current_password": "secret12"},
+    )
+
+    assert response.status_code == 200
+    # auth.users row (email + password) gone...
+    assert "user@example.com" not in users
+    # ...and the profiles row (username) with it, leaving other users alone.
+    assert tables["profiles"] == [{"user_id": "u2", "user_displayname": "other"}]
+
+    # And the account genuinely no longer exists: a fresh login fails.
+    login = client.post(
+        "/auth/login",
+        json={"identifier": "user@example.com", "password": "secret12"},
+    )
+    assert login.status_code == 401
+
+
+# TC-49
+def test_delete_account_rejects_wrong_password(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    users = {"user@example.com": {"password": "secret12", "id": "u1", "username": "someone"}}
+    tables = {"profiles": [{"user_id": "u1", "user_displayname": "someone"}]}
+    tables, users, _ = _install_fake_supabase(monkeypatch, tables=tables, users=users, tokens=tokens)
+
+    response = client.post(
+        "/me/delete",
+        headers={"Authorization": "Bearer good-token"},
+        json={"current_password": "wrongpass"},
+    )
+
+    assert response.status_code == 401
+    # Nothing removed.
+    assert "user@example.com" in users
+    assert tables["profiles"] == [{"user_id": "u1", "user_displayname": "someone"}]
+
+
+# TC-50
+def test_delete_account_rejects_missing_token(monkeypatch):
+    _install_fake_supabase(monkeypatch)
+
+    response = client.post("/me/delete", json={"current_password": "secret12"})
+
+    assert response.status_code == 401
+
+
+# TC-51
+def test_delete_account_requires_current_password(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    _install_fake_supabase(monkeypatch, tokens=tokens)
+
+    response = client.post(
+        "/me/delete",
+        headers={"Authorization": "Bearer good-token"},
+        json={},
+    )
+
+    assert response.status_code == 422

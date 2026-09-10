@@ -75,6 +75,12 @@ class UpdatePasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+class DeleteAccountRequest(BaseModel):
+    # Same re-verification gate as a password change - account deletion is
+    # irreversible, so a logged-in session alone isn't enough to trigger it.
+    current_password: str = Field(min_length=1)
+
+
 class UserOut(BaseModel):
     id: str  # Supabase auth.users UUID, as a string
     email: str

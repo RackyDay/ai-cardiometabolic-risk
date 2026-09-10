@@ -14,12 +14,18 @@ export function useSettingsViewModel() {
     isAuthenticated,
     changeUsername,
     changePassword,
+    deleteAccount,
     enrollMfa,
     confirmMfaEnrollment,
     unenrollMfa,
     listMfaFactors,
   } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  // Typed into the delete-account confirmation box to prove intent - the
+  // username if there is one, otherwise the email (Google sign-ups have no
+  // username).
+  const deleteConfirmPhrase = user?.username || user?.email || "";
 
   // Account configuration only makes sense while logged in - bounce anyone
   // who lands here directly (typed URL, stale link) back to Welcome.
@@ -121,6 +127,49 @@ export function useSettingsViewModel() {
       setPasswordError(err.message || "Couldn't update your password. Please try again.");
     } finally {
       setPasswordSubmitting(false);
+    }
+  };
+
+  // --- Delete account ---------------------------------------------------
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  const openDeleteConfirm = () => {
+    setDeleteError("");
+    setDeleteOpen(true);
+  };
+
+  const cancelDeleteConfirm = () => {
+    setDeleteOpen(false);
+    setDeletePassword("");
+    setDeleteConfirmInput("");
+    setDeleteError("");
+  };
+
+  const deleteConfirmed = deleteConfirmInput.trim() === deleteConfirmPhrase;
+
+  const handleDeleteAccount = async (event) => {
+    event.preventDefault();
+    setDeleteError("");
+
+    if (!deleteConfirmed) {
+      setDeleteError(`Type "${deleteConfirmPhrase}" exactly to confirm.`);
+      return;
+    }
+
+    setDeleteSubmitting(true);
+    try {
+      await deleteAccount(deletePassword);
+      // Session's already been torn down inside deleteAccount; leave the
+      // now-defunct settings page for the public landing page. replace: so
+      // Back doesn't return to a page that immediately bounces anyway.
+      navigate("/", { replace: true });
+    } catch (err) {
+      setDeleteError(err.message || "Couldn't delete your account. Please try again.");
+      setDeleteSubmitting(false);
     }
   };
 
@@ -243,5 +292,18 @@ export function useSettingsViewModel() {
     passwordError,
     passwordSuccess,
     handlePasswordSubmit,
+
+    deleteOpen,
+    deleteConfirmPhrase,
+    deletePassword,
+    setDeletePassword,
+    deleteConfirmInput,
+    setDeleteConfirmInput,
+    deleteConfirmed,
+    deleteSubmitting,
+    deleteError,
+    openDeleteConfirm,
+    cancelDeleteConfirm,
+    handleDeleteAccount,
   };
 }

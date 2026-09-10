@@ -117,6 +117,19 @@ export const updatePassword = async ({ currentPassword, newPassword, accessToken
   await throwForStatus(res, "Updating your password");
 };
 
+export const deleteAccount = async ({ currentPassword, accessToken }) => {
+  const res = await fetch(`${API_URL}/me/delete`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ current_password: currentPassword }),
+  });
+
+  await throwForStatus(res, "Deleting your account");
+};
+
 export const logOut = async (accessToken) => {
   await fetch(`${API_URL}/auth/logout`, {
     method: "POST",

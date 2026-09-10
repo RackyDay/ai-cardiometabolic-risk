@@ -185,12 +185,11 @@ def update_username(user, new_username: str) -> UserOut:
     return UserOut(id=user.id, email=user.email, username=new_username)
 
 
-def update_password(user, current_password: str, new_password: str) -> None:
-    """Change the logged-in user's password. current_password is verified
-    first with a plain sign-in (same call log_in uses - a pass/fail result,
-    never a stored hash) so a walked-away session can't be used to swap the
-    password; the change itself goes through the Admin API rather than
-    relying on the shared client holding this user's session.
+def _verify_current_password(user, current_password: str) -> None:
+    """Re-check the caller's password with a plain sign-in (same call log_in
+    uses - a pass/fail result, never a stored hash). Gate for the
+    destructive/sensitive account actions below, so a walked-away logged-in
+    session can't change the password or delete the account outright.
     """
     try:
         result = supabase.auth.sign_in_with_password({
@@ -203,7 +202,43 @@ def update_password(user, current_password: str, new_password: str) -> None:
     if result.session is None:
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
+
+def update_password(user, current_password: str, new_password: str) -> None:
+    """Change the logged-in user's password. current_password is verified
+    first (see _verify_current_password); the change itself goes through the
+    Admin API rather than relying on the shared client holding this user's
+    session.
+    """
+    _verify_current_password(user, current_password)
+
     try:
         supabase_admin.auth.admin.update_user_by_id(user.id, {"password": new_password})
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+def delete_account(user, current_password: str) -> None:
+    """Permanently delete the logged-in user's account after re-verifying the
+    current password. Removal is in two parts: the auth.users row (email +
+    password hash, owned by Supabase Auth) via the Admin API, then the
+    public.profiles row (the username), whose ON DELETE CASCADE clears this
+    user's risk_calculations and, through them, risk_inputs. There is no
+    on_auth_user_deleted trigger, so the profiles row has to be removed
+    explicitly - deleting the auth user alone would orphan it.
+    """
+    _verify_current_password(user, current_password)
+
+    try:
+        supabase_admin.auth.admin.delete_user(user.id)
+    except Exception as exc:
+        # Nothing has been deleted yet - surface it and leave the account
+        # intact rather than half-removing it.
+        raise HTTPException(status_code=500, detail=f"Couldn't delete account: {exc}")
+
+    try:
+        supabase_admin.table("profiles").delete().eq("user_id", user.id).execute()
+    except Exception:
+        # The account itself is already gone (step above) - the user can no
+        # longer sign in. A leftover, now-orphaned profiles row is harmless;
+        # don't fail a request the user already sees as done.
+        pass
