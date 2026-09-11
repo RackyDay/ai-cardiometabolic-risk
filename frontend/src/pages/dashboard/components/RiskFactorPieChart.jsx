@@ -81,6 +81,8 @@ function RiskFactorTooltip({
   const contribution =
     Number(factor.value);
 
+  if (!(contribution > 0)) return null;
+
   const factorColor =
     getRiskFactorColor(
       factor.feature
@@ -128,7 +130,7 @@ function RiskFactorTooltip({
       <div className="risk-chart-tooltip-row">
 
         <span>
-          Relative contribution
+          Share of risk-raising effects
         </span>
 
         <strong>
@@ -196,16 +198,6 @@ function RiskFactorPieChart({
   ] = useState(null);
 
 
-  /*
-   * selectedIndex = factor clicked/tapped
-   * by the user.
-   */
-  const [
-    selectedIndex,
-    setSelectedIndex,
-  ] = useState(null);
-
-
   /* =======================================================
      Choose original or hypothetical data
   ======================================================= */
@@ -231,21 +223,26 @@ function RiskFactorPieChart({
   }
 
 
+  if (!chartData.some((factor) => factor.value > 0)) {
+    return (
+      <div className="risk-chart-container">
+        <p className="risk-factors-empty" role="status">
+          No risk-raising effects among the displayed factors
+          {isHypotheticalActive ? " in this what-if scenario" : " in this assessment"}.
+          {" "}Risk-lowering factors remain in the list. This does not mean the overall risk is zero.
+        </p>
+      </div>
+    );
+  }
+
   /* =======================================================
      Determine highlighted factor
   ======================================================= */
 
-  /*
-   * Hover takes priority.
-   *
-   * This means that even if a user has clicked
-   * one segment, hovering another segment still
-   * highlights the hovered one.
-   */
-  const highlightedIndex =
-    activeIndex !== null
-      ? activeIndex
-      : selectedIndex;
+  // Highlight only the slice currently under the pointer; clicks do not pin it.
+  const highlightedIndex = chartData[activeIndex]?.value > 0
+    ? activeIndex
+    : null;
 
 
   const highlightedFactor =
@@ -277,68 +274,7 @@ function RiskFactorPieChart({
 
   const handleMouseLeave = () => {
     setActiveIndex(null);
-
-    /*
-     * If a factor was clicked previously,
-     * return the highlight to that factor.
-     */
-    if (
-      selectedIndex !== null
-    ) {
-      const selectedFactor =
-        chartData[
-          selectedIndex
-        ];
-
-      onFactorHover?.(
-        selectedFactor?.feature ??
-        null
-      );
-    } else {
-      onFactorHover?.(null);
-    }
-  };
-
-
-  /* =======================================================
-     Click / tap handler
-  ======================================================= */
-
-  const handleClick = (
-    _,
-    index
-  ) => {
-    if (
-      selectedIndex === index
-    ) {
-      setSelectedIndex(null);
-
-      /*
-       * Keep current hover if the
-       * mouse is still over the pie.
-       */
-      if (
-        activeIndex !== null
-      ) {
-        onFactorHover?.(
-          chartData[
-            activeIndex
-          ]?.feature ?? null
-        );
-      } else {
-        onFactorHover?.(null);
-      }
-
-      return;
-    }
-
-
-    setSelectedIndex(index);
-
-    onFactorHover?.(
-      chartData[index]
-        ?.feature ?? null
-    );
+    onFactorHover?.(null);
   };
 
 
@@ -347,7 +283,7 @@ function RiskFactorPieChart({
   ======================================================= */
 
   return (
-    <div className="risk-chart-container">
+    <div className="risk-chart-container" onMouseLeave={handleMouseLeave}>
 
       <div className="risk-donut-section">
 
@@ -383,9 +319,9 @@ function RiskFactorPieChart({
             ? highlightedFactor.name
 
             : isHypotheticalActive
-            ? "Hover or tap a factor to explore its what-if contribution."
+            ? "Hover over a factor to explore its what-if contribution."
 
-            : "Hover or tap a factor to see its contribution."}
+            : "Hover over a factor to see its contribution."}
 
         </div>
 
@@ -426,7 +362,7 @@ function RiskFactorPieChart({
 
                 activeIndex={
                   highlightedIndex ??
-                  undefined
+                  -1
                 }
 
 
@@ -471,18 +407,15 @@ function RiskFactorPieChart({
                   handleMouseLeave
                 }
 
-                onClick={
-                  handleClick
-                }
               >
 
-                {/* Keep colors identical to the labels; the active sector
-                    uses expansion and an outline to indicate selection. */}
-                {chartData.map((entry) => (
+                {/* Keep the shared factor colors, muted until hovered. */}
+                {chartData.map((entry, index) => (
                   <Cell
                     key={`cell-${entry.feature ?? entry.name}`}
                     fill={getRiskFactorColor(entry.feature)}
-                    style={{ cursor: "pointer" }}
+                    opacity={highlightedIndex === index ? 1 : 0.65}
+                    style={{ cursor: "pointer", transition: "opacity 0.18s ease" }}
                   />
                 ))}
 
@@ -494,6 +427,7 @@ function RiskFactorPieChart({
               ================================================== */}
 
               <Tooltip
+                active={highlightedIndex !== null}
                 content={
                   <RiskFactorTooltip />
                 }
@@ -524,7 +458,7 @@ function RiskFactorPieChart({
             </strong>
 
             <span>
-              Risk contribution
+              Risk-raising effects
             </span>
 
           </div>
@@ -579,7 +513,7 @@ function RiskFactorPieChart({
             <div className="risk-chart-selected-factor-row">
 
               <span>
-                Contribution
+                Share of risk-raising effects
               </span>
 
               <strong>
