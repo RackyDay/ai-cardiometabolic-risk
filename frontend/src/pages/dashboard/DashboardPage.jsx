@@ -22,9 +22,7 @@ import { getRiskFactorColor } from "./riskFactorColors";
 
 import EditAssessmentModal from "./EditAssessmentModal";
 
-import {
-  useDashboardViewModel,
-} from "./useDashboardViewModel";
+import { useDashboardViewModel } from "./useDashboardViewModel";
 
 import "./DashboardPage.css";
 
@@ -530,14 +528,8 @@ function DashboardPage() {
                         hoveredRiskFactor ===
                         factor.feature;
 
-
-                      /*
-                       * Stable factor colour.
-                       */
                       const factorColor =
-                        getRiskFactorColor(
-                          factor.feature
-                        );
+                        getRiskFactorColor(factor.feature);
 
 
                       return (
