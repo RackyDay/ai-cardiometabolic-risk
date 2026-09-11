@@ -1,10 +1,13 @@
 .app-layout {
   height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
 }
 
 .app-body {
-  height: calc(100vh - 70px);
+  min-height: 0;
+  position: relative;
   overflow: hidden;
 }
 
@@ -37,8 +40,8 @@
 
   .drawer-backdrop {
     display: block;
-    position: fixed;
-    top: 70px;
+    position: absolute;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
