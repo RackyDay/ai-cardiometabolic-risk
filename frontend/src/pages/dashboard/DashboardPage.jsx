@@ -14,6 +14,7 @@ import AlertTriangleIcon from "../../components/icons/AlertTriangleIcon";
 import PencilIcon from "../../components/icons/PencilIcon";
 
 import RiskGauge from "./components/RiskGauge";
+import RiskFactorInfluenceBadge from "./components/RiskFactorInfluenceBadge";
 
 import RiskFactorPieChart, {
   RISK_FACTOR_DESCRIPTIONS,
@@ -228,6 +229,9 @@ function DashboardPage() {
     hypotheticalScore,
     hypotheticalInputs,
     hypotheticalPieData,
+    hypotheticalRiskFactors,
+    isCalculatingHypothetical,
+    hypotheticalError,
 
     changeableRiskFactors,
 
@@ -414,8 +418,11 @@ function DashboardPage() {
             <p className="risk-chart-description">
 
               {isHypotheticalActive
-                ? "Showing the estimated contribution of each factor after your changes."
-                : "Relative contribution of the factors used in your current risk assessment."}
+                ? "The pie shows the share of risk-raising effects after your changes."
+                : "The pie shows the share of risk-raising effects in your current assessment."}
+              {" "}List percentages include both risk-raising (+) and risk-lowering (−)
+              effects{isHypotheticalActive ? " after your changes" : " in the original assessment"}. These are relative influences,
+              not changes in your risk score.
 
             </p>
 
@@ -469,7 +476,7 @@ function DashboardPage() {
                   </span>
 
                   <span>
-                    Contribution
+                    Overall influence
                   </span>
 
                 </div>
@@ -687,25 +694,15 @@ function DashboardPage() {
 
                             {/* Contribution */}
 
-                            <span
-                              className={`risk-factor-tag ${
-                                factor.raisesRisk
-                                  ? "risk-factor-tag-up"
-                                  : "risk-factor-tag-down"
-                              }`}
-                            >
-
-                              {factor.raisesRisk
-                                ? "+"
-                                : "-"}
-
-                              {Math.round(
-                                factor.weightPercent
+                            <RiskFactorInfluenceBadge
+                              originalFactor={factor}
+                              hypotheticalFactor={hypotheticalRiskFactors.find(
+                                (updated) => updated.feature === factor.feature
                               )}
-
-                              %
-
-                            </span>
+                              isHypotheticalActive={isHypotheticalActive}
+                              isCalculating={isCalculatingHypothetical}
+                              error={hypotheticalError}
+                            />
 
 
                             {/* Fixed */}

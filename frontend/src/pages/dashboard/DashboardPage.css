@@ -488,6 +488,11 @@
   color: #15803d;
 }
 
+.risk-factor-tag-neutral {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
 
 /* =========================================================
    Fixed label
