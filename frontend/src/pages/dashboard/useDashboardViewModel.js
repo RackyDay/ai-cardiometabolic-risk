@@ -10,6 +10,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { getLatestPrediction, getRiskCalculationHistory, predictRisk } from "../../services/api";
 import { buildRiskTrend } from "./buildRiskTrend";
+import { buildPieData } from "./buildPieData";
 import { buildPredictionPayload } from "../input/riskInputTransform";
 import { useLocation } from "react-router-dom";
 import { CHANGEABLE_RISK_FACTORS } from "./changeableRiskFactors";
@@ -99,32 +100,6 @@ function buildRiskFactors(contributors, originalInputs) {
           ),
       };
     });
-}
-
-
-/* =========================================================
-   Build pie chart data
-========================================================= */
-
-function buildPieData(riskFactors, referenceFactors = riskFactors) {
-  // Keep slices in the original assessment's order as contributions change.
-  const factorOrder = new Map(
-    referenceFactors.map((factor, index) => [factor.feature, index])
-  );
-
-  return [...riskFactors].sort((a, b) =>
-    (factorOrder.get(a.feature) ?? Infinity) -
-      (factorOrder.get(b.feature) ?? Infinity) ||
-    a.feature.localeCompare(b.feature)
-  ).map(
-    (factor) => ({
-      feature: factor.feature,
-      name: factor.label,
-      value: factor.weightPercent,
-      raisesRisk:
-        factor.raisesRisk,
-    })
-  );
 }
 
 
@@ -287,6 +262,9 @@ export function useDashboardViewModel() {
     isCalculatingHypothetical,
     setIsCalculatingHypothetical,
   ] = useState(false);
+  const [hypotheticalError, setHypotheticalError] = useState("");
+  const hypotheticalRequestRef = useRef(0);
+  const hypotheticalInputsRef = useRef(riskInputs);
 
 
   /* =======================================================
@@ -296,6 +274,10 @@ export function useDashboardViewModel() {
 
   useEffect(() => {
 
+    hypotheticalRequestRef.current += 1;
+    hypotheticalInputsRef.current = riskInputs;
+    setIsCalculatingHypothetical(false);
+    setHypotheticalError("");
     originalInputsRef.current =
       riskInputs;
 
@@ -307,6 +289,7 @@ export function useDashboardViewModel() {
 
     setHypotheticalContributors([]);
 
+    return () => { hypotheticalRequestRef.current += 1; };
   }, [riskInputs]);
 
 
@@ -338,6 +321,8 @@ export function useDashboardViewModel() {
       value
     ) => {
 
+      const requestId = ++hypotheticalRequestRef.current;
+      setHypotheticalError("");
       const schemaKey =
         FEATURE_TO_SCHEMA_KEY[
           feature
@@ -345,10 +330,11 @@ export function useDashboardViewModel() {
 
 
       const updatedInputs = {
-        ...hypotheticalInputs,
+        ...hypotheticalInputsRef.current,
 
         [schemaKey]: value,
       };
+      hypotheticalInputsRef.current = updatedInputs;
 
 
       setHypotheticalInputs(
@@ -376,6 +362,7 @@ export function useDashboardViewModel() {
         setHypotheticalContributors(
           []
         );
+        setIsCalculatingHypothetical(false);
 
         return;
       }
@@ -400,6 +387,7 @@ export function useDashboardViewModel() {
             payload
           );
 
+        if (requestId !== hypotheticalRequestRef.current) return;
 
         setHypotheticalScore(
           result.risk_score
@@ -413,6 +401,8 @@ export function useDashboardViewModel() {
 
       } catch (error) {
 
+        if (requestId !== hypotheticalRequestRef.current) return;
+        setHypotheticalError("Couldn't update this contribution. Adjust the slider to try again.");
         console.error(
           "Hypothetical prediction failed:",
           error
@@ -420,9 +410,9 @@ export function useDashboardViewModel() {
 
       } finally {
 
-        setIsCalculatingHypothetical(
-          false
-        );
+        if (requestId === hypotheticalRequestRef.current) {
+          setIsCalculatingHypothetical(false);
+        }
 
       }
     };
@@ -462,6 +452,10 @@ export function useDashboardViewModel() {
 
   const resetHypothetical = () => {
 
+    hypotheticalRequestRef.current += 1;
+    hypotheticalInputsRef.current = originalInputsRef.current;
+    setIsCalculatingHypothetical(false);
+    setHypotheticalError("");
     setHypotheticalInputs(
       originalInputsRef.current
     );
@@ -516,6 +510,7 @@ export function useDashboardViewModel() {
     isHypotheticalActive,
 
     isCalculatingHypothetical,
+    hypotheticalError,
 
 
     /* Controls */
