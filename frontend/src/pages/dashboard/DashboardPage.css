@@ -1630,15 +1630,16 @@ strong {
 }
 
 .edit-assessment-button {
-  width: 2.6rem;
-  height: 2.6rem;
-  padding: 0;
-  border-radius: 50%;
+  width: auto;
+  min-height: 2.6rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
   justify-content: center;
+  white-space: nowrap;
 }
 
 .edit-assessment-button span {
-  display: none;
+  display: inline;
 }
 
 .edit-assessment-button svg {
@@ -1649,6 +1650,14 @@ strong {
 
 
 @media (max-width: 36rem) {
+
+  .risk-breakdown-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .edit-assessment-button {
+    justify-self: end;
+  }
 
   .card {
     padding: 1rem;

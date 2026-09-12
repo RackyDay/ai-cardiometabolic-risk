@@ -446,7 +446,7 @@ function DashboardPage() {
 
             className="edit-assessment-button"
 
-            aria-label="Edit risk assessment"
+            aria-label="Edit original assessment"
 
             onClick={() =>
               setIsEditOpen(true)
@@ -456,7 +456,7 @@ function DashboardPage() {
             <PencilIcon size={15} />
 
             <span>
-              Edit assessment
+              Edit original assessment
             </span>
 
           </button>
