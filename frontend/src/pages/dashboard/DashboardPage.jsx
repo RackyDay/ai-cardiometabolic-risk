@@ -720,12 +720,14 @@ function DashboardPage() {
 
 
                       /*
-                       * Stable factor colour.
+                       * Stable factor colour — must match
+                       * how RiskFactorPieChart looks colours
+                       * up (by feature key), so list rows and
+                       * pie slices stay in sync.
                        */
                       const factorColor =
                         getRiskFactorColor(
-                          factor.label,
-                          i
+                          factor.feature
                         );
 
 
