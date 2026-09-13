@@ -35,11 +35,30 @@ class FakeQuery:
         self._is_maybe_single = True
         return self
 
+    def update(self, values):
+        self._update = values
+        return self
+
+    def delete(self):
+        self._delete = True
+        return self
+
     def execute(self):
         matches = [
             row for row in self._rows
             if all(row.get(k) == v for k, v in self._filters.items())
         ]
+        if getattr(self, "_update", None) is not None:
+            # Mutate the matched rows in place - _rows is the same list
+            # object the fake's table store holds, so this persists.
+            for row in matches:
+                row.update(self._update)
+            return SimpleNamespace(data=matches)
+        if getattr(self, "_delete", False):
+            # Same aliasing trick - splice the list in place so the removal
+            # is visible through the fake's table store.
+            self._rows[:] = [row for row in self._rows if row not in matches]
+            return SimpleNamespace(data=matches)
         if self._is_maybe_single:
             # Real postgrest-py quirk: .maybe_single().execute() returns
             # None outright (not a response object) when zero rows match.
@@ -75,6 +94,24 @@ class FakeAuthAdminAPI:
             if record["id"] == uid:
                 return SimpleNamespace(user=SimpleNamespace(id=uid, email=email))
         return SimpleNamespace(user=None)
+
+    def update_user_by_id(self, uid, attributes):
+        # Only the fields update_password/update_username actually send.
+        for record in self._users.values():
+            if record["id"] == uid:
+                if "password" in attributes:
+                    record["password"] = attributes["password"]
+                if "user_metadata" in attributes:
+                    record.setdefault("user_metadata", {}).update(attributes["user_metadata"])
+                return SimpleNamespace(user=SimpleNamespace(id=uid))
+        raise Exception("user not found")
+
+    def delete_user(self, uid):
+        for email, record in list(self._users.items()):
+            if record["id"] == uid:
+                del self._users[email]
+                return SimpleNamespace(user=None)
+        raise Exception("user not found")
 
 
 class FakeAuth:
@@ -424,3 +461,214 @@ def test_me_rejects_invalid_token(monkeypatch):
     response = client.get("/me", headers={"Authorization": "Bearer wrong-token"})
 
     assert response.status_code == 401
+
+
+# --- PATCH /me/username ----------------------------------------------------
+
+# TC-39
+def test_update_username_succeeds_and_writes_to_profiles(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    tables = {"profiles": [{"user_id": "u1", "user_displayname": "oldname"}]}
+    _install_fake_supabase(monkeypatch, tables=tables, tokens=tokens)
+
+    response = client.patch(
+        "/me/username",
+        headers={"Authorization": "Bearer good-token"},
+        json={"username": "newname"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"id": "u1", "email": "user@example.com", "username": "newname"}
+    assert tables["profiles"][0]["user_displayname"] == "newname"
+
+
+# TC-40
+def test_update_username_rejects_taken_username(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    tables = {"profiles": [
+        {"user_id": "u1", "user_displayname": "oldname"},
+        {"user_id": "u2", "user_displayname": "taken"},
+    ]}
+    _install_fake_supabase(monkeypatch, tables=tables, tokens=tokens)
+
+    response = client.patch(
+        "/me/username",
+        headers={"Authorization": "Bearer good-token"},
+        json={"username": "taken"},
+    )
+
+    assert response.status_code == 409
+    assert tables["profiles"][0]["user_displayname"] == "oldname"
+
+
+# TC-41
+def test_update_username_allows_keeping_your_own_name(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    tables = {"profiles": [{"user_id": "u1", "user_displayname": "samename"}]}
+    _install_fake_supabase(monkeypatch, tables=tables, tokens=tokens)
+
+    response = client.patch(
+        "/me/username",
+        headers={"Authorization": "Bearer good-token"},
+        json={"username": "samename"},
+    )
+
+    assert response.status_code == 200
+
+
+# TC-42
+def test_update_username_rejects_invalid_characters(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    _install_fake_supabase(monkeypatch, tables={"profiles": []}, tokens=tokens)
+
+    response = client.patch(
+        "/me/username",
+        headers={"Authorization": "Bearer good-token"},
+        json={"username": "not valid!"},
+    )
+
+    assert response.status_code == 422
+
+
+# TC-43
+def test_update_username_rejects_missing_token(monkeypatch):
+    _install_fake_supabase(monkeypatch)
+
+    response = client.patch("/me/username", json={"username": "newname"})
+
+    assert response.status_code == 401
+
+
+# --- PATCH /me/password --------------------------------------------------
+
+# TC-44
+def test_update_password_succeeds(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    users = {"user@example.com": {"password": "oldpass12", "id": "u1", "username": "someone"}}
+    _, users, _ = _install_fake_supabase(monkeypatch, users=users, tokens=tokens)
+
+    response = client.patch(
+        "/me/password",
+        headers={"Authorization": "Bearer good-token"},
+        json={"current_password": "oldpass12", "new_password": "brandnew34"},
+    )
+
+    assert response.status_code == 200
+    assert users["user@example.com"]["password"] == "brandnew34"
+
+
+# TC-45
+def test_update_password_rejects_wrong_current_password(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    users = {"user@example.com": {"password": "oldpass12", "id": "u1", "username": "someone"}}
+    _, users, _ = _install_fake_supabase(monkeypatch, users=users, tokens=tokens)
+
+    response = client.patch(
+        "/me/password",
+        headers={"Authorization": "Bearer good-token"},
+        json={"current_password": "wrongpass", "new_password": "brandnew34"},
+    )
+
+    assert response.status_code == 401
+    assert users["user@example.com"]["password"] == "oldpass12"
+
+
+# TC-46
+def test_update_password_rejects_short_new_password(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    users = {"user@example.com": {"password": "oldpass12", "id": "u1", "username": "someone"}}
+    _install_fake_supabase(monkeypatch, users=users, tokens=tokens)
+
+    response = client.patch(
+        "/me/password",
+        headers={"Authorization": "Bearer good-token"},
+        json={"current_password": "oldpass12", "new_password": "short"},
+    )
+
+    assert response.status_code == 422
+
+
+# TC-47
+def test_update_password_rejects_missing_token(monkeypatch):
+    _install_fake_supabase(monkeypatch)
+
+    response = client.patch(
+        "/me/password",
+        json={"current_password": "oldpass12", "new_password": "brandnew34"},
+    )
+
+    assert response.status_code == 401
+
+
+# --- POST /me/delete --------------------------------------------------
+
+# TC-48
+def test_delete_account_removes_user_and_profile(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    users = {"user@example.com": {"password": "secret12", "id": "u1", "username": "someone"}}
+    tables = {"profiles": [
+        {"user_id": "u1", "user_displayname": "someone"},
+        {"user_id": "u2", "user_displayname": "other"},
+    ]}
+    tables, users, _ = _install_fake_supabase(monkeypatch, tables=tables, users=users, tokens=tokens)
+
+    response = client.post(
+        "/me/delete",
+        headers={"Authorization": "Bearer good-token"},
+        json={"current_password": "secret12"},
+    )
+
+    assert response.status_code == 200
+    # auth.users row (email + password) gone...
+    assert "user@example.com" not in users
+    # ...and the profiles row (username) with it, leaving other users alone.
+    assert tables["profiles"] == [{"user_id": "u2", "user_displayname": "other"}]
+
+    # And the account genuinely no longer exists: a fresh login fails.
+    login = client.post(
+        "/auth/login",
+        json={"identifier": "user@example.com", "password": "secret12"},
+    )
+    assert login.status_code == 401
+
+
+# TC-49
+def test_delete_account_rejects_wrong_password(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    users = {"user@example.com": {"password": "secret12", "id": "u1", "username": "someone"}}
+    tables = {"profiles": [{"user_id": "u1", "user_displayname": "someone"}]}
+    tables, users, _ = _install_fake_supabase(monkeypatch, tables=tables, users=users, tokens=tokens)
+
+    response = client.post(
+        "/me/delete",
+        headers={"Authorization": "Bearer good-token"},
+        json={"current_password": "wrongpass"},
+    )
+
+    assert response.status_code == 401
+    # Nothing removed.
+    assert "user@example.com" in users
+    assert tables["profiles"] == [{"user_id": "u1", "user_displayname": "someone"}]
+
+
+# TC-50
+def test_delete_account_rejects_missing_token(monkeypatch):
+    _install_fake_supabase(monkeypatch)
+
+    response = client.post("/me/delete", json={"current_password": "secret12"})
+
+    assert response.status_code == 401
+
+
+# TC-51
+def test_delete_account_requires_current_password(monkeypatch):
+    tokens = {"good-token": {"id": "u1", "email": "user@example.com"}}
+    _install_fake_supabase(monkeypatch, tokens=tokens)
+
+    response = client.post(
+        "/me/delete",
+        headers={"Authorization": "Bearer good-token"},
+        json={},
+    )
+
+    assert response.status_code == 422

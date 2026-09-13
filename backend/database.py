@@ -44,16 +44,23 @@ def fetch_assessment_history(token):
 def fetch_risk_calculation(riskcalc_id, token):
     user_client = get_user_scoped_client(token)
 
-    risk_calc = (user_client.table("risk_calculations")
-                .select("*")
-                .execute()
-                )
+    risk_calc_response = (
+        user_client
+        .table("risk_calculations")
+        .select("*")
+        .eq("riskcalc_id", riskcalc_id)
+        .execute()
+    )
 
-    risk_inputs = (user_client.table("risk_inputs")
-                   .select("*")
-                   .eq("riskcalc_id", riskcalc_id))
+    risk_inputs_response = (
+        user_client
+        .table("risk_inputs")
+        .select("*")
+        .eq("riskcalc_id", riskcalc_id)
+        .execute()
+    )
 
-    return risk_calc, risk_inputs
+    return risk_calc_response.data, risk_inputs_response.data
 
 def fetch_latest_risk_calculation(token):
     user_client = get_user_scoped_client(token)

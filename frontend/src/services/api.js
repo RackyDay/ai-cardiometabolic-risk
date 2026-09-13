@@ -90,6 +90,46 @@ export const logIn = async ({ identifier, password }) => {
   return res.json();
 };
 
+export const updateUsername = async ({ username, accessToken }) => {
+  const res = await fetch(`${API_URL}/me/username`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ username }),
+  });
+
+  await throwForStatus(res, "Updating your username");
+  return res.json();
+};
+
+export const updatePassword = async ({ currentPassword, newPassword, accessToken }) => {
+  const res = await fetch(`${API_URL}/me/password`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+
+  await throwForStatus(res, "Updating your password");
+};
+
+export const deleteAccount = async ({ currentPassword, accessToken }) => {
+  const res = await fetch(`${API_URL}/me/delete`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ current_password: currentPassword }),
+  });
+
+  await throwForStatus(res, "Deleting your account");
+};
+
 export const logOut = async (accessToken) => {
   await fetch(`${API_URL}/auth/logout`, {
     method: "POST",
@@ -103,6 +143,27 @@ export const getLatestPrediction = async (accessToken) => {
   });
 
   await throwForStatus(res, "Loading your latest risk evaluation");
+  return res.json();
+};
+
+export const getRiskCalculationHistory = async (accessToken) => {
+  const res = await fetch(`${API_URL}/api/risk-calculations`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  await throwForStatus(res, "Loading risk calculation history");
+  return res.json();
+};
+
+export const getRiskCalculation = async (accessToken, calculationId) => {
+  const res = await fetch(
+    `${API_URL}/api/risk-calculations/${calculationId}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+
+  await throwForStatus(res, "Loading risk calculation");
   return res.json();
 };
 

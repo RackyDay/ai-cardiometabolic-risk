@@ -61,6 +61,26 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1)
 
 
+class UpdateUsernameRequest(BaseModel):
+    # Same charset/length rules as SignUpRequest.username - a username has to
+    # stay email-distinguishable (no "@") and unique no matter which endpoint
+    # sets it.
+    username: str = Field(min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_]+$")
+
+
+class UpdatePasswordRequest(BaseModel):
+    # current_password is re-verified server-side before the change goes
+    # through, so a walked-away session can't have its password swapped.
+    current_password: str = Field(min_length=1)
+    new_password: str = Field(min_length=8)
+
+
+class DeleteAccountRequest(BaseModel):
+    # Same re-verification gate as a password change - account deletion is
+    # irreversible, so a logged-in session alone isn't enough to trigger it.
+    current_password: str = Field(min_length=1)
+
+
 class UserOut(BaseModel):
     id: str  # Supabase auth.users UUID, as a string
     email: str

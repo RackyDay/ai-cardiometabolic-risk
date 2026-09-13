@@ -9,7 +9,7 @@ function getNumberPlaceholder(field) {
     return `Enter a value between ${min}\u2013${max}${unitSuffix}`;
 }
 
-function RiskField({ field, value, onChange, error }) {
+function RiskField({ field, value, onChange, error, disabled = false, disabledMessage }) {
     switch (field.type) {
         case "select":
             return (
@@ -36,6 +36,8 @@ function RiskField({ field, value, onChange, error }) {
                     required={field.required}
                     placeholder={getNumberPlaceholder(field)}
                     tooltip={field.tooltip}
+                    disabled={disabled}
+                    disabledMessage={disabledMessage}
                     onKeyDown={(e) => {
                         const blockedKeys = field.blockKeys || [];
                         if (blockedKeys.includes(e.key)) {

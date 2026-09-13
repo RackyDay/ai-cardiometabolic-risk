@@ -1,14 +1,16 @@
 .menu-bar {
-  height: 56px;
+  min-height: 70px;
   width: 100%;
   background: #f7fafd;
   border-bottom: 1px solid var(--border);
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
   align-items: center;
-  padding: 0 0.75rem;
+  padding: 0.35rem 0.75rem;
   box-sizing: border-box;
   position: relative;
+  z-index: 30;
 }
 
 .menu-bar-left {
@@ -20,15 +22,14 @@
 
 .menu-bar-title {
   margin: 0;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  min-width: 0;
   text-align: center;
   font-size: 1.35rem;
   font-weight: 600;
   color: #3d6fd4;
   letter-spacing: 0.3px;
-  white-space: nowrap;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
   z-index: 1;
 }
 
@@ -37,7 +38,20 @@
   justify-content: flex-end;
   align-items: center;
   gap: 0.35rem;
+  min-width: 0;
   z-index: 2;
+}
+
+.menu-bar-actions .history-dropdown {
+  width: clamp(12rem, 20vw, 16rem);
+  flex-shrink: 0;
+}
+
+.menu-bar-actions .history-menu {
+  left: auto;
+  right: 0;
+  width: min(22rem, calc(100vw - 1.5rem));
+  box-sizing: border-box;
 }
 
 .menu-icon-button {
@@ -64,6 +78,8 @@
 
 .menu-profile-wrapper {
   position: relative;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .menu-profile-name {
@@ -165,15 +181,17 @@
   display: block;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1025px) {
   .menu-profile-button {
     display: none;
   }
 
   .menu-profile-name {
     height: 40px;
-    display: grid;
-    place-items: center;
+    display: block;
+    max-width: min(16rem, 20vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
     cursor: pointer;
     padding: 0 10px;
     border: none;
@@ -198,5 +216,33 @@
   .menu-profile-dropdown-header,
   .menu-profile-dropdown-divider {
     display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .menu-bar {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.25rem 0.5rem;
+  }
+
+  .menu-bar-title {
+    font-size: 1.15rem;
+  }
+
+  .menu-bar-actions {
+    grid-column: 1 / -1;
+    padding-bottom: 0.25rem;
+  }
+
+  .menu-bar-actions .history-dropdown {
+    flex: 1;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .menu-bar-actions .history-menu {
+    left: 0;
+    right: auto;
   }
 }

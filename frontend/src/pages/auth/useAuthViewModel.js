@@ -1,21 +1,36 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+
+// Existing users always land here after logging in, regardless of where
+// they started. Only account creation (signup) returns to `from`, so a
+// brand new user can pick up whatever flow they interrupted to sign up.
+const LOGIN_DESTINATION = "/dashboard";
 
 export function useAuthViewModel() {
   const { signUp, logIn, signInWithGoogle, requestPasswordReset, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   // Wherever the user navigated here from (e.g. "/" or "/dashboard") -
-  // navigate() there on success so the flow returns to its origin.
+  // for signup, navigate() there on success so the flow returns to its
+  // origin. A login instead goes to LOGIN_DESTINATION (see below).
   const from = location.state?.from || "/";
+
+  // True from the moment a login submit starts until it resolves - tells
+  // the effect below to route a freshly-authenticated user to the
+  // dashboard rather than back to `from`, whether the session finalizes
+  // synchronously in handleSubmit or later via the MFA step-up modal.
+  const loginInProgress = useRef(false);
 
   // Login/signup is disabled once already logged in - bounce anyone who
   // lands here directly (typed URL, back button) back to where they came
-  // from instead of showing the form.
+  // from instead of showing the form. A user who just logged in through
+  // the form goes to the dashboard instead.
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(from, { replace: true });
+      const destination = loginInProgress.current ? LOGIN_DESTINATION : from;
+      loginInProgress.current = false;
+      navigate(destination, { replace: true });
     }
   }, [isAuthenticated, from, navigate]);
 
@@ -52,18 +67,25 @@ export function useAuthViewModel() {
           setConfirmationRequired(true);
           return;
         }
+        // New account: return to wherever the user started the flow.
+        navigate(from);
       } else {
+        // Existing user: flag the login now so the effect above also
+        // routes to the dashboard once isAuthenticated flips - covers both
+        // the synchronous finalize here and the deferred MFA path.
+        loginInProgress.current = true;
         const result = await logIn({ identifier, password });
         if (result?.mfaRequired) {
           // Not actually signed in yet - the global code-entry modal
           // (rendered from AuthProvider) takes over from here. Stay put;
-          // the effect above navigates away once it resolves and
-          // isAuthenticated flips to true.
+          // the effect above navigates to the dashboard once it resolves
+          // and isAuthenticated flips to true.
           return;
         }
+        navigate(LOGIN_DESTINATION);
       }
-      navigate(from);
     } catch (err) {
+      loginInProgress.current = false;
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);

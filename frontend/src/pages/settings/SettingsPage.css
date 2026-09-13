@@ -155,6 +155,28 @@
   gap: 1.25rem;
 }
 
+.settings-edit-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e3e9f3;
+}
+
+.settings-card-header + .settings-edit-form {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.settings-card-danger {
+  border-color: #f3c6c6;
+}
+
+.settings-card-danger .settings-card-header h2 {
+  color: #b91c1c;
+}
+
 .qr-section {
   display: grid;
   grid-template-columns: auto 1fr;

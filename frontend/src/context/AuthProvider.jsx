@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthContext } from "./AuthContext";
-import { logIn, logOut, signUp } from "../services/api";
+import {
+  deleteAccount as apiDeleteAccount,
+  logIn,
+  logOut,
+  signUp,
+  updatePassword as apiUpdatePassword,
+  updateUsername as apiUpdateUsername,
+} from "../services/api";
 import { supabase } from "../services/supabaseClient";
 
 const STORAGE_KEY = "auth";
@@ -216,17 +223,20 @@ export function AuthProvider({ children }) {
   };
 
   // Redirects the whole page to Google - nothing after this call runs in
-  // the current page load. `from` (e.g. "/" or "/dashboard") is where the
-  // user started, same idea as the password flow's location.state.from,
-  // but it has to survive an actual cross-site navigation here, so it's
-  // baked into redirectTo instead of React Router state. Coming back is
-  // handled entirely by the onAuthStateChange listener below - Supabase
-  // redirects the browser straight back to that URL with a session already
-  // established, and supabase-js's default detectSessionInUrl notices it.
+  // the current page load. Always comes back to /auth/callback rather than
+  // straight to `from`: that route waits for the session to finalize (incl.
+  // any MFA step-up) and then decides where to land - a returning Google
+  // user goes to the dashboard, a first-time sign-up resumes `from`. `from`
+  // (e.g. "/" or "/dashboard") is where the user started; it has to survive
+  // an actual cross-site navigation, so it rides along as a query param
+  // instead of React Router state. The session itself is picked up by the
+  // onAuthStateChange listener below via supabase-js's detectSessionInUrl.
   const signInWithGoogle = async (from) => {
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("from", from);
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${from}` },
+      options: { redirectTo: callbackUrl.toString() },
     });
   };
 
@@ -250,6 +260,44 @@ export function AuthProvider({ children }) {
   const updatePassword = async (newPassword) => {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;
+  };
+
+  // Account edits from SettingsPage. Unlike updatePassword above (which runs
+  // on the temporary recovery session), these go through our backend on the
+  // live logged-in session - the backend re-checks username uniqueness and
+  // the current password, neither of which the frontend can do on its own.
+  const changeUsername = async (newUsername) => {
+    const updated = await apiUpdateUsername({
+      username: newUsername,
+      accessToken: session?.accessToken,
+    });
+    // Reflect the new name immediately everywhere `user` is read (menu bar,
+    // this page, the sign-in toast on next login) without a round trip.
+    setSession((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, user: { ...prev.user, username: updated.username } };
+      persistSession(next);
+      return next;
+    });
+    return updated;
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    await apiUpdatePassword({
+      currentPassword,
+      newPassword,
+      accessToken: session?.accessToken,
+    });
+  };
+
+  const deleteAccount = async (currentPassword) => {
+    await apiDeleteAccount({ currentPassword, accessToken: session?.accessToken });
+    // The account - and the user this token belonged to - no longer exists,
+    // so there's nothing to revoke server-side (no /auth/logout call): just
+    // tear down local session state, same as the tail of logOutUser.
+    await supabase.auth.signOut().catch(() => {});
+    setSession(null);
+    persistSession(null);
   };
 
   // MFA enrollment/management, used by SettingsPage. All plain passthroughs
@@ -386,6 +434,9 @@ export function AuthProvider({ children }) {
         signInWithGoogle,
         requestPasswordReset,
         updatePassword,
+        changeUsername,
+        changePassword,
+        deleteAccount,
         enrollMfa,
         confirmMfaEnrollment,
         unenrollMfa,

@@ -17,6 +17,34 @@ function SettingsPage() {
     unenrollSubmitting,
     unenrollError,
     handleDisableClick,
+    usernameInput,
+    setUsernameInput,
+    usernameSubmitting,
+    usernameError,
+    usernameSuccess,
+    handleUsernameSubmit,
+    currentPassword,
+    setCurrentPassword,
+    newPassword,
+    setNewPassword,
+    confirmPassword,
+    setConfirmPassword,
+    passwordSubmitting,
+    passwordError,
+    passwordSuccess,
+    handlePasswordSubmit,
+    deleteOpen,
+    deleteConfirmPhrase,
+    deletePassword,
+    setDeletePassword,
+    deleteConfirmInput,
+    setDeleteConfirmInput,
+    deleteConfirmed,
+    deleteSubmitting,
+    deleteError,
+    openDeleteConfirm,
+    cancelDeleteConfirm,
+    handleDeleteAccount,
   } = useSettingsViewModel();
 
   if (!user) return null;
@@ -37,17 +65,104 @@ function SettingsPage() {
 
         <div className="profile-info-list">
           <div className="profile-info-row">
-            <span className="profile-info-label">Username</span>
-            <span className="profile-info-value">
-              {user.username || "Not set"}
-            </span>
-          </div>
-
-          <div className="profile-info-row">
             <span className="profile-info-label">Email</span>
             <span className="profile-info-value">{user.email}</span>
           </div>
         </div>
+
+        <form className="settings-edit-form" onSubmit={handleUsernameSubmit}>
+          <label className="settings-field">
+            <span>Username</span>
+            <input
+              type="text"
+              autoComplete="username"
+              value={usernameInput}
+              onChange={(event) => setUsernameInput(event.target.value)}
+              placeholder="your_username"
+              minLength={3}
+              maxLength={32}
+              required
+            />
+          </label>
+
+          {usernameError && <p className="settings-error">{usernameError}</p>}
+
+          {usernameSuccess && (
+            <p className="settings-success">Username updated.</p>
+          )}
+
+          <div className="settings-button-row">
+            <button
+              type="submit"
+              className="settings-primary-button"
+              disabled={usernameSubmitting}
+            >
+              {usernameSubmitting ? "Saving..." : "Save username"}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="settings-card">
+        <div className="settings-card-header">
+          <div>
+            <h2>Password</h2>
+            <p>Change the password you use to sign in.</p>
+          </div>
+        </div>
+
+        <form className="settings-edit-form" onSubmit={handlePasswordSubmit}>
+          <label className="settings-field">
+            <span>Current password</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              required
+            />
+          </label>
+
+          <label className="settings-field">
+            <span>New password</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              minLength={8}
+              required
+            />
+          </label>
+
+          <label className="settings-field">
+            <span>Confirm new password</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              minLength={8}
+              required
+            />
+          </label>
+
+          {passwordError && <p className="settings-error">{passwordError}</p>}
+
+          {passwordSuccess && (
+            <p className="settings-success">Password updated.</p>
+          )}
+
+          <div className="settings-button-row">
+            <button
+              type="submit"
+              className="settings-primary-button"
+              disabled={passwordSubmitting}
+            >
+              {passwordSubmitting ? "Saving..." : "Update password"}
+            </button>
+          </div>
+        </form>
       </section>
 
       <section className="settings-card">
@@ -173,6 +288,83 @@ function SettingsPage() {
                 : "Disable two-factor authentication"}
             </button>
           </div>
+        )}
+      </section>
+
+      <section className="settings-card settings-card-danger">
+        <div className="settings-card-header">
+          <div>
+            <h2>Delete Account</h2>
+            <p>
+              Permanently delete your account and every risk assessment tied
+              to it. This can't be undone.
+            </p>
+          </div>
+        </div>
+
+        {!deleteOpen && (
+          <div className="mfa-action-box">
+            <button
+              type="button"
+              className="settings-danger-button"
+              onClick={openDeleteConfirm}
+            >
+              Delete my account
+            </button>
+          </div>
+        )}
+
+        {deleteOpen && (
+          <form className="settings-edit-form" onSubmit={handleDeleteAccount}>
+            <p className="settings-muted">
+              Your username, email, password and all saved assessments will be
+              erased. To confirm, enter your password and type{" "}
+              <strong>{deleteConfirmPhrase}</strong> below.
+            </p>
+
+            <label className="settings-field">
+              <span>Password</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={deletePassword}
+                onChange={(event) => setDeletePassword(event.target.value)}
+                required
+              />
+            </label>
+
+            <label className="settings-field">
+              <span>Type "{deleteConfirmPhrase}" to confirm</span>
+              <input
+                type="text"
+                autoComplete="off"
+                value={deleteConfirmInput}
+                onChange={(event) => setDeleteConfirmInput(event.target.value)}
+                required
+              />
+            </label>
+
+            {deleteError && <p className="settings-error">{deleteError}</p>}
+
+            <div className="settings-button-row">
+              <button
+                type="submit"
+                className="settings-danger-button"
+                disabled={deleteSubmitting || !deleteConfirmed || !deletePassword}
+              >
+                {deleteSubmitting ? "Deleting..." : "Permanently delete account"}
+              </button>
+
+              <button
+                type="button"
+                className="settings-secondary-button"
+                onClick={cancelDeleteConfirm}
+                disabled={deleteSubmitting}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         )}
       </section>
     </main>

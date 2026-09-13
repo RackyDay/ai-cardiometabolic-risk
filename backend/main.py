@@ -1,26 +1,33 @@
 import logging
 
-from fastapi import Depends, FastAPI, Header, Request
+from fastapi import Depends, FastAPI, Header, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from risk_model import predict_risk
 from schemas import (
     AuthResponse,
+    DeleteAccountRequest,
     LatestPredictionResponse,
     LoginRequest,
     PredictionResponse,
     RiskInputData,
     SignUpRequest,
+    UpdatePasswordRequest,
+    UpdateUsernameRequest,
+    UserOut,
 )
 
 from auth import (
     _maybe_single_data,
+    delete_account,
     get_current_user_and_token,
     get_optional_user,
     log_in,
     log_out,
     sign_up,
+    update_password,
+    update_username,
 )
 from supabase_client import get_user_scoped_client, supabase_admin
 
@@ -33,7 +40,8 @@ import database as db
 app = FastAPI()
 
 origins = ["https://ai-cardiometabolic-risk.onrender.com",
-           "http://localhost:5173"]
+           "http://localhost:5173",
+           "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -81,6 +89,8 @@ def edit(assessment_id, data: RiskInputData, auth = Depends(get_optional_user)):
     if auth is not None:
         _, token = auth
         db.edit_assessment(assessment_id, data.model_dump(), token)
+    else:
+        raise HTTPException(status_code=401, detail="Not signed in")
 
     predict(data, auth)
 
@@ -89,12 +99,22 @@ async def get_assessment_history(auth = Depends(get_optional_user)):
     if auth is not None:
         _, token = auth
         risk_calculations = db.fetch_assessment_history(token)
+        return risk_calculations
 
 @app.get("/api/risk-calculations/{calculation_id}")
-async def get_risk_calculation(calculation_id: UUID, auth = Depends(get_optional_user)):
-    if auth is not None:
-        _, token = auth
-        risk_calc, risk_inputs = db.fetch_risk_calculation(calculation_id, token)
+def get_risk_calculation(calculation_id: UUID, auth = Depends(get_current_user_and_token)):
+    _, token = auth
+    risk_calc, risk_inputs = db.fetch_risk_calculation(str(calculation_id), token)
+    if not risk_calc or not risk_inputs:
+        raise HTTPException(status_code=404, detail="Calculation not found")
+    inputs = risk_inputs[0]["inputs_JSON"]
+    prediction = predict_risk(RiskInputData(**inputs))
+    return {
+        "riskcalc_id": risk_calc[0]["riskcalc_id"],
+        "risk_score": risk_calc[0]["risk_score"],
+        "inputs": inputs,
+        "top_contributors": prediction.get("top_contributors", []),
+    }
 
 @app.get("/predictions/latest", response_model=LatestPredictionResponse)
 def latest_prediction(auth=Depends(get_current_user_and_token)):
@@ -182,4 +202,36 @@ def me(auth=Depends(get_current_user_and_token)):
         "email": user.email,
         "username": profile.get("user_displayname") if profile else None,
     }
+
+
+@app.patch("/me/username", response_model=UserOut)
+def update_my_username(req: UpdateUsernameRequest, auth=Depends(get_current_user_and_token)):
+    """Change the caller's own display name. See auth.update_username for the
+    uniqueness check and the two stores it writes.
+    """
+    user, _ = auth
+    return update_username(user, req.username)
+
+
+@app.patch("/me/password")
+def update_my_password(req: UpdatePasswordRequest, auth=Depends(get_current_user_and_token)):
+    """Change the caller's own password after re-verifying the current one.
+    See auth.update_password.
+    """
+    user, _ = auth
+    update_password(user, req.current_password, req.new_password)
+    return {"message": "Password updated"}
+
+
+@app.post("/me/delete")
+def delete_my_account(req: DeleteAccountRequest, auth=Depends(get_current_user_and_token)):
+    """Permanently delete the caller's own account (auth.users row + profiles
+    row, which cascades to their risk_calculations and risk_inputs) after
+    re-verifying the current password. POST, not DELETE, to stay consistent
+    with the other mutating endpoints here and to carry a JSON body cleanly.
+    See auth.delete_account.
+    """
+    user, _ = auth
+    delete_account(user, req.current_password)
+    return {"message": "Account deleted"}
 

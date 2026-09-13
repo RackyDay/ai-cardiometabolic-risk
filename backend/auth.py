@@ -153,3 +153,92 @@ def log_out(access_token: str) -> None:
         # Logout is best-effort server-side revocation; the frontend clears
         # its local session regardless, so a failure here isn't fatal.
         pass
+
+
+def update_username(user, new_username: str) -> UserOut:
+    """Change the logged-in user's display name. Uniqueness is checked the
+    same way sign_up does it - a service-role read of public.profiles, since
+    RLS only lets a user see their own row - and the write goes to both
+    stores signup populates: public.profiles.user_displayname (what login and
+    /me read) and auth.users.raw_user_meta_data.username (what the Google
+    session path reads), so the two can't drift apart.
+    """
+    existing = _maybe_single_data(
+        supabase_admin.table("profiles").select("user_id").eq("user_displayname", new_username).maybe_single()
+    )
+    if existing and existing.get("user_id") != user.id:
+        raise HTTPException(status_code=409, detail="That username is already taken")
+
+    supabase_admin.table("profiles").update(
+        {"user_displayname": new_username}
+    ).eq("user_id", user.id).execute()
+
+    try:
+        supabase_admin.auth.admin.update_user_by_id(
+            user.id, {"user_metadata": {"username": new_username}}
+        )
+    except Exception:
+        # Best-effort metadata mirror: profiles is the source of truth for a
+        # password account, so a failure here doesn't fail the request.
+        pass
+
+    return UserOut(id=user.id, email=user.email, username=new_username)
+
+
+def _verify_current_password(user, current_password: str) -> None:
+    """Re-check the caller's password with a plain sign-in (same call log_in
+    uses - a pass/fail result, never a stored hash). Gate for the
+    destructive/sensitive account actions below, so a walked-away logged-in
+    session can't change the password or delete the account outright.
+    """
+    try:
+        result = supabase.auth.sign_in_with_password({
+            "email": user.email,
+            "password": current_password,
+        })
+    except Exception:
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    if result.session is None:
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+
+def update_password(user, current_password: str, new_password: str) -> None:
+    """Change the logged-in user's password. current_password is verified
+    first (see _verify_current_password); the change itself goes through the
+    Admin API rather than relying on the shared client holding this user's
+    session.
+    """
+    _verify_current_password(user, current_password)
+
+    try:
+        supabase_admin.auth.admin.update_user_by_id(user.id, {"password": new_password})
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+def delete_account(user, current_password: str) -> None:
+    """Permanently delete the logged-in user's account after re-verifying the
+    current password. Removal is in two parts: the auth.users row (email +
+    password hash, owned by Supabase Auth) via the Admin API, then the
+    public.profiles row (the username), whose ON DELETE CASCADE clears this
+    user's risk_calculations and, through them, risk_inputs. There is no
+    on_auth_user_deleted trigger, so the profiles row has to be removed
+    explicitly - deleting the auth user alone would orphan it.
+    """
+    _verify_current_password(user, current_password)
+
+    try:
+        supabase_admin.auth.admin.delete_user(user.id)
+    except Exception as exc:
+        # Nothing has been deleted yet - surface it and leave the account
+        # intact rather than half-removing it.
+        raise HTTPException(status_code=500, detail=f"Couldn't delete account: {exc}")
+
+    try:
+        supabase_admin.table("profiles").delete().eq("user_id", user.id).execute()
+    except Exception:
+        # The account itself is already gone (step above) - the user can no
+        # longer sign in. A leftover, now-orphaned profiles row is harmless;
+        # don't fail a request the user already sees as done.
+        pass
