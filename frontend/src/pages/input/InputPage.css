@@ -109,7 +109,8 @@
 
 .input-disclaimer-card {
   grid-column: 3;
-  width: 18rem;
+  width: 100%;
+  max-width: 18rem;
   background: #fffbeb;
   border: 1px solid #fde68a;
   border-radius: 1rem;
@@ -524,6 +525,26 @@
 
 .input-disclaimer-modal p:last-child {
   margin-bottom: 0;
+}
+
+@media (max-width: 1350px) {
+  .input-content-layout {
+    display: block;
+  }
+
+  .input-disclaimer-card {
+    display: none;
+  }
+
+  .input-disclaimer-trigger {
+    display: grid;
+    place-items: center;
+  }
+
+  .form-card {
+    margin-inline: auto;
+    position: relative;
+  }
 }
 
 @media (max-width: 767px) {
