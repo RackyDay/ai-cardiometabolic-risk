@@ -578,8 +578,11 @@
   }
 
   .form-card {
-    margin-inline: auto;
     position: relative;
+  }
+
+  .form-card-column {
+    margin-inline: auto;
   }
 }
 
