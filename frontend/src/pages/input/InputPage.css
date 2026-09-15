@@ -92,6 +92,14 @@
   max-width: var(--form-max-width);
   box-sizing: border-box;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.form-card-column {
+  grid-column: 2;
+  width: 100%;
+  max-width: var(--form-max-width);
+  min-width: 0;
 }
 
 .input-content-layout {
@@ -100,11 +108,6 @@
   grid-template-columns: minmax(0, 1fr) var(--form-max-width) minmax(0, 1fr);
   column-gap: 1.5rem;
   align-items: start;
-}
-
-.form-card {
-  position: relative;
-  grid-column: 2;
 }
 
 .input-disclaimer-card {
@@ -527,6 +530,39 @@
   margin-bottom: 0;
 }
 
+.clinical-unit-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.clinical-unit-control span {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.clinical-unit-button {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #3d6fd4;
+
+  padding: 0.4rem 0.8rem;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+
+  cursor: pointer;
+}
+
+.clinical-unit-button:hover {
+  background: #f0f4ff;
+}
+
 @media (max-width: 1350px) {
   .input-content-layout {
     display: block;
@@ -544,43 +580,6 @@
   .form-card {
     margin-inline: auto;
     position: relative;
-  }
-
-  .form-input-with-unit {
-    display: flex;
-    width: 100%;
-  }
-
-  .form-input-with-unit .form-input {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .form-input-with-unit:has(.form-unit-select) .form-input {
-    border-radius: 8px 0 0 8px;
-  }
-
-  .form-unit-select {
-    width: 7rem;
-    flex-shrink: 0;
-
-    border: 1px solid #d0d0d4;
-    border-left: none;
-    border-radius: 0 8px 8px 0;
-
-    background: #f7f9fc;
-    color: #2c2c2c;
-
-    padding: 0 0.65rem;
-    font: inherit;
-    font-size: 0.875rem;
-
-    cursor: pointer;
-  }
-
-  .form-unit-select:focus {
-    outline: none;
-    border-color: #3d6fd4;
   }
 }
 

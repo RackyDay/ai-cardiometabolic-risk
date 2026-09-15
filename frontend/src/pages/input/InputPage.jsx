@@ -12,10 +12,19 @@ function InputPage() {
   const currentFields = categories[currentCategory];
   const isLastPage = page === pageOrder.length - 1;
   const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
-  const [units, setUnits] = useState({
-    glucose: "mg/dL",
-    totChol: "mg/dL",
-  });
+  const [clinicalUnit, setClinicalUnit] = useState("mg/dL");
+
+  const toggleClinicalUnit = () => {
+    setClinicalUnit((current) =>
+      current === "mg/dL" ? "mmol/L" : "mg/dL"
+    );
+  };
+
+  const showUnitToggle = currentFields.some(
+    (field) =>
+      field.name === "glucose" ||
+      field.name === "totChol"
+  );
 
   return (
     <div className="inputs-page">
@@ -24,7 +33,24 @@ function InputPage() {
         ‹ Back
       </button>
 
-        <div className="input-content-layout">
+      <div className="input-content-layout">
+        
+        <div className="form-card-column">
+
+          {showUnitToggle && (
+            <div className="clinical-unit-control">
+              <span>Units:</span>
+
+              <button
+                type="button"
+                className="clinical-unit-button"
+                onClick={toggleClinicalUnit}
+              >
+                {clinicalUnit}
+              </button>
+            </div>
+          )}
+
           <div className="form-card">
             {isLastPage && (
               <button
@@ -55,16 +81,7 @@ function InputPage() {
                       ? "This field is disabled because you selected No for smoking status."
                       : undefined
                   }
-                  unit={units[field.name]}
-                  onUnitChange={
-                    field.unitOptions
-                      ? (newUnit) =>
-                          setUnits((current) => ({
-                            ...current,
-                            [field.name]: newUnit,
-                          }))
-                      : undefined
-                  }
+                  clinicalUnit={clinicalUnit}
                 />
               );
             })}
@@ -106,17 +123,19 @@ function InputPage() {
               </button>
             </nav>
           </div>
-
-          {isLastPage && (
-            <aside className="input-disclaimer-card">
-              <h2>Important note</h2>
-              <p>
-                Although these fields are optional, providing these measurements can help
-                improve the accuracy of the risk calculation.
-              </p>
-            </aside>
-          )}
         </div>
+        
+
+        {isLastPage && (
+          <aside className="input-disclaimer-card">
+            <h2>Important note</h2>
+            <p>
+              Although these fields are optional, providing these measurements can help
+              improve the accuracy of the risk calculation.
+            </p>
+          </aside>
+        )}
+      </div>
 
         {isLastPage && isDisclaimerOpen && (
           <div

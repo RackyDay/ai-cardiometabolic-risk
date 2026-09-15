@@ -35,7 +35,7 @@ function getNumberPlaceholder(field) {
     return `Enter a value between ${min}\u2013${max}${unitSuffix}`;
 }
 
-function RiskField({ field, value, onChange, error, disabled = false, disabledMessage, unit, onUnitChange }) {
+function RiskField({ field, value, onChange, error, disabled = false, disabledMessage, clinicalUnit }) {
     switch (field.type) {
         case "select":
             return (
@@ -50,23 +50,27 @@ function RiskField({ field, value, onChange, error, disabled = false, disabledMe
                 />
             )
         case "number": {
-            const selectedUnit = unit || field.units;
+            const isConvertible = Boolean(field.mmolConversionFactor);
+
+            const displayUnit = isConvertible
+                ? clinicalUnit
+                : field.units;
 
             const displayValue = canonicalToDisplay(
                 value,
-                selectedUnit,
+                displayUnit,
                 field.mmolConversionFactor
             );
 
             const displayMin = canonicalToDisplay(
                 field.min,
-                selectedUnit,
+                displayUnit,
                 field.mmolConversionFactor
             );
 
             const displayMax = canonicalToDisplay(
                 field.max,
-                selectedUnit,
+                displayUnit,
                 field.mmolConversionFactor
             );
 
@@ -76,31 +80,28 @@ function RiskField({ field, value, onChange, error, disabled = false, disabledMe
                 value={displayValue}
                 onChange={(e) =>
                     onChange(
-                    displayToCanonical(
+                        displayToCanonical(
                         e.target.value,
-                        selectedUnit,
+                        displayUnit,
                         field.mmolConversionFactor
-                    )
+                        )
                     )
                 }
                 min={displayMin}
                 max={displayMax}
-                step={selectedUnit === "mmol/L" ? 0.01 : field.step || 1}
+                step={displayUnit === "mmol/L" ? 0.01 : field.step || 1}
                 error={error}
                 required={field.required}
                 placeholder={
                     displayMin != null && displayMax != null
                     ? `Enter a value between ${displayMin}–${displayMax}${
-                        selectedUnit ? ` ${selectedUnit}` : ""
+                        displayUnit ? ` ${displayUnit}` : ""
                         }`
                     : ""
                 }
                 tooltip={field.tooltip}
                 disabled={disabled}
                 disabledMessage={disabledMessage}
-                unit={selectedUnit}
-                unitOptions={field.unitOptions}
-                onUnitChange={onUnitChange}
                 onKeyDown={(e) => {
                     const blockedKeys = field.blockKeys || [];
 

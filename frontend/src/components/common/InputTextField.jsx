@@ -1,6 +1,6 @@
 import FieldLabel from "./FieldLabel";
 
-function InputTextField({ label, value, onChange, min, step, max, error, required = true, placeholder, onKeyDown, tooltip, disabled = false, disabledMessage, unit, unitOptions, onUnitChange, }) {
+function InputTextField({ label, value, onChange, min, step, max, error, required = true, placeholder, onKeyDown, tooltip, disabled = false, disabledMessage }) {
     return (
     <div className={`form-field ${disabled ? "form-field-disabled" : ""}`}>
       <FieldLabel label={label} required={required} tooltip={tooltip} />
@@ -17,21 +17,6 @@ function InputTextField({ label, value, onChange, min, step, max, error, require
           placeholder={placeholder}
           disabled={disabled}
         />
-
-        {unitOptions && (
-          <select
-            className="form-unit-select"
-            value={unit}
-            onChange={(e) => onUnitChange(e.target.value)}
-            aria-label={`${label} unit`}
-          >
-            {unitOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        )}
       </div>
 
       {disabled && disabledMessage && (
