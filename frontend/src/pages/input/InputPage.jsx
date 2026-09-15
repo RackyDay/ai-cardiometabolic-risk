@@ -12,6 +12,10 @@ function InputPage() {
   const currentFields = categories[currentCategory];
   const isLastPage = page === pageOrder.length - 1;
   const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
+  const [units, setUnits] = useState({
+    glucose: "mg/dL",
+    totChol: "mg/dL",
+  });
 
   return (
     <div className="inputs-page">
@@ -49,6 +53,16 @@ function InputPage() {
                   disabledMessage={
                     shouldDisableCigarettes
                       ? "This field is disabled because you selected No for smoking status."
+                      : undefined
+                  }
+                  unit={units[field.name]}
+                  onUnitChange={
+                    field.unitOptions
+                      ? (newUnit) =>
+                          setUnits((current) => ({
+                            ...current,
+                            [field.name]: newUnit,
+                          }))
                       : undefined
                   }
                 />
