@@ -158,6 +158,7 @@ export function useDashboardViewModel() {
     setTopContributors,
     riskInputs: contextRiskInputs,
     selectedCalculation,
+    hasFreshCalculation,
   } = useContext(RiskContext);
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
@@ -209,7 +210,7 @@ export function useDashboardViewModel() {
     getLatestPrediction(accessToken)
       .then((result) => {
           if (cancelled) return;
-          setLatestRequest({ token: accessToken, error: "", timestamp: result.riskcalc_timestamp });
+          setLatestRequest({ token: accessToken, error: "", timestamp: result.riskcalc_timestamp, hasHistory: result.has_history });
           if (!result.has_history) {
             setRiskScore(null);
             setTopContributors([]);
@@ -470,7 +471,29 @@ export function useDashboardViewModel() {
      Return values to Dashboard
   ======================================================== */
 
+  const loadedHistory = trendResponse?.key === trendKey ? trendResponse.history : null;
+  const latestIndex = loadedHistory?.findIndex(
+    (item) => item.riskcalc_timestamp === latestRequest?.timestamp
+  ) ?? -1;
+  const pastAssessment = selectedCalculation ?? (
+    isAuthenticated && !hasFreshCalculation && latestRequest?.token === accessToken &&
+    latestRequest.hasHistory && latestIndex !== -1
+      ? { calculationNumber: loadedHistory.length - latestIndex,
+          riskcalc_timestamp: latestRequest.timestamp }
+      : null
+  );
+
   return {
+    pastCalculation: pastAssessment ? {
+      number: pastAssessment.calculationNumber,
+      date: new Date(pastAssessment.riskcalc_timestamp).toLocaleString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    } : null,
     isAuthenticated,
     trendData: isAuthenticated && trendResponse?.key === trendKey
       ? buildRiskTrend(trendResponse.history ?? [], fromHistory ? calculationId : null, latestRequest?.timestamp)

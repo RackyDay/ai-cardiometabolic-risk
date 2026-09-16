@@ -1,9 +1,9 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthContext } from "../../context/AuthContext";
 import { RiskContext } from "../../context/RiskContext";
-import { predictRisk } from "../../services/api";
+import { predictRisk, getLatestPrediction, getRiskCalculationHistory } from "../../services/api";
 import { useDashboardViewModel } from "./useDashboardViewModel";
 
 vi.mock("../../services/api", () => ({
@@ -40,6 +40,43 @@ function Wrapper({ children }) {
 }
 
 beforeEach(() => vi.resetAllMocks());
+
+describe("automatically loaded calculation title", () => {
+  it.each([false, true])("handles a fresh submission flag of %s", async (hasFreshCalculation) => {
+    const timestamp = "2026-09-16T10:00:00Z";
+    getLatestPrediction.mockResolvedValue({
+      has_history: true, risk_score: 10, riskcalc_timestamp: timestamp,
+    });
+    getRiskCalculationHistory.mockResolvedValue([
+      { riskcalc_id: "latest", riskcalc_timestamp: timestamp, risk_score: 10 },
+      { riskcalc_id: "older", riskcalc_timestamp: "2026-09-01T10:00:00Z", risk_score: 12 },
+    ]);
+    function AuthenticatedWrapper({ children }) {
+      return <MemoryRouter>
+        <AuthContext.Provider value={{ isAuthenticated: true, accessToken: "token" }}>
+          <RiskContext.Provider value={{ ...context, hasFreshCalculation }}>
+            {children}
+          </RiskContext.Provider>
+        </AuthContext.Provider>
+      </MemoryRouter>;
+    }
+    const { result } = renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await waitFor(() => {
+      expect(result.current.isLoadingAssessment).toBe(false);
+      expect(result.current.isLoadingTrend).toBe(false);
+    });
+    if (hasFreshCalculation) {
+      expect(result.current.pastCalculation).toBeNull();
+    } else {
+      expect(result.current.pastCalculation).toEqual({
+        number: 2,
+        date: new Date(timestamp).toLocaleString(undefined, {
+          day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit",
+        }),
+      });
+    }
+  });
+});
 
 describe("what-if contribution updates", () => {
   it("uses the newest slider prediction even when an older response arrives last", async () => {

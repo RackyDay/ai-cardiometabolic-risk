@@ -77,7 +77,12 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation) {
         selectedId
       );
       if (version === requestVersion.current) {
-        onLoadCalculation(data);
+        const index = history.findIndex((item) => item.riskcalc_id === selectedId);
+        onLoadCalculation({
+          ...data,
+          calculationNumber: history.length - index,
+          riskcalc_timestamp: history[index].riskcalc_timestamp,
+        });
         setIsOpen(false);
       }
 
