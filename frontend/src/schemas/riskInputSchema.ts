@@ -181,6 +181,7 @@ export const riskInputSchema = {
         min: 40,
         max: 500,
         units: "mg/dL",
+        mmolConversionFactor: 18.0182,
         blockKeys: ["e", "E"],
         category: "clinical",
         tooltip: "Enter your fasting blood glucose level in mg/dL, measured after not eating for at least 8 hours. A normal fasting level is typically under 100 mg/dL."
@@ -198,6 +199,7 @@ export const riskInputSchema = {
         min: 100,
         max: 600,
         units: "mg/dL",
+        mmolConversionFactor: 38.67,
         blockKeys: ["e", "E"],
         category: "clinical",
         tooltip: "Enter your total cholesterol level in mg/dL, from a recent blood test (lipid panel). A desirable level is generally under 200 mg/dL."
