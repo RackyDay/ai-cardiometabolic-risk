@@ -29,13 +29,30 @@ function RiskGauge({ score }) {
               className={`risk-bar-segment ${
                 index === 0 ? "risk-bar-segment-first" : ""
               } ${
-                index === RISK_LEVELS.length - 1 ? "risk-bar-segment-last" : ""
+                index === RISK_LEVELS.length - 1
+                  ? "risk-bar-segment-last"
+                  : ""
               }`}
               style={{
                 flex: level.max - level.min,
                 backgroundColor: level.color,
               }}
-            />
+              tabIndex={0}
+            >
+              <div className="risk-range-tooltip">
+                <div className="risk-range-tooltip-title">
+                  {level.label}
+                </div>
+
+                <div className="risk-range-tooltip-range">
+                  {level.min}–{level.max}%
+                </div>
+
+                <div className="risk-range-tooltip-description">
+                  {level.description}
+                </div>
+              </div>
+            </div>
           ))}
 
           <div
@@ -49,30 +66,6 @@ function RiskGauge({ score }) {
           <span>50%</span>
           <span>100%</span>
         </div>
-      </div>
-
-      <div className="risk-legend">
-        {RISK_LEVELS.map((level) => (
-          <div key={level.key} className="risk-legend-row">
-            <span
-              className="risk-legend-swatch"
-              style={{ backgroundColor: level.color }}
-            />
-
-            <div className="risk-legend-text">
-              <span className="risk-legend-label">
-                {level.label}{" "}
-                <span className="risk-legend-range">
-                  ({level.min}–{level.max}%)
-                </span>
-              </span>
-
-              <span className="risk-legend-desc">
-                {level.description}
-              </span>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
