@@ -72,11 +72,41 @@
 }
 
 .risk-bar-scale {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  width: 100%;
+  height: 1.25rem;
+
   color: #6b7280;
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.risk-scale-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.risk-scale-0 {
+  left: 0;
+  transform: none;
+}
+
+.risk-scale-10 {
+  left: 10%;
+}
+
+.risk-scale-20 {
+  left: 20%;
+}
+
+.risk-scale-50 {
+  left: 50%;
+}
+
+.risk-scale-100 {
+  left: 100%;
+  transform: translateX(-100%);
 }
 
 .simulate-dropdown {
@@ -211,4 +241,10 @@
   line-height: 1.4;
 
   color: #64748b;
+}
+
+@media (max-width: 767px) {
+  .risk-bar-scale {
+    font-size: 0.6rem;
+  }
 }

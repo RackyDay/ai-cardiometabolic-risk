@@ -62,9 +62,11 @@ function RiskGauge({ score }) {
         </div>
 
         <div className="risk-bar-scale">
-          <span>0%</span>
-          <span>50%</span>
-          <span>100%</span>
+          <span className="risk-scale-label risk-scale-0">0%</span>
+          <span className="risk-scale-label risk-scale-10">10%</span>
+          <span className="risk-scale-label risk-scale-20">20%</span>
+          <span className="risk-scale-label risk-scale-50">50%</span>
+          <span className="risk-scale-label risk-scale-100">100%</span>
         </div>
       </div>
     </div>
