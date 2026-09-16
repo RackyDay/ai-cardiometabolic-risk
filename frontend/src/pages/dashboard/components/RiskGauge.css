@@ -181,6 +181,7 @@
 .risk-bar-segment {
   position: relative;
   height: 100%;
+  cursor: pointer;
 }
 
 .risk-range-tooltip {
@@ -191,7 +192,7 @@
 
   transform: translateX(-50%) translateY(0.25rem);
 
-  width: 15rem;
+  width: min(15rem, calc(100vw - 2rem));
   max-width: 70vw;
 
   padding: 0.8rem 0.9rem;
@@ -214,12 +215,31 @@
   z-index: 20;
 }
 
-.risk-bar-segment:hover .risk-range-tooltip,
-.risk-bar-segment:focus .risk-range-tooltip {
+.risk-bar-segment:hover .risk-range-tooltip {
   opacity: 1;
   visibility: visible;
-
   transform: translateX(-50%) translateY(0);
+}
+
+/* Green section: keep tooltip inside the bar/card */
+.risk-bar-segment-first .risk-range-tooltip {
+  left: 0;
+  transform: translateY(0.25rem);
+}
+
+/* Yellow section: also open toward the right */
+.risk-bar-segment:nth-child(2) .risk-range-tooltip {
+  left: 0;
+  transform: translateY(0.25rem);
+}
+
+.risk-bar-segment-first:hover .risk-range-tooltip,
+.risk-bar-segment-first:focus .risk-range-tooltip,
+.risk-bar-segment-first .risk-range-tooltip.open,
+.risk-bar-segment:nth-child(2):hover .risk-range-tooltip,
+.risk-bar-segment:nth-child(2):focus .risk-range-tooltip,
+.risk-bar-segment:nth-child(2) .risk-range-tooltip.open {
+  transform: translateY(0);
 }
 
 .risk-range-tooltip-title {
@@ -244,7 +264,14 @@
 }
 
 @media (max-width: 767px) {
-  .risk-bar-scale {
-    font-size: 0.6rem;
+  .risk-range-tooltip.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .risk-bar-segment-first .risk-range-tooltip.open,
+  .risk-bar-segment:nth-child(2) .risk-range-tooltip.open {
+    transform: translateY(0);
   }
 }

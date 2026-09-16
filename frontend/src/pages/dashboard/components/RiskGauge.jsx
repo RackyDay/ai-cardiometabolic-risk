@@ -1,10 +1,33 @@
+import { useEffect, useRef, useState } from "react";
 import "./RiskGauge.css";
 import { RISK_LEVELS, getRiskLevel } from "./riskLevels";
 
 function RiskGauge({ score }) {
+  const [selectedLevel, setSelectedLevel] = useState(null);
+  const riskBarRef = useRef(null);
   const numericScore = Number(score) || 0;
   const clampedScore = Math.max(0, Math.min(100, numericScore));
   const currentLevel = getRiskLevel(clampedScore);
+
+    useEffect(() => {
+    const handleOutsidePress = (event) => {
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+
+      if (
+        isMobile &&
+        riskBarRef.current &&
+        !riskBarRef.current.contains(event.target)
+      ) {
+        setSelectedLevel(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleOutsidePress);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsidePress);
+    };
+  }, []);
 
   return (
     <div className="gauge-wrapper">
@@ -22,7 +45,7 @@ function RiskGauge({ score }) {
       </div>
 
       <div className="risk-bar-wrapper">
-        <div className="risk-bar-track">
+        <div className="risk-bar-track" ref={riskBarRef}>
           {RISK_LEVELS.map((level, index) => (
             <div
               key={level.key}
@@ -37,9 +60,21 @@ function RiskGauge({ score }) {
                 flex: level.max - level.min,
                 backgroundColor: level.color,
               }}
-              tabIndex={0}
+              onClick={() => {
+                const isMobile = window.matchMedia("(max-width: 767px)").matches;
+
+                if (!isMobile) return;
+
+                setSelectedLevel((current) =>
+                  current === level.key ? null : level.key
+                );
+              }}
             >
-              <div className="risk-range-tooltip">
+              <div
+                className={`risk-range-tooltip ${
+                  selectedLevel === level.key ? "open" : ""
+                }`}
+              >
                 <div className="risk-range-tooltip-title">
                   {level.label}
                 </div>
