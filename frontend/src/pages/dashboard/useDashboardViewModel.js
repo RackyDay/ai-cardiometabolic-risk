@@ -8,7 +8,12 @@ import {
 import { RiskContext } from "../../context/RiskContext";
 import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
-import { getLatestPrediction, getRiskCalculationHistory, predictRisk } from "../../services/api";
+import {
+  getLatestPrediction,
+  getRiskCalculationHistory,
+  getRiskCalculation,
+  predictRisk
+} from "../../services/api";
 import { buildRiskTrend } from "./buildRiskTrend";
 import { buildPieData } from "./buildPieData";
 import { buildPredictionPayload } from "../input/riskInputTransform";
@@ -144,6 +149,206 @@ function inputsHaveChanged(
   );
 }
 
+/* =========================================================
+   Build comparison insights
+========================================================= */
+
+function buildInsights({
+  currentScore,
+  previousAssessment,
+  currentInputs,
+  currentContributors,
+}) {
+  if (!previousAssessment) {
+    return [];
+  }
+
+  const insights = [];
+
+  /* -------------------------------------------------------
+     Overall risk score
+  ------------------------------------------------------- */
+
+  const previousScore =
+    Number(previousAssessment.risk_score);
+
+  const currentRiskScore =
+    Number(currentScore);
+
+  if (
+    Number.isFinite(previousScore) &&
+    Number.isFinite(currentRiskScore) &&
+    previousScore !== currentRiskScore
+  ) {
+    const improved =
+      currentRiskScore < previousScore;
+
+    insights.push({
+      key: "overall-risk-score",
+
+      text:
+        `Overall risk score ${
+          improved
+            ? "decreased"
+            : "increased"
+        } from ${previousScore.toFixed(1)}% to ${currentRiskScore.toFixed(1)}%.`,
+
+      positive: improved,
+    });
+  }
+
+
+  /* -------------------------------------------------------
+     Factor comparisons
+
+     Green/red is determined by whether that feature's
+     model contribution to estimated risk decreased or
+     increased between the two assessments.
+  ------------------------------------------------------- */
+
+  const previousContributors =
+    previousAssessment.top_contributors ?? [];
+
+  const previousContributorMap =
+    new Map(
+      previousContributors.map(
+        (contributor) => [
+          contributor.feature,
+          contributor,
+        ]
+      )
+    );
+
+
+  const factorInsights =
+    (currentContributors ?? [])
+      .map((currentContributor) => {
+
+        const previousContributor =
+          previousContributorMap.get(
+            currentContributor.feature
+          );
+
+        if (!previousContributor) {
+          return null;
+        }
+
+
+        const schemaKey =
+          FEATURE_TO_SCHEMA_KEY[
+            currentContributor.feature
+          ] ||
+          currentContributor.feature;
+
+
+        const currentValue =
+          currentInputs?.[
+            schemaKey
+          ];
+
+        const previousValue =
+          previousAssessment.inputs?.[
+            schemaKey
+          ];
+
+
+        /* Can't compare missing or unchanged values */
+
+        if (
+          currentValue === null ||
+          currentValue === undefined ||
+          previousValue === null ||
+          previousValue === undefined ||
+          String(currentValue) ===
+            String(previousValue)
+        ) {
+          return null;
+        }
+
+
+        const currentContribution =
+          Number(
+            currentContributor.contribution
+          );
+
+        const previousContribution =
+          Number(
+            previousContributor.contribution
+          );
+
+
+        if (
+          !Number.isFinite(
+            currentContribution
+          ) ||
+          !Number.isFinite(
+            previousContribution
+          ) ||
+          currentContribution ===
+            previousContribution
+        ) {
+          return null;
+        }
+
+
+        const contributionImproved =
+          currentContribution <
+          previousContribution;
+
+
+        const currentDisplay =
+          formatSavedValue(
+            schemaKey,
+            currentValue
+          );
+
+        const previousDisplay =
+          formatSavedValue(
+            schemaKey,
+            previousValue
+          );
+
+
+        return {
+          key:
+            currentContributor.feature,
+
+          text:
+            `${labelForFeature(
+              currentContributor.feature
+            )} changed from ${previousDisplay} to ${currentDisplay}. ` +
+            `Its contribution to estimated risk ${
+              contributionImproved
+                ? "decreased"
+                : "increased"
+            }.`,
+
+          positive:
+            contributionImproved,
+
+          magnitude:
+            Math.abs(
+              currentContribution -
+              previousContribution
+            ),
+        };
+      })
+      .filter(Boolean)
+      .sort(
+        (a, b) =>
+          b.magnitude -
+          a.magnitude
+      )
+      .slice(0, 4);
+
+
+  insights.push(
+    ...factorInsights
+  );
+
+  return insights;
+}
+
 
 /* =========================================================
    ViewModel
@@ -168,6 +373,8 @@ export function useDashboardViewModel() {
   const riskScore = selectedCalculation?.risk_score ?? contextRiskScore;
   const topContributors = selectedCalculation?.top_contributors ?? contextTopContributors;
   const riskInputs = selectedCalculation?.inputs ?? contextRiskInputs;
+  const contributors = topContributors ?? [];
+  const originalInputsRef = useRef(riskInputs);
   const [trendResponse, setTrendResponse] = useState(null);
   const [trendRetry, setTrendRetry] = useState(0);
   const trendKey = `${accessToken}:${location.key}:${trendRetry}`;
@@ -187,9 +394,160 @@ export function useDashboardViewModel() {
   const assessmentError = !fromHistory && latestRequest?.token === accessToken
     ? latestRequest.error : "";
 
+  /* =========================================================
+    Previous assessment for Insights
+  ========================================================= */
 
-  const contributors =
-    topContributors ?? [];
+  const history =
+    trendResponse?.key === trendKey
+      ? trendResponse.history ?? []
+      : [];
+
+
+  /*
+  * History is newest -> oldest.
+  *
+  * If we're viewing the latest assessment:
+  *   current = history[0]
+  *   previous = history[1]
+  *
+  * If we're viewing an older saved calculation:
+  *   find that calculation and use the one
+  *   immediately after it in the array.
+  */
+
+  const currentHistoryIndex =
+    fromHistory
+      ? history.findIndex(
+          (calculation) =>
+            calculation.riskcalc_id ===
+            calculationId
+        )
+      : 0;
+
+
+  const previousHistoryEntry =
+    currentHistoryIndex >= 0
+      ? history[
+          currentHistoryIndex + 1
+        ] ?? null
+      : null;
+
+
+  const previousCalculationId =
+    previousHistoryEntry?.riskcalc_id ??
+    null;
+
+    const [
+      previousAssessmentResponse,
+      setPreviousAssessmentResponse,
+    ] = useState(null);
+
+    useEffect(() => {
+
+      if (
+        !isAuthenticated ||
+        !accessToken ||
+        !previousCalculationId
+      ) {
+        setPreviousAssessmentResponse(
+          null
+        );
+
+        return;
+      }
+
+
+      let cancelled = false;
+
+
+      getRiskCalculation(
+        accessToken,
+        previousCalculationId
+      )
+        .then((result) => {
+
+          if (cancelled) {
+            return;
+          }
+
+          setPreviousAssessmentResponse({
+            id:
+              previousCalculationId,
+
+            assessment:
+              result,
+
+            error:
+              "",
+          });
+
+        })
+
+        .catch(() => {
+
+          if (cancelled) {
+            return;
+          }
+
+          setPreviousAssessmentResponse({
+            id:
+              previousCalculationId,
+
+            assessment:
+              null,
+
+            error:
+              "Couldn't load your previous assessment.",
+          });
+
+        });
+
+
+      return () => {
+        cancelled = true;
+      };
+
+    }, [
+      isAuthenticated,
+      accessToken,
+      previousCalculationId,
+    ]);
+
+    const previousAssessment =
+      previousAssessmentResponse?.id ===
+        previousCalculationId
+        ? previousAssessmentResponse.assessment
+        : null;
+
+
+    const isLoadingInsights =
+      isAuthenticated &&
+      Boolean(previousCalculationId) &&
+      previousAssessmentResponse?.id !==
+        previousCalculationId;
+
+
+    const insightsError =
+      previousAssessmentResponse?.id ===
+        previousCalculationId
+        ? previousAssessmentResponse.error
+        : "";
+
+
+    const insights =
+      buildInsights({
+        currentScore:
+          riskScore,
+
+        previousAssessment,
+
+        currentInputs:
+          originalInputsRef.current,
+
+        currentContributors:
+          contributors,
+      });
 
 
   /* =======================================================
@@ -226,15 +584,6 @@ export function useDashboardViewModel() {
       cancelled = true;
     };
   }, [isAuthenticated, accessToken, fromHistory, setRiskScore, setTopContributors]);
-
-
-  /* =======================================================
-     Keep the user's original assessment untouched
-  ======================================================== */
-
-  const originalInputsRef =
-    useRef(riskInputs);
-
 
   /* =======================================================
      Hypothetical inputs
@@ -521,5 +870,18 @@ export function useDashboardViewModel() {
     updateHypotheticalInput,
 
     resetHypothetical,
+
+    /* Insights */
+
+    insights,
+
+    isLoadingInsights,
+
+    insightsError,
+
+    hasPreviousAssessment:
+      Boolean(
+        previousCalculationId
+      ),
   };
 }
