@@ -1335,51 +1335,62 @@ function DashboardPage() {
           INSIGHTS
       ====================================================== */}
 
-      <div className="card insights-card">
-
+      <div
+        className={`card insights-card${
+          !isAuthenticated
+            ? " insights-card-disabled"
+            : ""
+        }`}
+        aria-disabled={!isAuthenticated}
+      >
         <h2 className="card-title">
           Insights
         </h2>
 
+        {!isAuthenticated ? (
 
-        <p className="insight-subheading">
-          Since the last assessment:
-        </p>
+          <div className="insights-message">
+            Sign in to view personalised insights.
+          </div>
 
+        ) : (
 
-        <div className="insight-list">
+          <>
+            <p className="insight-subheading">
+              Since the last assessment:
+            </p>
 
-          {INSIGHTS.map(
-            (text, i) => (
+            <div className="insight-list">
 
-              <div
-                key={i}
+              {INSIGHTS.map(
+                (text, i) => (
 
-                className="insight-item insight-green"
-              >
-                {text}
-              </div>
+                  <div
+                    key={i}
+                    className="insight-item insight-green"
+                  >
+                    {text}
+                  </div>
 
-            )
-          )}
+                )
+              )}
 
-        </div>
+            </div>
 
+            <p className="insight-subheading stress-heading">
+              Stress
+            </p>
 
-        <p className="insight-subheading stress-heading">
-          Stress
-        </p>
+            <div className="insight-item insight-red">
+              Your data shows traits that
+              are usually associated with
+              stress. This could suggest
+              that you may be experiencing
+              high stress.
+            </div>
+          </>
 
-
-        <div className="insight-item insight-red">
-
-          Your data shows traits that
-          are usually associated with
-          stress. This could suggest
-          that you may be experiencing
-          high stress.
-
-        </div>
+        )}
 
       </div>
 
