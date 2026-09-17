@@ -21,6 +21,12 @@ export function RiskProvider({ children }) {
     createInitalRiskInputs(riskInputSchema)
   );
 
+  // The riskcalc_id behind riskInputs/riskScore/topContributors (when
+  // there is one - it's null for an anonymous session, since nothing gets
+  // persisted). Lets "Edit original assessment" update that exact saved
+  // row instead of always inserting a new one.
+  const [riskCalculationId, setRiskCalculationId] = useState(null);
+
   const [riskScore, setRiskScore] = useState(null);
 
   const [topContributors, setTopContributors] = useState([]);
@@ -50,6 +56,8 @@ export function RiskProvider({ children }) {
         selectCalculation,
         riskInputs,
         setRiskInputs,
+        riskCalculationId,
+        setRiskCalculationId,
         riskScore,
         setRiskScore,
         topContributors,

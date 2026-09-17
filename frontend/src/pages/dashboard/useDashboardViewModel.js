@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -357,6 +358,7 @@ export function useDashboardViewModel() {
     setTopContributors,
     riskInputs: contextRiskInputs,
     setRiskInputs,
+    setRiskCalculationId,
     selectedCalculation
   } = useContext(RiskContext);
 
@@ -373,6 +375,14 @@ export function useDashboardViewModel() {
   const [trendResponse, setTrendResponse] = useState(null);
   const [trendRetry, setTrendRetry] = useState(0);
   const trendKey = `${accessToken}:${location.key}:${trendRetry}`;
+  // Stable identity: EditAssessmentModal relies on this staying the same
+  // function across renders when it's passed in as an effect dependency
+  // (an unstable one would re-fire that effect and refetch on every
+  // unrelated render instead of once per save).
+  const retryTrend = useCallback(
+    () => setTrendRetry((value) => value + 1),
+    []
+  );
   useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
     let cancelled = false;
@@ -393,8 +403,14 @@ export function useDashboardViewModel() {
     Previous assessment for Insights
   ========================================================= */
 
+  // Distinguishes "history hasn't loaded yet" from "loaded, and there
+  // genuinely isn't a previous entry" - both would otherwise collapse to
+  // an empty `history` and briefly show the wrong Insights message.
+  const isHistoryLoaded =
+    trendResponse?.key === trendKey;
+
   const history =
-    trendResponse?.key === trendKey
+    isHistoryLoaded
       ? trendResponse.history ?? []
       : [];
 
@@ -518,9 +534,14 @@ export function useDashboardViewModel() {
 
     const isLoadingInsights =
       isAuthenticated &&
-      Boolean(previousCalculationId) &&
-      previousAssessmentResponse?.id !==
-        previousCalculationId;
+      (
+        !isHistoryLoaded ||
+        (
+          Boolean(previousCalculationId) &&
+          previousAssessmentResponse?.id !==
+            previousCalculationId
+        )
+      );
 
 
     const insightsError =
@@ -567,6 +588,7 @@ export function useDashboardViewModel() {
             setRiskScore(null);
             setTopContributors([]);
             setRiskInputs(createInitalRiskInputs(riskInputSchema));
+            setRiskCalculationId(null);
             return;
           }
         setRiskScore(result.risk_score);
@@ -578,6 +600,10 @@ export function useDashboardViewModel() {
         // submitted, for anyone who didn't just come from the input form
         // in this same browser session (e.g. a returning visit).
         setRiskInputs(result.inputs ?? createInitalRiskInputs(riskInputSchema));
+
+        // Lets "Edit original assessment" update this exact row instead
+        // of inserting a new one.
+        setRiskCalculationId(result.riskcalc_id ?? null);
       })
       .catch(() => {
         if (!cancelled) setLatestRequest({ token: accessToken, error: "Couldn't load your assessment. Please refresh to try again." });
@@ -586,7 +612,15 @@ export function useDashboardViewModel() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, fromHistory, setRiskScore, setTopContributors, setRiskInputs]);
+  }, [
+    isAuthenticated,
+    accessToken,
+    fromHistory,
+    setRiskScore,
+    setTopContributors,
+    setRiskInputs,
+    setRiskCalculationId,
+  ]);
 
   /* =======================================================
      Hypothetical inputs
@@ -815,7 +849,7 @@ export function useDashboardViewModel() {
       : [],
     isLoadingTrend: isAuthenticated && trendResponse?.key !== trendKey,
     trendError: trendResponse?.key === trendKey ? trendResponse.error : "",
-    retryTrend: () => setTrendRetry((value) => value + 1),
+    retryTrend,
     isLoadingAssessment,
     assessmentError,
 

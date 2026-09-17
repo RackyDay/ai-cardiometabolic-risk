@@ -25,10 +25,19 @@ def delete_assessment(riskcalc_id, token):
 
     user_client.table("risk_calculations").delete().eq("riskcalc_id", riskcalc_id).execute()
 
-def edit_assessment(riskcalc_id, risk_inputs, token):
+def update_assessment(riskcalc_id, risk_score, risk_inputs, token):
     user_client = get_user_scoped_client(token)
 
-    user_client.table("risk_inputs").update({"inputs_JSON": risk_inputs}).eq("riskinput_id", riskcalc_id).execute()
+    user_client.table("risk_calculations").update(
+        {"risk_score": risk_score}
+    ).eq("riskcalc_id", riskcalc_id).execute()
+
+    # risk_inputs' own primary key is riskinput_id - riskcalc_id is only its
+    # foreign key back to risk_calculations, so the filter has to be on
+    # riskcalc_id here, not riskinput_id.
+    user_client.table("risk_inputs").update(
+        {"inputs_JSON": risk_inputs}
+    ).eq("riskcalc_id", riskcalc_id).execute()
 
 def fetch_assessment_history(token):
     user_client = get_user_scoped_client(token)
