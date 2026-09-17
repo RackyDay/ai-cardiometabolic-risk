@@ -154,6 +154,7 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
         risk_score=calculation["risk_score"],
         top_contributors=top_contributors,
         riskcalc_timestamp=calculation["riskcalc_timestamp"],
+        inputs=inputs["inputs_JSON"] if inputs and inputs.get("inputs_JSON") else None
     )
 
 @app.get("/learn")

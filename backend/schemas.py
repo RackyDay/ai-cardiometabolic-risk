@@ -109,3 +109,4 @@ class LatestPredictionResponse(BaseModel):
     # what was shown at submission time).
     top_contributors: Optional[list[FeatureContribution]] = None
     riskcalc_timestamp: Optional[str] = None
+    inputs: Optional[RiskInputData] = None

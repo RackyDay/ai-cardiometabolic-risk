@@ -316,12 +316,7 @@ function buildInsights({
           text:
             `${labelForFeature(
               currentContributor.feature
-            )} changed from ${previousDisplay} to ${currentDisplay}. ` +
-            `Its contribution to estimated risk ${
-              contributionImproved
-                ? "decreased"
-                : "increased"
-            }.`,
+            )} changed from ${previousDisplay} to ${currentDisplay}.`,
 
           positive:
             contributionImproved,
@@ -338,8 +333,7 @@ function buildInsights({
         (a, b) =>
           b.magnitude -
           a.magnitude
-      )
-      .slice(0, 4);
+      );
 
 
   insights.push(
@@ -362,7 +356,8 @@ export function useDashboardViewModel() {
     topContributors: contextTopContributors,
     setTopContributors,
     riskInputs: contextRiskInputs,
-    selectedCalculation,
+    setRiskInputs,
+    selectedCalculation
   } = useContext(RiskContext);
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
@@ -543,7 +538,7 @@ export function useDashboardViewModel() {
         previousAssessment,
 
         currentInputs:
-          originalInputsRef.current,
+          riskInputs,
 
         currentContributors:
           contributors,
@@ -575,6 +570,10 @@ export function useDashboardViewModel() {
           }
         setRiskScore(result.risk_score);
         setTopContributors(result.top_contributors ?? []);
+
+        if (result.inputs) {
+          setRiskInputs(result.inputs);
+        }
       })
       .catch(() => {
         if (!cancelled) setLatestRequest({ token: accessToken, error: "Couldn't load your assessment. Please refresh to try again." });
@@ -583,7 +582,7 @@ export function useDashboardViewModel() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, fromHistory, setRiskScore, setTopContributors]);
+  }, [isAuthenticated, accessToken, fromHistory, setRiskScore, setTopContributors, setRiskInputs]);
 
   /* =======================================================
      Hypothetical inputs
