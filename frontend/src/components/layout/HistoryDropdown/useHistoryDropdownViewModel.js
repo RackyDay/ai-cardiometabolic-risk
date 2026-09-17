@@ -111,6 +111,7 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCal
       setResult({ accessToken, retryCount, history: remaining, error: "" });
       setSelectedId((current) => current === id ? "" : current);
       onDeleteCalculation?.(id, remaining);
+      return true;
     } catch {
       if (version === requestVersion.current) setDeleteError("Couldn't delete this calculation. Please try again.");
     } finally {
