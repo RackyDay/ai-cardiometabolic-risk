@@ -43,6 +43,31 @@
   margin: 0 auto;
 }
 
+/* Slice labels sit outside the donut's outer radius - don't let the
+   chart's own SVG clip them off. */
+.risk-donut-wrapper svg {
+  overflow: visible;
+}
+
+
+/* =========================================================
+   Slice labels
+
+   Each visible slice gets a label outside the donut, joined
+   to it by a leader line in the slice's own colour.
+========================================================= */
+
+.risk-chart-slice-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  fill: #334155;
+  pointer-events: none;
+}
+
+.risk-chart-slice-line {
+  pointer-events: none;
+}
+
 
 /* =========================================================
    Centre text
@@ -157,6 +182,41 @@
 
 .risk-tooltip-negative {
   color: #16a34a !important;
+}
+
+
+/* =========================================================
+   "Other factors" member breakdown
+========================================================= */
+
+.risk-chart-tooltip-members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.risk-chart-tooltip-members li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.risk-chart-tooltip-members li span {
+  color: #64748b;
+}
+
+.risk-chart-tooltip-members li strong {
+  color: #111827;
+  flex-shrink: 0;
+}
+
+.risk-chart-selected-factor-members {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
 }
 
 
@@ -431,6 +491,14 @@
     max-width: 320px;
     height: 320px;
     margin: 1.25rem auto 0;
+  }
+
+  /* Not enough room for outside labels at this size - the
+     tap-to-reveal factor card below the chart takes over
+     showing which section is which. */
+  .risk-chart-slice-label,
+  .risk-chart-slice-line {
+    display: none;
   }
 
   .risk-chart-center-text {

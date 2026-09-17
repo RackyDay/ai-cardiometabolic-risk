@@ -10,7 +10,6 @@ import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { getLatestPrediction, getRiskCalculationHistory, predictRisk } from "../../services/api";
 import { buildRiskTrend } from "./buildRiskTrend";
-import { buildPieData } from "./buildPieData";
 import { buildPredictionPayload } from "../input/riskInputTransform";
 import { useLocation } from "react-router-dom";
 import { CHANGEABLE_RISK_FACTORS } from "./changeableRiskFactors";
@@ -303,13 +302,6 @@ export function useDashboardViewModel() {
       originalInputsRef.current
     );
 
-  
-
-  const pieData =
-    buildPieData(
-      riskFactors
-    );
-
 
   /* =======================================================
      Update hypothetical value
@@ -428,13 +420,6 @@ export function useDashboardViewModel() {
     );
 
 
-  const hypotheticalPieData =
-    buildPieData(
-      hypotheticalRiskFactors,
-      riskFactors
-    );
-
-
   /* =======================================================
      Is the hypothetical scenario active?
   ======================================================== */
@@ -488,8 +473,6 @@ export function useDashboardViewModel() {
 
     riskFactors,
 
-    pieData,
-
     originalInputs:
       originalInputsRef.current,
 
@@ -499,8 +482,6 @@ export function useDashboardViewModel() {
     hypotheticalScore,
 
     hypotheticalInputs,
-
-    hypotheticalPieData,
 
     hypotheticalRiskFactors,
 
