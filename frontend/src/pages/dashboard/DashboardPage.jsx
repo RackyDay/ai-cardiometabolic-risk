@@ -19,6 +19,8 @@ import RiskFactorPieChart, {
   RISK_FACTOR_DESCRIPTIONS,
 } from "./components/RiskFactorPieChart";
 
+import { buildPieData } from "./buildPieData";
+
 import { getRiskFactorColor } from "./riskFactorColors";
 
 import EditAssessmentModal from "./EditAssessmentModal";
@@ -226,13 +228,12 @@ function DashboardPage() {
     assessmentError,
 
     riskFactors,
-    pieData,
 
     originalInputs,
 
     hypotheticalScore,
     hypotheticalInputs,
-    hypotheticalPieData,
+    hypotheticalRiskFactors,
 
     changeableRiskFactors,
 
@@ -319,6 +320,36 @@ function DashboardPage() {
       </div>
     );
   }
+
+
+  /*
+   * The pie chart mirrors whichever tab the factor list is on: only
+   * changeable factors while that tab is active, only fixed factors on
+   * the other. buildPieData renormalizes against just this subset, so
+   * the chart still reads as a full breakdown of the factors it's
+   * currently showing rather than a handful of slivers out of 100%.
+   */
+  const isChangeableFactor = (factor) =>
+    Boolean(changeableRiskFactors[factor.feature]);
+
+  const tabRiskFactors = riskFactors.filter((factor) =>
+    activeFactorTab === "changeable"
+      ? isChangeableFactor(factor)
+      : !isChangeableFactor(factor)
+  );
+
+  const tabHypotheticalRiskFactors = hypotheticalRiskFactors.filter((factor) =>
+    activeFactorTab === "changeable"
+      ? isChangeableFactor(factor)
+      : !isChangeableFactor(factor)
+  );
+
+  const tabPieData = buildPieData(tabRiskFactors);
+
+  const tabHypotheticalPieData = buildPieData(
+    tabHypotheticalRiskFactors,
+    tabRiskFactors
+  );
 
 
   return (
@@ -1300,27 +1331,38 @@ function DashboardPage() {
 
           <div className="risk-breakdown-chart-panel">
 
-            <RiskFactorPieChart
-              data={
-                pieData
-              }
+            {activeFactorTab === "stress" ? (
 
-              hypotheticalData={
-                hypotheticalPieData
-              }
+              <p className="risk-factors-empty" role="status">
+                Not available. Stress tracking doesn't have risk factors
+                associated with it yet.
+              </p>
 
-              isHypotheticalActive={
-                isHypotheticalActive
-              }
+            ) : (
 
-              /*
-               * Maps hovered pie factor
-               * to the corresponding left row.
-               */
-              onFactorHover={
-                setHoveredRiskFactor
-              }
-            />
+              <RiskFactorPieChart
+                data={
+                  tabPieData
+                }
+
+                hypotheticalData={
+                  tabHypotheticalPieData
+                }
+
+                isHypotheticalActive={
+                  isHypotheticalActive
+                }
+
+                /*
+                 * Maps hovered pie factor
+                 * to the corresponding left row.
+                 */
+                onFactorHover={
+                  setHoveredRiskFactor
+                }
+              />
+
+            )}
 
           </div>
 

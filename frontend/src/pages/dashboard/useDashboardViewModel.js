@@ -14,8 +14,8 @@ import {
   getRiskCalculation,
   predictRisk
 } from "../../services/api";
+import { createInitalRiskInputs } from "../../schemas/createInitialRiskInputs";
 import { buildRiskTrend } from "./buildRiskTrend";
-import { buildPieData } from "./buildPieData";
 import { buildPredictionPayload } from "../input/riskInputTransform";
 import { useLocation } from "react-router-dom";
 import { CHANGEABLE_RISK_FACTORS } from "./changeableRiskFactors";
@@ -566,14 +566,18 @@ export function useDashboardViewModel() {
           if (!result.has_history) {
             setRiskScore(null);
             setTopContributors([]);
+            setRiskInputs(createInitalRiskInputs(riskInputSchema));
             return;
           }
         setRiskScore(result.risk_score);
         setTopContributors(result.top_contributors ?? []);
 
-        if (result.inputs) {
-          setRiskInputs(result.inputs);
-        }
+        // Powers the what-if sliders' starting values and the "saved
+        // value" shown next to each factor - without this they'd default
+        // to each slider's minimum instead of what the user actually
+        // submitted, for anyone who didn't just come from the input form
+        // in this same browser session (e.g. a returning visit).
+        setRiskInputs(result.inputs ?? createInitalRiskInputs(riskInputSchema));
       })
       .catch(() => {
         if (!cancelled) setLatestRequest({ token: accessToken, error: "Couldn't load your assessment. Please refresh to try again." });
@@ -649,13 +653,6 @@ export function useDashboardViewModel() {
     buildRiskFactors(
       contributors,
       originalInputsRef.current
-    );
-
-  
-
-  const pieData =
-    buildPieData(
-      riskFactors
     );
 
 
@@ -776,13 +773,6 @@ export function useDashboardViewModel() {
     );
 
 
-  const hypotheticalPieData =
-    buildPieData(
-      hypotheticalRiskFactors,
-      riskFactors
-    );
-
-
   /* =======================================================
      Is the hypothetical scenario active?
   ======================================================== */
@@ -836,8 +826,6 @@ export function useDashboardViewModel() {
 
     riskFactors,
 
-    pieData,
-
     originalInputs:
       originalInputsRef.current,
 
@@ -847,8 +835,6 @@ export function useDashboardViewModel() {
     hypotheticalScore,
 
     hypotheticalInputs,
-
-    hypotheticalPieData,
 
     hypotheticalRiskFactors,
 

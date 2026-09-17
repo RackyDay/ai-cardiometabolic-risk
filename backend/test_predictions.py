@@ -113,7 +113,11 @@ def _install_fake_auth(monkeypatch, user_id="user-1"):
 
 
 def _install_fake_scoped_client(monkeypatch, tables):
-    monkeypatch.setattr(main_module, "get_user_scoped_client", lambda token: FakeScopedClient(tables))
+    # database.py holds its own `get_user_scoped_client` reference (via
+    # `from supabase_client import get_user_scoped_client`) - patching
+    # main's copy doesn't touch it, so every db.* call would still reach
+    # the real Supabase client.
+    monkeypatch.setattr(database_module, "get_user_scoped_client", lambda token: FakeScopedClient(tables))
 
 
 # --- POST /predict's optional-auth persistence -----------------------
@@ -145,7 +149,7 @@ def test_predict_does_not_persist_when_anonymous(monkeypatch):
     # scoped client should never be reached for a logged-out submission.
     scoped_client_calls = []
     monkeypatch.setattr(
-        main_module, "get_user_scoped_client", lambda token: scoped_client_calls.append(token)
+        database_module, "get_user_scoped_client", lambda token: scoped_client_calls.append(token)
     )
 
     response = client.post("/predict", json=VALID_PAYLOAD)
@@ -167,6 +171,7 @@ def test_latest_prediction_with_no_history(monkeypatch):
         "risk_score": None,
         "top_contributors": None,
         "riskcalc_timestamp": None,
+        "inputs": None,
     }
 
 
@@ -193,6 +198,9 @@ def test_latest_prediction_returns_most_recent_with_recomputed_contributors(monk
     assert body["risk_score"] == 45.6
     assert body["riskcalc_timestamp"] == "2026-08-19T00:00:00Z"
     assert len(body["top_contributors"]) > 0
+    # The dashboard's what-if sliders default to these, so they must come
+    # back as saved - not just used server-side to recompute the score.
+    assert body["inputs"] == VALID_PAYLOAD
 
 
 # TC-43
@@ -213,3 +221,29 @@ def test_latest_prediction_degrades_gracefully_with_no_matching_inputs_row(monke
     assert body["has_history"] is True
     assert body["risk_score"] == 30.0
     assert body["top_contributors"] is None
+    assert body["inputs"] is None
+
+
+def test_latest_prediction_still_returns_inputs_when_they_no_longer_match_the_current_shape(monkeypatch):
+    _install_fake_auth(monkeypatch)
+    # Missing required fields (e.g. an older submission from before a field
+    # was added) - RiskInputData(**inputs_json) raises, so top_contributors
+    # can't be recomputed, but the raw inputs are still usable for
+    # defaulting whichever sliders they do cover.
+    stale_inputs = {"age": 40, "gender": "F"}
+    tables = {
+        "risk_calculations": [
+            {"riskcalc_id": "calc-1", "risk_score": 30.0, "riskcalc_timestamp": "2026-08-19T00:00:00Z"},
+        ],
+        "risk_inputs": [
+            {"riskcalc_id": "calc-1", "inputs_JSON": stale_inputs},
+        ],
+    }
+    _install_fake_scoped_client(monkeypatch, tables)
+
+    response = client.get("/predictions/latest", headers={"Authorization": "Bearer token"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["top_contributors"] is None
+    assert body["inputs"] == stale_inputs

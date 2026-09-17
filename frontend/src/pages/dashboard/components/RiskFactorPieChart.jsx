@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import {
   Cell,
@@ -11,6 +11,120 @@ import {
 
 import "./RiskFactorPieChart.css";
 import { getRiskFactorColor } from "../riskFactorColors";
+
+
+/* =========================================================
+   Slice label geometry
+
+   Labels sit outside the donut, connected to their slice by
+   a short leader line, so each label clearly points back to
+   the section of the chart it describes.
+========================================================= */
+
+const SLICE_LABEL_LINE_GAP = 10;
+const SLICE_LABEL_TEXT_GAP = 16;
+const SLICE_LABEL_MAX_CHARS_PER_LINE = 16;
+const SLICE_LABEL_MIN_GAP = 6;
+const OTHERS_THRESHOLD_PERCENT = 5;
+
+// Groups risk-raising factors under the threshold into a single "Other
+// factors" slice, so a handful of near-invisible slivers don't crowd the
+// chart with labels. Only kicks in with 2+ small factors - grouping just
+// one wouldn't declutter anything, only hide its name for no reason.
+// feature is left null: it has no single row in the breakdown list to
+// highlight, and getRiskFactorColor()/Cell keys already fall back
+// sensibly for an unknown feature.
+function aggregateSmallSlices(factors) {
+  const small = factors.filter(
+    (factor) => factor.value > 0 && factor.value < OTHERS_THRESHOLD_PERCENT
+  );
+  if (small.length <= 1) return factors;
+
+  const smallFeatures = new Set(small.map((factor) => factor.feature));
+  const kept = factors.filter((factor) => !smallFeatures.has(factor.feature));
+  const othersValue = small.reduce((sum, factor) => sum + factor.value, 0);
+
+  return [
+    ...kept,
+    {
+      feature: null,
+      name: "Other factors",
+      value: othersValue,
+      raisesRisk: true,
+      members: small,
+    },
+  ];
+}
+
+function polarToCartesian(cx, cy, radius, angleDeg) {
+  const angleRad = ((-angleDeg) * Math.PI) / 180;
+  return {
+    x: cx + radius * Math.cos(angleRad),
+    y: cy + radius * Math.sin(angleRad),
+  };
+}
+
+// Wraps a factor's full name (e.g. "Blood pressure medication status")
+// onto a few short lines instead of one long line running off the chart.
+function wrapSliceLabel(text, maxCharsPerLine = SLICE_LABEL_MAX_CHARS_PER_LINE) {
+  const words = text.split(" ");
+  const lines = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length > maxCharsPerLine && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+
+  return lines;
+}
+
+// getBBox() isn't implemented in jsdom (used by the component's tests),
+// and may briefly fail on a real browser before first layout - fall back
+// to an estimate from the label's line count in either case.
+function measureLabelHeight(labelEl) {
+  try {
+    const height = labelEl.getBBox().height;
+    if (height > 0) return height;
+  } catch {
+    // fall through to the estimate below
+  }
+  return (Number(labelEl.dataset.lines) || 1) * 12;
+}
+
+// Pushes labels on the same side of the chart apart vertically so two
+// slices with adjacent angles don't render label text on top of each
+// other. Labels are nudged down in natural-position order.
+//
+// `y` is each label's vertical CENTER (it's positioned with
+// dominantBaseline="central"), so two labels clear each other once the
+// gap between their centers is at least half of each one's height.
+function declutterSliceLabels(positions) {
+  const bySide = { left: [], right: [] };
+  positions.forEach((p) => bySide[p.side]?.push(p));
+
+  const offsets = {};
+  for (const side of Object.values(bySide)) {
+    side.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < side.length; i++) {
+      const prev = side[i - 1];
+      const cur = side[i];
+      const prevBottom = prev.y + (offsets[prev.feature] ?? 0) + prev.height / 2;
+      const curTop = cur.y + (offsets[cur.feature] ?? 0) - cur.height / 2;
+      const minTop = prevBottom + SLICE_LABEL_MIN_GAP;
+      if (curTop < minTop) {
+        offsets[cur.feature] = (offsets[cur.feature] ?? 0) + (minTop - curTop);
+      }
+    }
+  }
+  return offsets;
+}
 
 
 /* =========================================================
@@ -172,6 +286,30 @@ function RiskFactorTooltip({
         </div>
       )}
 
+
+      {factor.members && (
+
+        <>
+          <div className="risk-chart-tooltip-divider" />
+
+          <ul className="risk-chart-tooltip-members">
+
+            {factor.members.map((member) => (
+
+              <li key={member.feature}>
+
+                <span>{member.name}</span>
+
+                <strong>{Number(member.value).toFixed(2)}%</strong>
+
+              </li>
+
+            ))}
+
+          </ul>
+        </>
+      )}
+
     </div>
   );
 }
@@ -198,16 +336,95 @@ function RiskFactorPieChart({
   ] = useState(null);
 
 
+  // Scopes the post-render label declutter pass (below) to just this
+  // chart instance's own DOM.
+  const donutWrapperRef = useRef(null);
+
+
   /* =======================================================
      Choose original or hypothetical data
   ======================================================= */
 
-  const chartData =
+  const chartData = aggregateSmallSlices(
     isHypotheticalActive &&
     hypotheticalData &&
     hypotheticalData.length > 0
       ? hypotheticalData
-      : data;
+      : data
+  );
+
+
+  /*
+   * Slice labels are drawn at their natural (non-overlapping-unaware)
+   * position first; this measures what actually got painted and nudges
+   * any that collide apart, updating the DOM directly rather than
+   * through React state.
+   *
+   * It can't just run once after this component's own render: Recharts'
+   * ResponsiveContainer measures itself asynchronously, so the real
+   * labels often don't exist in the DOM yet on this component's first
+   * paint, and get (re)created independently whenever the container
+   * resizes or chartData changes. A MutationObserver reacts to Recharts
+   * actually inserting/replacing those nodes, whenever that happens,
+   * instead of guessing when to re-run from our own render cycle. It
+   * only watches for added/removed nodes, so this pass's own attribute
+   * writes below don't re-trigger it.
+   */
+  useLayoutEffect(() => {
+    const container = donutWrapperRef.current;
+    if (!container) return undefined;
+
+    const declutter = () => {
+      const labels = [
+        ...container.querySelectorAll(".risk-chart-slice-label"),
+      ];
+      if (labels.length === 0) return;
+
+      const positions = labels.map((label) => ({
+        feature: label.dataset.feature,
+        side: label.dataset.side,
+        y: Number(label.dataset.naturalY),
+        height: measureLabelHeight(label),
+      }));
+
+      const offsets = declutterSliceLabels(positions);
+
+      labels.forEach((label) => {
+        const offset = offsets[label.dataset.feature] ?? 0;
+        const naturalY = Number(label.dataset.naturalY);
+        label.setAttribute("y", String(naturalY + offset));
+
+        const line = container.querySelector(
+          `.risk-chart-slice-line[data-feature="${CSS.escape(label.dataset.feature)}"]`
+        );
+        if (!line) return;
+
+        const [edge, bend] = line.getAttribute("points").trim().split(" ");
+        const [bendX, bendY] = bend.split(",").map(Number);
+        line.setAttribute("points", `${edge} ${bend} ${bendX},${bendY + offset}`);
+      });
+    };
+
+    declutter();
+
+    const cleanups = [];
+
+    if (typeof MutationObserver !== "undefined") {
+      const mutationObserver = new MutationObserver(declutter);
+      mutationObserver.observe(container, { childList: true, subtree: true });
+      cleanups.push(() => mutationObserver.disconnect());
+    }
+
+    // Not available in the test environment (jsdom) - the initial
+    // declutter() call above still runs there.
+    if (typeof ResizeObserver !== "undefined") {
+      const resizeObserver = new ResizeObserver(declutter);
+      resizeObserver.observe(container);
+      cleanups.push(() => resizeObserver.disconnect());
+    }
+
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, []);
 
 
   if (
@@ -279,6 +496,68 @@ function RiskFactorPieChart({
 
 
   /* =======================================================
+     Slice labels
+
+     Every slice with a non-zero share gets its own label
+     outside the donut, joined to that slice by a leader line
+     coloured to match it - so it's unambiguous which section
+     of the chart each label belongs to.
+  ======================================================= */
+
+  const renderSliceLabelLine = ({ cx, cy, midAngle, outerRadius, index }) => {
+    const entry = chartData[index];
+    if (!entry || !(entry.value > 0)) return null;
+
+    const start = polarToCartesian(cx, cy, outerRadius, midAngle);
+    const bend = polarToCartesian(cx, cy, outerRadius + SLICE_LABEL_LINE_GAP, midAngle);
+
+    return (
+      <polyline
+        className="risk-chart-slice-line"
+        data-feature={entry.feature}
+        points={`${start.x},${start.y} ${bend.x},${bend.y}`}
+        stroke={getRiskFactorColor(entry.feature)}
+        strokeWidth={1.5}
+        fill="none"
+      />
+    );
+  };
+
+
+  const renderSliceLabel = ({ cx, cy, midAngle, outerRadius, index }) => {
+    const entry = chartData[index];
+    if (!entry || !(entry.value > 0)) return null;
+
+    const point = polarToCartesian(
+      cx, cy, outerRadius + SLICE_LABEL_LINE_GAP + SLICE_LABEL_TEXT_GAP, midAngle
+    );
+    const textAnchor = point.x >= cx ? "start" : "end";
+    const lines = wrapSliceLabel(entry.name);
+    const firstLineOffset = -((lines.length - 1) * 6);
+
+    return (
+      <text
+        x={point.x}
+        y={point.y}
+        data-feature={entry.feature}
+        data-side={point.x >= cx ? "right" : "left"}
+        data-natural-y={point.y}
+        data-lines={lines.length}
+        textAnchor={textAnchor}
+        dominantBaseline="central"
+        className="risk-chart-slice-label"
+      >
+        {lines.map((line, i) => (
+          <tspan key={line} x={point.x} dy={i === 0 ? firstLineOffset : 12}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    );
+  };
+
+
+  /* =======================================================
      Render
   ======================================================= */
 
@@ -330,7 +609,7 @@ function RiskFactorPieChart({
             Donut
         ================================================== */}
 
-        <div className="risk-donut-wrapper">
+        <div className="risk-donut-wrapper" ref={donutWrapperRef}>
 
           <ResponsiveContainer
             width="100%"
@@ -340,6 +619,16 @@ function RiskFactorPieChart({
             <PieChart>
 
               <Pie
+                /*
+                 * Recharts silently drops the whole custom label layer
+                 * for the duration of its enter/update animation when
+                 * the slice count or keys change between renders (e.g.
+                 * switching the changeable/fixed factor tab) - it never
+                 * recovers once that happens. Disabling the animation
+                 * sidesteps it entirely.
+                 */
+                isAnimationActive={false}
+
                 data={chartData}
 
                 dataKey="value"
@@ -350,15 +639,19 @@ function RiskFactorPieChart({
 
                 cy="50%"
 
-                innerRadius="48%"
+                innerRadius="44%"
 
-                outerRadius="78%"
+                outerRadius="68%"
 
                 paddingAngle={2}
 
                 stroke="#ffffff"
 
                 strokeWidth={2}
+
+                label={renderSliceLabel}
+
+                labelLine={renderSliceLabelLine}
 
                 activeIndex={
                   highlightedIndex ??
@@ -550,6 +843,27 @@ function RiskFactorPieChart({
                 </strong>
 
               </div>
+
+            )}
+
+
+            {highlightedFactor.members && (
+
+              <ul className="risk-chart-tooltip-members risk-chart-selected-factor-members">
+
+                {highlightedFactor.members.map((member) => (
+
+                  <li key={member.feature}>
+
+                    <span>{member.name}</span>
+
+                    <strong>{Number(member.value).toFixed(2)}%</strong>
+
+                  </li>
+
+                ))}
+
+              </ul>
 
             )}
 
