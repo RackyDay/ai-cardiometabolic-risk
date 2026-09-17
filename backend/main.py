@@ -132,6 +132,7 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
         return LatestPredictionResponse(has_history=False)
 
     calculation, inputs = latest
+    inputs_json = inputs.get("inputs_JSON") if inputs else None
 
     # top_contributors isn't persisted (only risk_score is) - recompute it
     # from the stored inputs via predict_risk(), which is deterministic
@@ -139,14 +140,16 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
     # at submission time.
 
     top_contributors = None
-    if inputs and inputs.get("inputs_JSON"):
+    if inputs_json:
         try:
-            reconstructed = RiskInputData(**inputs["inputs_JSON"])
+            reconstructed = RiskInputData(**inputs_json)
             top_contributors = predict_risk(reconstructed)["top_contributors"]
         except Exception:
             # Stored inputs don't match the current RiskInputData shape
             # (e.g. an older submission from before a field was added) -
-            # degrade gracefully and still show the score.
+            # degrade gracefully and still show the score. inputs_json is
+            # still returned below as-is so the dashboard can default what
+            # it can from it.
             top_contributors = None
 
     return LatestPredictionResponse(
@@ -154,6 +157,7 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
         risk_score=calculation["risk_score"],
         top_contributors=top_contributors,
         riskcalc_timestamp=calculation["riskcalc_timestamp"],
+        inputs=inputs_json,
     )
 
 @app.get("/learn")

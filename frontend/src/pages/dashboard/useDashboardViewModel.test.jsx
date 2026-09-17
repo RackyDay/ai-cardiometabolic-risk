@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthContext } from "../../context/AuthContext";
 import { RiskContext } from "../../context/RiskContext";
-import { predictRisk } from "../../services/api";
+import { getLatestPrediction, getRiskCalculationHistory, predictRisk } from "../../services/api";
 import { useDashboardViewModel } from "./useDashboardViewModel";
 
 vi.mock("../../services/api", () => ({
@@ -22,6 +22,7 @@ const context = {
   ],
   setRiskScore: vi.fn(),
   setTopContributors: vi.fn(),
+  setRiskInputs: vi.fn(),
 };
 const prediction = {
   risk_score: 15,
@@ -39,7 +40,45 @@ function Wrapper({ children }) {
   </MemoryRouter>;
 }
 
+function AuthenticatedWrapper({ children }) {
+  return <MemoryRouter>
+    <AuthContext.Provider value={{ isAuthenticated: true, accessToken: "token" }}>
+      <RiskContext.Provider value={context}>{children}</RiskContext.Provider>
+    </AuthContext.Provider>
+  </MemoryRouter>;
+}
+
 beforeEach(() => vi.resetAllMocks());
+
+describe("loading the latest saved assessment", () => {
+  it("defaults the what-if sliders to the inputs stored with the latest prediction", async () => {
+    getRiskCalculationHistory.mockResolvedValue([]);
+    getLatestPrediction.mockResolvedValue({
+      has_history: true,
+      risk_score: 20,
+      top_contributors: [],
+      riskcalc_timestamp: "2026-01-01T00:00:00Z",
+      inputs: { age: 55, cigsPerDay: 3, currentSmoker: false },
+    });
+
+    renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await act(async () => {});
+
+    expect(context.setRiskInputs)
+      .toHaveBeenCalledWith({ age: 55, cigsPerDay: 3, currentSmoker: false });
+  });
+
+  it("resets to blank inputs when the account has no saved history", async () => {
+    getRiskCalculationHistory.mockResolvedValue([]);
+    getLatestPrediction.mockResolvedValue({ has_history: false });
+
+    renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await act(async () => {});
+
+    const [resetInputs] = context.setRiskInputs.mock.calls.at(-1);
+    expect(resetInputs).toMatchObject({ age: "", gender: "" });
+  });
+});
 
 describe("what-if contribution updates", () => {
   it("uses the newest slider prediction even when an older response arrives last", async () => {

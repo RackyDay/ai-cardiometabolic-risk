@@ -109,3 +109,7 @@ class LatestPredictionResponse(BaseModel):
     # what was shown at submission time).
     top_contributors: Optional[list[FeatureContribution]] = None
     riskcalc_timestamp: Optional[str] = None
+    # The stored form inputs behind this prediction, so the dashboard's
+    # what-if sliders can default to the user's actual saved values
+    # instead of each slider's minimum.
+    inputs: Optional[dict] = None
