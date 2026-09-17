@@ -108,11 +108,15 @@ def get_risk_calculation(calculation_id: UUID, auth = Depends(get_current_user_a
     if not risk_calc or not risk_inputs:
         raise HTTPException(status_code=404, detail="Calculation not found")
     inputs = risk_inputs[0]["inputs_JSON"]
-    prediction = predict_risk(RiskInputData(**inputs))
+
+    validated_inputs = RiskInputData(**inputs)
+
+    prediction = predict_risk(validated_inputs)
+
     return {
         "riskcalc_id": risk_calc[0]["riskcalc_id"],
         "risk_score": risk_calc[0]["risk_score"],
-        "inputs": inputs,
+        "inputs": validated_inputs.model_dump(),
         "top_contributors": prediction.get("top_contributors", []),
     }
 

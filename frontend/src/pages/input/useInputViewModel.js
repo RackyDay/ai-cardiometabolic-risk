@@ -81,9 +81,47 @@ export function useInputViewModel() {
     };
 
     const set = (field) => (value) => {
-        setRiskInputs((prev) => ({ ...prev, [field]: value }));
-        const error = validateField(field, value);
-        setErrors((prev) => ({ ...prev, [field]: error }));
+
+        setRiskInputs((prev) => {
+
+            const updatedInputs = {
+                ...prev,
+                [field]: value,
+            };
+
+            // A non-smoker should always have 0 cigarettes per day.
+            if (
+                field === "currentSmoker" &&
+                value === false
+            ) {
+                updatedInputs.cigsPerDay = 0;
+            }
+
+            return updatedInputs;
+        });
+
+
+        const error =
+            validateField(field, value);
+
+
+        setErrors((prev) => {
+
+            const updatedErrors = {
+                ...prev,
+                [field]: error,
+            };
+
+            // Clear any old cigarette-count error as well.
+            if (
+                field === "currentSmoker" &&
+                value === false
+            ) {
+                updatedErrors.cigsPerDay = "";
+            }
+
+            return updatedErrors;
+        });
     };
 
     const handleSubmit = async () => {
