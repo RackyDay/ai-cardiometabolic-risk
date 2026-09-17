@@ -1861,6 +1861,17 @@ function DashboardPage() {
               false
             )
           }
+
+          /*
+           * An in-place edit doesn't navigate, so nothing else would
+           * refetch assessment history - without this, the trend chart
+           * and Insights' "previous assessment" would keep comparing
+           * against a stale entry that's no longer actually the one
+           * right before this edit.
+           */
+          onSaved={
+            retryTrend
+          }
         />
 
       )}

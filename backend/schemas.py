@@ -49,6 +49,10 @@ class FeatureContribution(BaseModel):
 class PredictionResponse(BaseModel):
     risk_score: float
     top_contributors: list[FeatureContribution]
+    # Only present when the request was authenticated (anonymous
+    # predictions aren't persisted, so there's no row to point to) - lets
+    # the frontend edit this exact assessment in place later.
+    riskcalc_id: Optional[str] = None
 
 
 class SignUpRequest(BaseModel):
@@ -110,6 +114,7 @@ class AuthResponse(BaseModel):
 
 class LatestPredictionResponse(BaseModel):
     has_history: bool
+    riskcalc_id: Optional[str] = None
     risk_score: Optional[float] = None
     # Not persisted in risk_calculations - recomputed from the stored
     # risk_inputs row via predict_risk() (deterministic, so this matches

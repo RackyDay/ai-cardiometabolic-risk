@@ -1,8 +1,9 @@
 import { useContext, useState } from "react";
 import { RiskContext } from "../../context/RiskContext";
+import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { buildPredictionPayload } from "../input/riskInputTransform";
-import { predictRisk } from "../../services/api";
+import { editRiskCalculation, predictRisk } from "../../services/api";
 
 
 export function useEditAssessmentViewModel() {
@@ -12,7 +13,16 @@ export function useEditAssessmentViewModel() {
         setRiskInputs,
         setRiskScore,
         setTopContributors,
+        riskCalculationId,
+        setRiskCalculationId,
+        selectedCalculation,
     } = useContext(RiskContext);
+
+    const { accessToken } = useContext(AuthContext);
+
+    // Whichever assessment is actually on screen right now: the one
+    // selected from history, or the current/latest one tracked separately.
+    const calculationId = selectedCalculation?.riskcalc_id ?? riskCalculationId;
 
     const [draftInputs, setDraftInputs] = useState(riskInputs);
     const [errors, setErrors] = useState({});
@@ -145,12 +155,22 @@ export function useEditAssessmentViewModel() {
 
         try {
             const payload = buildPredictionPayload(draftInputs, riskInputSchema);
-            const result = await predictRisk(payload);
+
+            // Update the existing row in place when we know which one
+            // that is - otherwise (anonymous session, nothing saved yet)
+            // fall back to a plain prediction, same as before. Either
+            // way this needs the access token: without it, an
+            // authenticated request would hit /predict as anonymous and
+            // the edit would silently vanish on next load.
+            const result = calculationId
+                ? await editRiskCalculation(accessToken, calculationId, payload)
+                : await predictRisk(payload, accessToken);
 
             // Only now does the draft become the actual saved assessment.
             setRiskInputs(draftInputs);
             setRiskScore(result.risk_score);
             setTopContributors(result.top_contributors);
+            setRiskCalculationId(result.riskcalc_id ?? null);
 
             setSaveSuccess(true);
         } catch (err) {
