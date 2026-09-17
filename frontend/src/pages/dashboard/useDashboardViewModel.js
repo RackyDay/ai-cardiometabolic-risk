@@ -8,6 +8,7 @@ import {
 import { RiskContext } from "../../context/RiskContext";
 import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
+import { createInitalRiskInputs } from "../../schemas/createInitialRiskInputs";
 import { getLatestPrediction, getRiskCalculationHistory, predictRisk } from "../../services/api";
 import { buildRiskTrend } from "./buildRiskTrend";
 import { buildPredictionPayload } from "../input/riskInputTransform";
@@ -156,6 +157,7 @@ export function useDashboardViewModel() {
     topContributors: contextTopContributors,
     setTopContributors,
     riskInputs: contextRiskInputs,
+    setRiskInputs,
     selectedCalculation,
   } = useContext(RiskContext);
 
@@ -212,10 +214,18 @@ export function useDashboardViewModel() {
           if (!result.has_history) {
             setRiskScore(null);
             setTopContributors([]);
+            setRiskInputs(createInitalRiskInputs(riskInputSchema));
             return;
           }
         setRiskScore(result.risk_score);
         setTopContributors(result.top_contributors ?? []);
+
+        // Powers the what-if sliders' starting values and the "saved
+        // value" shown next to each factor - without this they'd default
+        // to each slider's minimum instead of what the user actually
+        // submitted, for anyone who didn't just come from the input form
+        // in this same browser session (e.g. a returning visit).
+        setRiskInputs(result.inputs ?? createInitalRiskInputs(riskInputSchema));
       })
       .catch(() => {
         if (!cancelled) setLatestRequest({ token: accessToken, error: "Couldn't load your assessment. Please refresh to try again." });
@@ -224,7 +234,7 @@ export function useDashboardViewModel() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, fromHistory, setRiskScore, setTopContributors]);
+  }, [isAuthenticated, accessToken, fromHistory, setRiskScore, setTopContributors, setRiskInputs]);
 
 
   /* =======================================================
