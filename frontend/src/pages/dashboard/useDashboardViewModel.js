@@ -159,6 +159,8 @@ export function useDashboardViewModel() {
     riskInputs: contextRiskInputs,
     selectedCalculation,
     historyRevision = 0,
+    historyActivity = "",
+    setViewingCalculationId,
     hasFreshCalculation,
   } = useContext(RiskContext);
 
@@ -185,8 +187,9 @@ export function useDashboardViewModel() {
     return () => { cancelled = true; };
   }, [isAuthenticated, accessToken, trendKey]);
   const [latestRequest, setLatestRequest] = useState(null);
-  const isLoadingAssessment = isAuthenticated && !fromHistory && latestRequest?.token !== accessToken;
-  const assessmentError = !fromHistory && latestRequest?.token === accessToken
+  const latestIsCurrent = latestRequest?.token === accessToken && latestRequest?.revision === historyRevision;
+  const isLoadingAssessment = Boolean(historyActivity) || (isAuthenticated && !fromHistory && !latestIsCurrent);
+  const assessmentError = !fromHistory && latestIsCurrent
     ? latestRequest.error : "";
 
 
@@ -211,7 +214,7 @@ export function useDashboardViewModel() {
     getLatestPrediction(accessToken)
       .then((result) => {
           if (cancelled) return;
-          setLatestRequest({ token: accessToken, error: "", timestamp: result.riskcalc_timestamp, hasHistory: result.has_history });
+          setLatestRequest({ token: accessToken, revision: historyRevision, error: "", timestamp: result.riskcalc_timestamp, hasHistory: result.has_history });
           if (!result.has_history) {
             setRiskScore(null);
             setTopContributors([]);
@@ -221,7 +224,7 @@ export function useDashboardViewModel() {
         setTopContributors(result.top_contributors ?? []);
       })
       .catch(() => {
-        if (!cancelled) setLatestRequest({ token: accessToken, error: "Couldn't load your assessment. Please refresh to try again." });
+        if (!cancelled) setLatestRequest({ token: accessToken, revision: historyRevision, error: "Couldn't load your assessment. Please refresh to try again." });
       });
 
     return () => {
@@ -476,6 +479,16 @@ export function useDashboardViewModel() {
   const latestIndex = loadedHistory?.findIndex(
     (item) => item.riskcalc_timestamp === latestRequest?.timestamp
   ) ?? -1;
+  const displayedCalculationId = isLoadingAssessment || assessmentError
+    ? null
+    : selectedCalculation?.riskcalc_id ?? (latestIsCurrent && latestRequest?.hasHistory && latestIndex !== -1
+      ? loadedHistory[latestIndex].riskcalc_id : null);
+
+  useEffect(() => {
+    setViewingCalculationId?.(displayedCalculationId);
+    return () => setViewingCalculationId?.(null);
+  }, [displayedCalculationId, setViewingCalculationId]);
+
   const pastAssessment = selectedCalculation ?? (
     isAuthenticated && !hasFreshCalculation && latestRequest?.token === accessToken &&
     latestRequest.hasHistory && latestIndex !== -1
@@ -503,6 +516,7 @@ export function useDashboardViewModel() {
     trendError: trendResponse?.key === trendKey ? trendResponse.error : "",
     retryTrend: () => setTrendRetry((value) => value + 1),
     isLoadingAssessment,
+    assessmentLoadingMessage: historyActivity || "Loading calculation…",
     assessmentError,
 
     /* Original assessment */

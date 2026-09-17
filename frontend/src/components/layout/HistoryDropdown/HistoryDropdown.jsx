@@ -6,7 +6,7 @@ import { RiskContext } from "../../../context/RiskContext";
 
 const HistoryDropdown = ({ onLoadCalculation }) => {
   const { accessToken, isAuthenticated: signedIn } = useContext(AuthContext);
-  const { calculationDeleted } = useContext(RiskContext);
+  const { calculationDeleted, setHistoryActivity, viewingCalculationId, historyActivity } = useContext(RiskContext);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [confirmationError, setConfirmationError] = useState("");
   const confirmationRef = useRef(null);
@@ -38,7 +38,7 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
     viewError,
     viewCalculation,
     dropdownRef,
-  } = useHistoryDropdownViewModel(accessToken, onLoadCalculation, calculationDeleted);
+  } = useHistoryDropdownViewModel(accessToken, onLoadCalculation, calculationDeleted, setHistoryActivity);
 
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleString(undefined, {
@@ -202,7 +202,12 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
 
                     <div className="history-item-content">
                       <div className="history-item-heading">
-                        Calculation {history.length - index}
+                        <span className="history-item-title">Calculation {history.length - index}</span>
+                        {!historyActivity && viewingCalculationId === calculation.riskcalc_id && (
+                          <span className="history-viewing-label" aria-label="Currently viewing">
+                            <span className="history-viewing-text" aria-hidden="true">Currently viewing</span>
+                          </span>
+                        )}
                       </div>
 
                       <div className="history-item-date">

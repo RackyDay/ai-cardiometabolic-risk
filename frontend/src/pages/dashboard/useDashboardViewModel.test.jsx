@@ -123,3 +123,42 @@ describe("what-if contribution updates", () => {
     log.mockRestore();
   });
 });
+
+describe("history transition loading", () => {
+  it("hides the previous assessment until the post-deletion refresh finishes", async () => {
+    let revision = 0;
+    let activity = "";
+    let finishRefresh;
+    getLatestPrediction.mockResolvedValueOnce({ has_history: true, risk_score: 10 });
+    getLatestPrediction.mockImplementationOnce(() => new Promise((resolve) => { finishRefresh = resolve; }));
+    getRiskCalculationHistory.mockResolvedValue([]);
+    function HistoryWrapper({ children }) {
+      return <MemoryRouter>
+        <AuthContext.Provider value={{ isAuthenticated: true, accessToken: "token" }}>
+          <RiskContext.Provider value={{ ...context, historyRevision: revision, historyActivity: activity }}>
+            {children}
+          </RiskContext.Provider>
+        </AuthContext.Provider>
+      </MemoryRouter>;
+    }
+    const { result, rerender } = renderHook(useDashboardViewModel, { wrapper: HistoryWrapper });
+    await waitFor(() => expect(result.current.isLoadingAssessment).toBe(false));
+    activity = "Deleting calculation…";
+    rerender();
+    expect(result.current.isLoadingAssessment).toBe(true);
+    expect(result.current.assessmentLoadingMessage).toBe(activity);
+    activity = "";
+    revision = 1;
+    rerender();
+    expect(result.current.isLoadingAssessment).toBe(true);
+    await act(async () => finishRefresh({ has_history: false }));
+    expect(result.current.isLoadingAssessment).toBe(false);
+    expect(context.setRiskScore).toHaveBeenLastCalledWith(null);
+    activity = "Loading calculation…";
+    rerender();
+    expect(result.current.isLoadingAssessment).toBe(true);
+    activity = "";
+    rerender();
+    expect(result.current.isLoadingAssessment).toBe(false);
+  });
+});

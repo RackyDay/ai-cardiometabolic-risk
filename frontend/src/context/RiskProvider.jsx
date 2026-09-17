@@ -8,6 +8,8 @@ export function RiskProvider({ children }) {
   const { user, isAuthenticated } = useContext(AuthContext);
   const [historySelection, setHistorySelection] = useState(null);
   const [historyRevision, setHistoryRevision] = useState(0);
+  const [historyActivity, setHistoryActivity] = useState("");
+  const [viewingCalculationId, setViewingCalculationId] = useState(null);
   const calculationDeleted = (id, remaining) => {
     setHistorySelection((current) => {
       if (!current) return current;
@@ -24,6 +26,7 @@ export function RiskProvider({ children }) {
   useEffect(() => {
     setHistorySelection((current) => current?.userId === userId ? current : null);
     setFreshCalculationUserId(null);
+    setViewingCalculationId(null);
   }, [userId]);
   const selectedCalculation = userId && historySelection?.userId === userId
     ? historySelection.calculation : null;
@@ -63,6 +66,10 @@ export function RiskProvider({ children }) {
         // Original assessment
         selectedCalculation,
         historyRevision,
+        viewingCalculationId,
+        setViewingCalculationId,
+        historyActivity,
+        setHistoryActivity,
         calculationDeleted,
         hasFreshCalculation: Boolean(userId && freshCalculationUserId === userId),
         selectCalculation,

@@ -226,6 +226,7 @@ function DashboardPage() {
     retryTrend,
 
     isLoadingAssessment,
+    assessmentLoadingMessage,
     assessmentError,
 
     riskFactors,
@@ -315,7 +316,7 @@ function DashboardPage() {
       >
 
         {isLoadingAssessment
-          ? "Loading assessment…"
+          ? assessmentLoadingMessage
           : assessmentError ||
             "No assessment to display. Complete a risk calculation to get started."}
 

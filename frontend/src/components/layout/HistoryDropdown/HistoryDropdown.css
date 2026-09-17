@@ -232,6 +232,9 @@
 }
 
 .history-item-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 1px;
 
   font-size: 13px;
@@ -323,7 +326,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
-  min-width: 110px;
+  min-width: 0;
 }
 
 .history-risk-label {
@@ -370,6 +373,63 @@
 
   color: #253746;
   text-align: right;
+}
+
+.history-viewing-label {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 4px;
+  border-radius: 999px;
+  background: transparent;
+  color: #3d6fd4;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 600;
+  transition: background 0.18s ease;
+}
+
+.history-viewing-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.history-viewing-text {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-width 0.18s ease, opacity 0.18s ease, margin-left 0.18s ease;
+}
+
+.history-viewing-label:hover,
+.history-item:focus-visible .history-viewing-label {
+  background: #edf3ff;
+}
+
+.history-viewing-label:hover .history-viewing-text,
+.history-item:focus-visible .history-viewing-text {
+  max-width: 100px;
+  margin-left: 4px;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-viewing-label,
+  .history-viewing-text {
+    transition: none;
+  }
+}
+
+.history-item-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .history-item-row {
   display: flex;

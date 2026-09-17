@@ -5,7 +5,7 @@ import {
   deleteRiskCalculation,
 } from "../../../services/api.js"
 
-function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCalculation) {
+function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCalculation, setHistoryActivity) {
   const [deletingId, setDeletingId] = useState(null);
   const [deleteError, setDeleteError] = useState("");
   const deletePending = useRef(false);
@@ -73,6 +73,7 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCal
     if (isViewing || deletePending.current || !accessToken || !history.some((item) => item.riskcalc_id === selectedId)) return;
     const version = requestVersion.current;
     setIsViewing(true);
+    setHistoryActivity?.("Loading calculation…");
     setViewError("");
 
     try {
@@ -95,6 +96,7 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCal
       if (version === requestVersion.current) setViewError("Couldn't load this calculation. Please try again.");
     } finally {
       setIsViewing(false);
+      setHistoryActivity?.("");
     }
   };
 
@@ -103,6 +105,7 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCal
     const version = requestVersion.current;
     deletePending.current = true;
     setDeletingId(id);
+    setHistoryActivity?.("Deleting calculation…");
     setDeleteError("");
     try {
       await deleteRiskCalculation(accessToken, id);
@@ -117,6 +120,7 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCal
     } finally {
       deletePending.current = false;
       setDeletingId(null);
+      setHistoryActivity?.("");
     }
   };
 
