@@ -79,10 +79,10 @@ def predict(data: RiskInputData, auth=Depends(get_optional_user)):
     return result
 
 @app.post("/delete")
-def delete(assessment_id, auth = Depends(get_optional_user)):
+def delete(assessment_id: UUID, auth = Depends(get_current_user_and_token)):
     if auth is not None:
         _, token = auth
-        db.delete_assessment(assessment_id, token)
+        db.delete_assessment(str(assessment_id), token)
 
 @app.post("/edit")
 def edit(assessment_id, data: RiskInputData, auth = Depends(get_optional_user)):

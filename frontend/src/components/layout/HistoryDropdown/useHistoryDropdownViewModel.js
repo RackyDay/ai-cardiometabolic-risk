@@ -2,9 +2,13 @@ import { useEffect, useState, useRef } from "react";
 import {
   getRiskCalculationHistory,
   getRiskCalculation,
+  deleteRiskCalculation,
 } from "../../../services/api.js"
 
-function useHistoryDropdownViewModel(accessToken, onLoadCalculation) {
+function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCalculation) {
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
+  const deletePending = useRef(false);
   const [result, setResult] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [selectedId, setSelectedId] = useState("");
@@ -66,7 +70,7 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation) {
   }, [accessToken, retryCount]);
 
   const viewCalculation = async () => {
-    if (isViewing || !accessToken || !history.some((item) => item.riskcalc_id === selectedId)) return;
+    if (isViewing || deletePending.current || !accessToken || !history.some((item) => item.riskcalc_id === selectedId)) return;
     const version = requestVersion.current;
     setIsViewing(true);
     setViewError("");
@@ -94,7 +98,31 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation) {
     }
   };
 
+  const deleteCalculation = async (id) => {
+    if (deletePending.current || isViewing || !accessToken || !history.some((item) => item.riskcalc_id === id)) return;
+    const version = requestVersion.current;
+    deletePending.current = true;
+    setDeletingId(id);
+    setDeleteError("");
+    try {
+      await deleteRiskCalculation(accessToken, id);
+      if (version !== requestVersion.current) return;
+      const remaining = history.filter((item) => item.riskcalc_id !== id);
+      setResult({ accessToken, retryCount, history: remaining, error: "" });
+      setSelectedId((current) => current === id ? "" : current);
+      onDeleteCalculation?.(id, remaining);
+    } catch {
+      if (version === requestVersion.current) setDeleteError("Couldn't delete this calculation. Please try again.");
+    } finally {
+      deletePending.current = false;
+      setDeletingId(null);
+    }
+  };
+
   return {
+    deletingId,
+    deleteError,
+    deleteCalculation,
     history,
     selectedId: history.some((item) => item.riskcalc_id === selectedId) ? selectedId : "",
     setSelectedId,

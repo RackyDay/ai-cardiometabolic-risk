@@ -158,6 +158,7 @@ export function useDashboardViewModel() {
     setTopContributors,
     riskInputs: contextRiskInputs,
     selectedCalculation,
+    historyRevision = 0,
     hasFreshCalculation,
   } = useContext(RiskContext);
 
@@ -171,7 +172,7 @@ export function useDashboardViewModel() {
   const riskInputs = selectedCalculation?.inputs ?? contextRiskInputs;
   const [trendResponse, setTrendResponse] = useState(null);
   const [trendRetry, setTrendRetry] = useState(0);
-  const trendKey = `${accessToken}:${location.key}:${trendRetry}`;
+  const trendKey = `${accessToken}:${location.key}:${trendRetry}:${historyRevision}`;
   useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
     let cancelled = false;
@@ -226,7 +227,7 @@ export function useDashboardViewModel() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, fromHistory, setRiskScore, setTopContributors]);
+  }, [isAuthenticated, accessToken, fromHistory, historyRevision, setRiskScore, setTopContributors]);
 
 
   /* =======================================================

@@ -206,7 +206,8 @@
   transition: background 0.15s ease;
 }
 
-.history-item:hover {
+.history-item-row:hover,
+.history-item-row:focus-within {
   background: #f4f6f8;
 }
 
@@ -214,7 +215,8 @@
   background: #e7eef3;
 }
 
-.history-item-selected:hover {
+.history-item-selected:hover,
+.history-item-selected:focus-within {
   background: #e1eaf0;
 }
 
@@ -368,4 +370,44 @@
 
   color: #253746;
   text-align: right;
+}
+.history-item-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 4px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.history-item-row .history-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-delete-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #65717b;
+  cursor: pointer;
+}
+
+.history-delete-button:hover:not(:disabled) {
+  color: #b91c1c;
+}
+
+.history-delete-button:focus-visible {
+  outline: 2px solid #b91c1c;
+  outline-offset: 2px;
+}
+
+.history-delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

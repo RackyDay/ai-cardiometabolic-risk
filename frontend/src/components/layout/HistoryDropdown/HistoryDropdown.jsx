@@ -2,12 +2,17 @@ import "./HistoryDropdown.css";
 import useHistoryDropdownViewModel from "./useHistoryDropdownViewModel";
 import { AuthContext } from "../../../context/AuthContext";
 import { useContext } from "react";
+import { RiskContext } from "../../../context/RiskContext";
 
 const HistoryDropdown = ({ onLoadCalculation }) => {
   const { accessToken, isAuthenticated: signedIn } = useContext(AuthContext);
+  const { calculationDeleted } = useContext(RiskContext);
 
   const {
     history,
+    deletingId,
+    deleteError,
+    deleteCalculation,
     selectedId,
     setSelectedId,
     isOpen,
@@ -19,7 +24,7 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
     viewError,
     viewCalculation,
     dropdownRef,
-  } = useHistoryDropdownViewModel(accessToken, onLoadCalculation);
+  } = useHistoryDropdownViewModel(accessToken, onLoadCalculation, calculationDeleted);
 
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleString(undefined, {
@@ -152,12 +157,27 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
                   selectedId === calculation.riskcalc_id;
 
                 return (
+                  <div className={`history-item-row ${isSelected ? "history-item-selected" : ""}`} key={calculation.riskcalc_id}>
                   <button
-                    key={calculation.riskcalc_id}
                     type="button"
-                    className={`history-item ${
-                      isSelected ? "history-item-selected" : ""
-                    }`}
+                    className="history-delete-button"
+                    aria-label={deletingId === calculation.riskcalc_id ? "Deleting calculation" : `Delete calculation ${history.length - index}`}
+                    title="Delete calculation"
+                    disabled={Boolean(deletingId) || isViewing}
+                    onClick={() => deleteCalculation(calculation.riskcalc_id)}
+                  >
+                    {deletingId === calculation.riskcalc_id ? (
+                      <span aria-hidden="true">...</span>
+                    ) : (
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={isSelected}
+                    className="history-item"
                     onClick={() =>
                       setSelectedId(calculation.riskcalc_id)
                     }
@@ -194,17 +214,19 @@ const HistoryDropdown = ({ onLoadCalculation }) => {
                     </div>
 
                   </button>
+                  </div>
                 );
               })
             )}
           </div>
 
           {viewError && <p className="history-empty" role="alert">{viewError}</p>}
+          {deleteError && <p className="history-empty" role="alert">{deleteError}</p>}
           {history.length > 0 && (
             <button
               type="button"
               className="history-view-button"
-              disabled={!selectedId || isViewing}
+              disabled={!selectedId || isViewing || Boolean(deletingId)}
               onClick={viewCalculation}
             >
               {isViewing ? "Loading calculation…" : "View selected calculation"}
