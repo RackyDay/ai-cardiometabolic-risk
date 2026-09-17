@@ -81,15 +81,41 @@ function EditAssessmentModal({ onClose }) {
 
                     <>
 
-                        {currentFields.map((field) => (
-                            <RiskField
-                                key={field.name}
-                                field={field}
-                                value={draftInputs[field.name]}
-                                onChange={set(field.name)}
-                                error={errors[field.name]}
-                            />
-                        ))}
+                        {currentFields.map((field) => {
+
+                            const isCigarettesField =
+                                field.name === "cigsPerDay";
+
+                            const isNonSmoker =
+                                draftInputs.currentSmoker === false;
+
+                            const shouldDisableCigarettes =
+                                isCigarettesField &&
+                                isNonSmoker;
+
+
+                            return (
+
+                                <RiskField
+                                    key={field.name}
+                                    field={field}
+                                    value={draftInputs[field.name]}
+                                    onChange={set(field.name)}
+                                    error={errors[field.name]}
+
+                                    disabled={
+                                        shouldDisableCigarettes
+                                    }
+
+                                    disabledMessage={
+                                        shouldDisableCigarettes
+                                            ? "This field is disabled because you selected No for smoking status."
+                                            : undefined
+                                    }
+                                />
+
+                            );
+                        })}
 
 
                         {isLastPage && (

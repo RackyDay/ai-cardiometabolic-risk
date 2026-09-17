@@ -3,7 +3,7 @@
 # validated on both sides of the API boundary.
 from typing import Literal, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class RiskInputData(BaseModel):
@@ -29,6 +29,13 @@ class RiskInputData(BaseModel):
     heartRate: Optional[float] = Field(default=None, ge=30, le=200)
     glucose: Optional[float] = Field(default=None, ge=40, le=500)
     totChol: Optional[float] = Field(default=None, ge=100, le=600)
+
+    @model_validator(mode="after")
+    def normalise_smoking_inputs(self):
+        if self.currentSmoker is False:
+            self.cigsPerDay = 0
+
+        return self
 
 
 class FeatureContribution(BaseModel):

@@ -77,9 +77,47 @@ export function useEditAssessmentViewModel() {
     };
 
     const set = (field) => (value) => {
-        setDraftInputs((prev) => ({ ...prev, [field]: value }));
-        const error = validateField(field, value);
-        setErrors((prev) => ({ ...prev, [field]: error }));
+
+    setDraftInputs((prev) => {
+
+        const updatedInputs = {
+            ...prev,
+            [field]: value,
+        };
+
+        // If smoker status is changed to No,
+        // automatically reset cigarettes per day to 0.
+        if (
+            field === "currentSmoker" &&
+            value === false
+        ) {
+            updatedInputs.cigsPerDay = 0;
+        }
+
+        return updatedInputs;
+    });
+
+
+    const error =
+            validateField(field, value);
+
+
+        setErrors((prev) => {
+
+            const updatedErrors = {
+                ...prev,
+                [field]: error,
+            };
+
+            if (
+                field === "currentSmoker" &&
+                value === false
+            ) {
+                updatedErrors.cigsPerDay = "";
+            }
+
+            return updatedErrors;
+        });
     };
 
 
