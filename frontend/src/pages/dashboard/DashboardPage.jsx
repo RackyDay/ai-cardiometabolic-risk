@@ -457,6 +457,8 @@ function DashboardPage() {
             className="edit-assessment-button"
 
             aria-label="Edit original assessment"
+            disabled={Boolean(pastCalculation)}
+            title={pastCalculation ? "Past calculations cannot be edited" : undefined}
 
             onClick={() =>
               setIsEditOpen(true)
@@ -1759,7 +1761,7 @@ function DashboardPage() {
           EDIT ASSESSMENT MODAL
       ====================================================== */}
 
-      {isEditOpen && (
+      {isEditOpen && !pastCalculation && (
 
         <EditAssessmentModal
           onClose={() =>

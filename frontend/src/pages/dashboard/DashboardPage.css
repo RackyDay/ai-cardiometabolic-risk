@@ -309,8 +309,14 @@
   transition: background 0.15s;
 }
 
-.edit-assessment-button:hover {
+.edit-assessment-button:hover:not(:disabled) {
   background: rgba(63, 115, 246, 0.16);
+}
+
+.edit-assessment-button:disabled {
+  background: #f1f2f4;
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 
 
