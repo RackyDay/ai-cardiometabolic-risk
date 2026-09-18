@@ -73,9 +73,8 @@ def predict(data: RiskInputData, auth=Depends(get_optional_user)):
 
     if auth is not None:
         user, token = auth
-        riskcalc_id = db.save_assessment(user.id, result["risk_score"], "1", data.model_dump(), token)
+        result["riskcalc_id"] = db.save_assessment(user.id, result["risk_score"], "1", data.model_dump(), token)
 
-    #return riskcalc_id also if signed in
     return result
 
 @app.post("/delete")
@@ -84,15 +83,19 @@ def delete(assessment_id: UUID, auth = Depends(get_current_user_and_token)):
         _, token = auth
         db.delete_assessment(str(assessment_id), token)
 
-@app.post("/edit")
-def edit(assessment_id, data: RiskInputData, auth = Depends(get_optional_user)):
-    if auth is not None:
-        _, token = auth
-        db.edit_assessment(assessment_id, data.model_dump(), token)
-    else:
-        raise HTTPException(status_code=401, detail="Not signed in")
+@app.put("/api/risk-calculations/{calculation_id}", response_model=PredictionResponse)
+def edit_risk_calculation(calculation_id: UUID, data: RiskInputData, auth = Depends(get_current_user_and_token)):
+    """Updates a saved assessment (score + inputs) in place, rather than
+    /predict's insert-a-new-row behaviour - this is what "Edit original
+    assessment" on the dashboard actually calls.
+    """
+    _, token = auth
 
-    predict(data, auth)
+    result = predict_risk(data)
+    db.update_assessment(str(calculation_id), result["risk_score"], data.model_dump(), token)
+    result["riskcalc_id"] = str(calculation_id)
+
+    return result
 
 @app.get("/api/risk-calculations")
 async def get_assessment_history(auth = Depends(get_optional_user)):
@@ -108,12 +111,24 @@ def get_risk_calculation(calculation_id: UUID, auth = Depends(get_current_user_a
     if not risk_calc or not risk_inputs:
         raise HTTPException(status_code=404, detail="Calculation not found")
     inputs = risk_inputs[0]["inputs_JSON"]
-    prediction = predict_risk(RiskInputData(**inputs))
+
+    # Stored inputs might not match the current RiskInputData shape (e.g.
+    # an older submission from before a field was added) - degrade
+    # gracefully and still return the score/raw inputs rather than a 500,
+    # the same way /predictions/latest handles this exact situation.
+    try:
+        validated_inputs = RiskInputData(**inputs)
+        top_contributors = predict_risk(validated_inputs).get("top_contributors", [])
+        response_inputs = validated_inputs.model_dump()
+    except Exception:
+        top_contributors = None
+        response_inputs = inputs
+
     return {
         "riskcalc_id": risk_calc[0]["riskcalc_id"],
         "risk_score": risk_calc[0]["risk_score"],
-        "inputs": inputs,
-        "top_contributors": prediction.get("top_contributors", []),
+        "inputs": response_inputs,
+        "top_contributors": top_contributors,
     }
 
 @app.get("/predictions/latest", response_model=LatestPredictionResponse)
@@ -132,6 +147,7 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
         return LatestPredictionResponse(has_history=False)
 
     calculation, inputs = latest
+    inputs_json = inputs.get("inputs_JSON") if inputs else None
 
     # top_contributors isn't persisted (only risk_score is) - recompute it
     # from the stored inputs via predict_risk(), which is deterministic
@@ -139,21 +155,25 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
     # at submission time.
 
     top_contributors = None
-    if inputs and inputs.get("inputs_JSON"):
+    if inputs_json:
         try:
-            reconstructed = RiskInputData(**inputs["inputs_JSON"])
+            reconstructed = RiskInputData(**inputs_json)
             top_contributors = predict_risk(reconstructed)["top_contributors"]
         except Exception:
             # Stored inputs don't match the current RiskInputData shape
             # (e.g. an older submission from before a field was added) -
-            # degrade gracefully and still show the score.
+            # degrade gracefully and still show the score. inputs_json is
+            # still returned below as-is so the dashboard can default what
+            # it can from it.
             top_contributors = None
 
     return LatestPredictionResponse(
         has_history=True,
+        riskcalc_id=calculation["riskcalc_id"],
         risk_score=calculation["risk_score"],
         top_contributors=top_contributors,
         riskcalc_timestamp=calculation["riskcalc_timestamp"],
+        inputs=inputs["inputs_JSON"] if inputs and inputs.get("inputs_JSON") else None
     )
 
 @app.get("/learn")

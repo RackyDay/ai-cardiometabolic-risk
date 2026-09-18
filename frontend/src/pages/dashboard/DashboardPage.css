@@ -259,6 +259,28 @@
   color: #991b1b;
 }
 
+.insights-card-disabled {
+  background: #f1f3f5;
+  color: #737b84;
+}
+
+.insights-card-disabled .card-title {
+  color: #737b84;
+}
+
+.insights-message {
+  min-height: 180px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #737b84;
+
+  text-align: center;
+  font-size: 0.9375rem;
+}
+
 
 /* =========================================================
    Risk Breakdown Card
@@ -1571,12 +1593,6 @@ strong {
     grid-template-columns: 1fr;
   }
 
-
-  .insights-card {
-    display: none;
-  }
-
-
   .insight-eye-button {
     display: grid;
   }
@@ -1773,6 +1789,7 @@ strong {
   }
 
 }
+
 .trend-card-disabled {
   background: #f1f3f5;
   color: #737b84;

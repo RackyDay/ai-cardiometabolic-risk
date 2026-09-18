@@ -19,6 +19,8 @@ import RiskFactorPieChart, {
   RISK_FACTOR_DESCRIPTIONS,
 } from "./components/RiskFactorPieChart";
 
+import { buildPieData } from "./buildPieData";
+
 import { getRiskFactorColor } from "./riskFactorColors";
 
 import EditAssessmentModal from "./EditAssessmentModal";
@@ -31,13 +33,6 @@ import "./DashboardPage.css";
 
 
 const VISIBLE_RISK_FACTOR_ROWS = 5;
-
-
-const INSIGHTS = [
-  "Overall Risk Score has decreased by 4%",
-  "Heart rate has improved by 5 BPM",
-  "BMI result is now closer to the ideal value",
-];
 
 
 const RISK_SCORE_DISCLAIMER =
@@ -220,6 +215,11 @@ function DashboardPage() {
 
     isAuthenticated,
 
+    insights,
+    isLoadingInsights,
+    insightsError,
+    hasPreviousAssessment,
+
     trendData,
     isLoadingTrend,
     trendError,
@@ -230,13 +230,12 @@ function DashboardPage() {
     assessmentError,
 
     riskFactors,
-    pieData,
 
     originalInputs,
 
     hypotheticalScore,
     hypotheticalInputs,
-    hypotheticalPieData,
+    hypotheticalRiskFactors,
 
     changeableRiskFactors,
 
@@ -323,6 +322,36 @@ function DashboardPage() {
       </div>
     );
   }
+
+
+  /*
+   * The pie chart mirrors whichever tab the factor list is on: only
+   * changeable factors while that tab is active, only fixed factors on
+   * the other. buildPieData renormalizes against just this subset, so
+   * the chart still reads as a full breakdown of the factors it's
+   * currently showing rather than a handful of slivers out of 100%.
+   */
+  const isChangeableFactor = (factor) =>
+    Boolean(changeableRiskFactors[factor.feature]);
+
+  const tabRiskFactors = riskFactors.filter((factor) =>
+    activeFactorTab === "changeable"
+      ? isChangeableFactor(factor)
+      : !isChangeableFactor(factor)
+  );
+
+  const tabHypotheticalRiskFactors = hypotheticalRiskFactors.filter((factor) =>
+    activeFactorTab === "changeable"
+      ? isChangeableFactor(factor)
+      : !isChangeableFactor(factor)
+  );
+
+  const tabPieData = buildPieData(tabRiskFactors);
+
+  const tabHypotheticalPieData = buildPieData(
+    tabHypotheticalRiskFactors,
+    tabRiskFactors
+  );
 
 
   return (
@@ -1314,27 +1343,38 @@ function DashboardPage() {
 
           <div className="risk-breakdown-chart-panel">
 
-            <RiskFactorPieChart
-              data={
-                pieData
-              }
+            {activeFactorTab === "stress" ? (
 
-              hypotheticalData={
-                hypotheticalPieData
-              }
+              <p className="risk-factors-empty" role="status">
+                Not available. Stress tracking doesn't have risk factors
+                associated with it yet.
+              </p>
 
-              isHypotheticalActive={
-                isHypotheticalActive
-              }
+            ) : (
 
-              /*
-               * Maps hovered pie factor
-               * to the corresponding left row.
-               */
-              onFactorHover={
-                setHoveredRiskFactor
-              }
-            />
+              <RiskFactorPieChart
+                data={
+                  tabPieData
+                }
+
+                hypotheticalData={
+                  tabHypotheticalPieData
+                }
+
+                isHypotheticalActive={
+                  isHypotheticalActive
+                }
+
+                /*
+                 * Maps hovered pie factor
+                 * to the corresponding left row.
+                 */
+                onFactorHover={
+                  setHoveredRiskFactor
+                }
+              />
+
+            )}
 
           </div>
 
@@ -1347,51 +1387,102 @@ function DashboardPage() {
           INSIGHTS
       ====================================================== */}
 
-      <div className="card insights-card">
+      <div
+        className={`card insights-card${
+          !isAuthenticated
+            ? " insights-card-disabled"
+            : ""
+        }`}
+        aria-disabled={
+          !isAuthenticated
+        }
+      >
 
         <h2 className="card-title">
           Insights
         </h2>
 
 
-        <p className="insight-subheading">
-          Since the last assessment:
-        </p>
+        {!isAuthenticated ? (
+
+          <div className="insights-message">
+
+            Sign in to view personalised insights.
+
+          </div>
+
+        ) : isLoadingInsights ? (
+
+          <div className="insights-message">
+
+            Comparing with your previous assessment…
+
+          </div>
+
+        ) : insightsError ? (
+
+          <div className="insights-message">
+
+            {insightsError}
+
+          </div>
+
+        ) : !hasPreviousAssessment ? (
+
+          <div className="insights-message">
+
+            Complete another assessment to see how your results have changed over time.
+
+          </div>
+
+        ) : insights.length === 0 ? (
+
+          <div className="insights-message">
+
+            No significant changes were found compared with your previous assessment.
+
+          </div>
+
+        ) : (
+
+          <>
+
+            <p className="insight-subheading">
+
+              Compared with your previous assessment:
+
+            </p>
 
 
-        <div className="insight-list">
+            <div className="insight-list">
 
-          {INSIGHTS.map(
-            (text, i) => (
+              {insights.map(
+                (insight) => (
 
-              <div
-                key={i}
+                  <div
+                    key={
+                      insight.key
+                    }
 
-                className="insight-item insight-green"
-              >
-                {text}
-              </div>
+                    className={`insight-item ${
+                      insight.positive
+                        ? "insight-green"
+                        : "insight-red"
+                    }`}
+                  >
 
-            )
-          )}
+                    {insight.text}
 
-        </div>
+                  </div>
 
+                )
+              )}
 
-        <p className="insight-subheading stress-heading">
-          Stress
-        </p>
+            </div>
 
+          </>
 
-        <div className="insight-item insight-red">
-
-          Your data shows traits that
-          are usually associated with
-          stress. This could suggest
-          that you may be experiencing
-          high stress.
-
-        </div>
+        )}
 
       </div>
 
@@ -1693,16 +1784,11 @@ function DashboardPage() {
                 Insights
               </h2>
 
-
               <button
                 className="insight-modal-close"
-
                 aria-label="Close insights"
-
                 onClick={() =>
-                  setIsInsightsOpen(
-                    false
-                  )
+                  setIsInsightsOpen(false)
                 }
               >
                 ×
@@ -1711,45 +1797,63 @@ function DashboardPage() {
             </div>
 
 
-            <p className="insight-subheading">
-              Since the last assessment:
-            </p>
+            {isLoadingInsights ? (
 
+              <div className="insights-message">
+                Comparing with your previous assessment…
+              </div>
 
-            <div className="insight-list">
+            ) : insightsError ? (
 
-              {INSIGHTS.map(
-                (text, i) => (
+              <div className="insights-message">
+                {insightsError}
+              </div>
 
-                  <div
-                    key={i}
+            ) : !hasPreviousAssessment ? (
 
-                    className="insight-item insight-green"
-                  >
-                    {text}
-                  </div>
+              <div className="insights-message">
+                Complete another assessment to see how your results have changed over time.
+              </div>
 
-                )
-              )}
+            ) : insights.length === 0 ? (
 
-            </div>
+              <div className="insights-message">
+                No significant changes were found compared with your previous assessment.
+              </div>
 
+            ) : (
 
-            <p className="insight-subheading stress-heading">
-              Stress
-            </p>
+              <>
+                <p className="insight-subheading">
+                  Compared with your previous assessment:
+                </p>
 
+                <div className="insight-list">
 
-            <div className="insight-item insight-red">
+                  {insights.map(
+                    (insight) => (
 
-              Your data shows traits that
-              are usually associated with
-              stress. This could suggest
-              that you may be experiencing
-              high stress.
+                      <div
+                        key={insight.key}
 
-            </div>
+                        className={`insight-item ${
+                          insight.positive
+                            ? "insight-green"
+                            : "insight-red"
+                        }`}
+                      >
 
+                        {insight.text}
+
+                      </div>
+
+                    )
+                  )}
+
+                </div>
+              </>
+
+            )}
           </div>
 
         </div>
@@ -1768,6 +1872,17 @@ function DashboardPage() {
             setIsEditOpen(
               false
             )
+          }
+
+          /*
+           * An in-place edit doesn't navigate, so nothing else would
+           * refetch assessment history - without this, the trend chart
+           * and Insights' "previous assessment" would keep comparing
+           * against a stale entry that's no longer actually the one
+           * right before this edit.
+           */
+          onSaved={
+            retryTrend
           }
         />
 

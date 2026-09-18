@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -8,9 +9,14 @@ import {
 import { RiskContext } from "../../context/RiskContext";
 import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
-import { getLatestPrediction, getRiskCalculationHistory, predictRisk } from "../../services/api";
+import {
+  getLatestPrediction,
+  getRiskCalculationHistory,
+  getRiskCalculation,
+  predictRisk
+} from "../../services/api";
+import { createInitalRiskInputs } from "../../schemas/createInitialRiskInputs";
 import { buildRiskTrend } from "./buildRiskTrend";
-import { buildPieData } from "./buildPieData";
 import { buildPredictionPayload } from "../input/riskInputTransform";
 import { useLocation } from "react-router-dom";
 import { CHANGEABLE_RISK_FACTORS } from "./changeableRiskFactors";
@@ -144,6 +150,200 @@ function inputsHaveChanged(
   );
 }
 
+/* =========================================================
+   Build comparison insights
+========================================================= */
+
+function buildInsights({
+  currentScore,
+  previousAssessment,
+  currentInputs,
+  currentContributors,
+}) {
+  if (!previousAssessment) {
+    return [];
+  }
+
+  const insights = [];
+
+  /* -------------------------------------------------------
+     Overall risk score
+  ------------------------------------------------------- */
+
+  const previousScore =
+    Number(previousAssessment.risk_score);
+
+  const currentRiskScore =
+    Number(currentScore);
+
+  if (
+    Number.isFinite(previousScore) &&
+    Number.isFinite(currentRiskScore) &&
+    previousScore !== currentRiskScore
+  ) {
+    const improved =
+      currentRiskScore < previousScore;
+
+    insights.push({
+      key: "overall-risk-score",
+
+      text:
+        `Overall risk score ${
+          improved
+            ? "decreased"
+            : "increased"
+        } from ${previousScore.toFixed(1)}% to ${currentRiskScore.toFixed(1)}%.`,
+
+      positive: improved,
+    });
+  }
+
+
+  /* -------------------------------------------------------
+     Factor comparisons
+
+     Green/red is determined by whether that feature's
+     model contribution to estimated risk decreased or
+     increased between the two assessments.
+  ------------------------------------------------------- */
+
+  const previousContributors =
+    previousAssessment.top_contributors ?? [];
+
+  const previousContributorMap =
+    new Map(
+      previousContributors.map(
+        (contributor) => [
+          contributor.feature,
+          contributor,
+        ]
+      )
+    );
+
+
+  const factorInsights =
+    (currentContributors ?? [])
+      .map((currentContributor) => {
+
+        const previousContributor =
+          previousContributorMap.get(
+            currentContributor.feature
+          );
+
+        if (!previousContributor) {
+          return null;
+        }
+
+
+        const schemaKey =
+          FEATURE_TO_SCHEMA_KEY[
+            currentContributor.feature
+          ] ||
+          currentContributor.feature;
+
+
+        const currentValue =
+          currentInputs?.[
+            schemaKey
+          ];
+
+        const previousValue =
+          previousAssessment.inputs?.[
+            schemaKey
+          ];
+
+
+        /* Can't compare missing or unchanged values */
+
+        if (
+          currentValue === null ||
+          currentValue === undefined ||
+          previousValue === null ||
+          previousValue === undefined ||
+          String(currentValue) ===
+            String(previousValue)
+        ) {
+          return null;
+        }
+
+
+        const currentContribution =
+          Number(
+            currentContributor.contribution
+          );
+
+        const previousContribution =
+          Number(
+            previousContributor.contribution
+          );
+
+
+        if (
+          !Number.isFinite(
+            currentContribution
+          ) ||
+          !Number.isFinite(
+            previousContribution
+          ) ||
+          currentContribution ===
+            previousContribution
+        ) {
+          return null;
+        }
+
+
+        const contributionImproved =
+          currentContribution <
+          previousContribution;
+
+
+        const currentDisplay =
+          formatSavedValue(
+            schemaKey,
+            currentValue
+          );
+
+        const previousDisplay =
+          formatSavedValue(
+            schemaKey,
+            previousValue
+          );
+
+
+        return {
+          key:
+            currentContributor.feature,
+
+          text:
+            `${labelForFeature(
+              currentContributor.feature
+            )} changed from ${previousDisplay} to ${currentDisplay}.`,
+
+          positive:
+            contributionImproved,
+
+          magnitude:
+            Math.abs(
+              currentContribution -
+              previousContribution
+            ),
+        };
+      })
+      .filter(Boolean)
+      .sort(
+        (a, b) =>
+          b.magnitude -
+          a.magnitude
+      );
+
+
+  insights.push(
+    ...factorInsights
+  );
+
+  return insights;
+}
+
 
 /* =========================================================
    ViewModel
@@ -162,6 +362,9 @@ export function useDashboardViewModel() {
     historyActivity = "",
     setViewingCalculationId,
     hasFreshCalculation,
+    setRiskInputs,
+    setRiskCalculationId,
+    selectedCalculation
   } = useContext(RiskContext);
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
@@ -172,9 +375,19 @@ export function useDashboardViewModel() {
   const riskScore = selectedCalculation?.risk_score ?? contextRiskScore;
   const topContributors = selectedCalculation?.top_contributors ?? contextTopContributors;
   const riskInputs = selectedCalculation?.inputs ?? contextRiskInputs;
+  const contributors = topContributors ?? [];
+  const originalInputsRef = useRef(riskInputs);
   const [trendResponse, setTrendResponse] = useState(null);
   const [trendRetry, setTrendRetry] = useState(0);
   const trendKey = `${accessToken}:${location.key}:${trendRetry}:${historyRevision}`;
+  // Stable identity: EditAssessmentModal relies on this staying the same
+  // function across renders when it's passed in as an effect dependency
+  // (an unstable one would re-fire that effect and refetch on every
+  // unrelated render instead of once per save).
+  const retryTrend = useCallback(
+    () => setTrendRetry((value) => value + 1),
+    []
+  );
   useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
     let cancelled = false;
@@ -192,9 +405,171 @@ export function useDashboardViewModel() {
   const assessmentError = !fromHistory && latestIsCurrent
     ? latestRequest.error : "";
 
+  /* =========================================================
+    Previous assessment for Insights
+  ========================================================= */
 
-  const contributors =
-    topContributors ?? [];
+  // Distinguishes "history hasn't loaded yet" from "loaded, and there
+  // genuinely isn't a previous entry" - both would otherwise collapse to
+  // an empty `history` and briefly show the wrong Insights message.
+  const isHistoryLoaded =
+    trendResponse?.key === trendKey;
+
+  const history =
+    isHistoryLoaded
+      ? trendResponse.history ?? []
+      : [];
+
+
+  /*
+  * History is newest -> oldest.
+  *
+  * If we're viewing the latest assessment:
+  *   current = history[0]
+  *   previous = history[1]
+  *
+  * If we're viewing an older saved calculation:
+  *   find that calculation and use the one
+  *   immediately after it in the array.
+  */
+
+  const currentHistoryIndex =
+    fromHistory
+      ? history.findIndex(
+          (calculation) =>
+            calculation.riskcalc_id ===
+            calculationId
+        )
+      : 0;
+
+
+  const previousHistoryEntry =
+    currentHistoryIndex >= 0
+      ? history[
+          currentHistoryIndex + 1
+        ] ?? null
+      : null;
+
+
+  const previousCalculationId =
+    previousHistoryEntry?.riskcalc_id ??
+    null;
+
+    const [
+      previousAssessmentResponse,
+      setPreviousAssessmentResponse,
+    ] = useState(null);
+
+    useEffect(() => {
+
+      if (
+        !isAuthenticated ||
+        !accessToken ||
+        !previousCalculationId
+      ) {
+        setPreviousAssessmentResponse(
+          null
+        );
+
+        return;
+      }
+
+
+      let cancelled = false;
+
+
+      getRiskCalculation(
+        accessToken,
+        previousCalculationId
+      )
+        .then((result) => {
+
+          if (cancelled) {
+            return;
+          }
+
+          setPreviousAssessmentResponse({
+            id:
+              previousCalculationId,
+
+            assessment:
+              result,
+
+            error:
+              "",
+          });
+
+        })
+
+        .catch(() => {
+
+          if (cancelled) {
+            return;
+          }
+
+          setPreviousAssessmentResponse({
+            id:
+              previousCalculationId,
+
+            assessment:
+              null,
+
+            error:
+              "Couldn't load your previous assessment.",
+          });
+
+        });
+
+
+      return () => {
+        cancelled = true;
+      };
+
+    }, [
+      isAuthenticated,
+      accessToken,
+      previousCalculationId,
+    ]);
+
+    const previousAssessment =
+      previousAssessmentResponse?.id ===
+        previousCalculationId
+        ? previousAssessmentResponse.assessment
+        : null;
+
+
+    const isLoadingInsights =
+      isAuthenticated &&
+      (
+        !isHistoryLoaded ||
+        (
+          Boolean(previousCalculationId) &&
+          previousAssessmentResponse?.id !==
+            previousCalculationId
+        )
+      );
+
+
+    const insightsError =
+      previousAssessmentResponse?.id ===
+        previousCalculationId
+        ? previousAssessmentResponse.error
+        : "";
+
+
+    const insights =
+      buildInsights({
+        currentScore:
+          riskScore,
+
+        previousAssessment,
+
+        currentInputs:
+          riskInputs,
+
+        currentContributors:
+          contributors,
+      });
 
 
   /* =======================================================
@@ -218,10 +593,23 @@ export function useDashboardViewModel() {
           if (!result.has_history) {
             setRiskScore(null);
             setTopContributors([]);
+            setRiskInputs(createInitalRiskInputs(riskInputSchema));
+            setRiskCalculationId(null);
             return;
           }
         setRiskScore(result.risk_score);
         setTopContributors(result.top_contributors ?? []);
+
+        // Powers the what-if sliders' starting values and the "saved
+        // value" shown next to each factor - without this they'd default
+        // to each slider's minimum instead of what the user actually
+        // submitted, for anyone who didn't just come from the input form
+        // in this same browser session (e.g. a returning visit).
+        setRiskInputs(result.inputs ?? createInitalRiskInputs(riskInputSchema));
+
+        // Lets "Edit original assessment" update this exact row instead
+        // of inserting a new one.
+        setRiskCalculationId(result.riskcalc_id ?? null);
       })
       .catch(() => {
         if (!cancelled) setLatestRequest({ token: accessToken, revision: historyRevision, error: "Couldn't load your assessment. Please refresh to try again." });
@@ -230,8 +618,16 @@ export function useDashboardViewModel() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, fromHistory, historyRevision, setRiskScore, setTopContributors]);
-
+  }, [
+    isAuthenticated,
+    accessToken,
+    fromHistory,
+    historyRevision,
+    setRiskScore,
+    setTopContributors,
+    setRiskInputs,
+    setRiskCalculationId,
+  ]);
 
   /* =======================================================
      Keep the user's original assessment untouched
@@ -239,7 +635,6 @@ export function useDashboardViewModel() {
 
   const originalInputsRef =
     useRef(riskInputs);
-
 
   /* =======================================================
      Hypothetical inputs
@@ -306,13 +701,6 @@ export function useDashboardViewModel() {
     buildRiskFactors(
       contributors,
       originalInputsRef.current
-    );
-
-  
-
-  const pieData =
-    buildPieData(
-      riskFactors
     );
 
 
@@ -433,13 +821,6 @@ export function useDashboardViewModel() {
     );
 
 
-  const hypotheticalPieData =
-    buildPieData(
-      hypotheticalRiskFactors,
-      riskFactors
-    );
-
-
   /* =======================================================
      Is the hypothetical scenario active?
   ======================================================== */
@@ -514,7 +895,7 @@ export function useDashboardViewModel() {
       : [],
     isLoadingTrend: isAuthenticated && trendResponse?.key !== trendKey,
     trendError: trendResponse?.key === trendKey ? trendResponse.error : "",
-    retryTrend: () => setTrendRetry((value) => value + 1),
+    retryTrend,
     isLoadingAssessment,
     assessmentLoadingMessage: historyActivity || "Loading calculation…",
     assessmentError,
@@ -526,8 +907,6 @@ export function useDashboardViewModel() {
 
     riskFactors,
 
-    pieData,
-
     originalInputs:
       originalInputsRef.current,
 
@@ -537,8 +916,6 @@ export function useDashboardViewModel() {
     hypotheticalScore,
 
     hypotheticalInputs,
-
-    hypotheticalPieData,
 
     hypotheticalRiskFactors,
 
@@ -559,5 +936,18 @@ export function useDashboardViewModel() {
     updateHypotheticalInput,
 
     resetHypothetical,
+
+    /* Insights */
+
+    insights,
+
+    isLoadingInsights,
+
+    insightsError,
+
+    hasPreviousAssessment:
+      Boolean(
+        previousCalculationId
+      ),
   };
 }

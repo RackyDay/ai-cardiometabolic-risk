@@ -10,7 +10,7 @@ export function useInputViewModel() {
 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
-    const { riskInputs, setRiskInputs, setRiskScore, setTopContributors, selectCalculation } = useContext(RiskContext);
+    const { riskInputs, setRiskInputs, setRiskScore, setTopContributors, setRiskCalculationId, selectCalculation } = useContext(RiskContext);
     const { accessToken } = useContext(AuthContext);
     const [page, setPage] = useState(0);
     // Tracks the in-flight /predict request so the View can disable the
@@ -81,9 +81,47 @@ export function useInputViewModel() {
     };
 
     const set = (field) => (value) => {
-        setRiskInputs((prev) => ({ ...prev, [field]: value }));
-        const error = validateField(field, value);
-        setErrors((prev) => ({ ...prev, [field]: error }));
+
+        setRiskInputs((prev) => {
+
+            const updatedInputs = {
+                ...prev,
+                [field]: value,
+            };
+
+            // A non-smoker should always have 0 cigarettes per day.
+            if (
+                field === "currentSmoker" &&
+                value === false
+            ) {
+                updatedInputs.cigsPerDay = 0;
+            }
+
+            return updatedInputs;
+        });
+
+
+        const error =
+            validateField(field, value);
+
+
+        setErrors((prev) => {
+
+            const updatedErrors = {
+                ...prev,
+                [field]: error,
+            };
+
+            // Clear any old cigarette-count error as well.
+            if (
+                field === "currentSmoker" &&
+                value === false
+            ) {
+                updatedErrors.cigsPerDay = "";
+            }
+
+            return updatedErrors;
+        });
     };
 
     const handleSubmit = async () => {
@@ -115,6 +153,10 @@ export function useInputViewModel() {
             setRiskScore(result.risk_score);
             selectCalculation(null);
             setTopContributors(result.top_contributors);
+            // Lets "Edit original assessment" update this exact row
+            // afterward instead of inserting a new one - null for an
+            // anonymous submission, since nothing was persisted.
+            setRiskCalculationId(result.riskcalc_id ?? null);
             navigate("/dashboard");
         } catch {
             // Network failure or a 4xx/5xx from the API — keep the user on

@@ -47,21 +47,21 @@ export const predictRisk = async (inputData, accessToken) => {
   return res.json();
 };
 
-export const editRisk = async (inputData) => {
-  const rest = await fetch(`${API_URL}/predict`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json" },
-    body: JSON.stringify(inputData)
+// Updates a saved assessment's score/inputs in place (PUT .../{id}),
+// unlike predictRisk's /predict which always inserts a new row.
+export const editRiskCalculation = async (accessToken, calculationId, inputData) => {
+  const res = await fetch(`${API_URL}/api/risk-calculations/${calculationId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(inputData),
   });
 
-  if (!res.ok) {
-    const errorBody = await res.json().catch(() => null);
-    const detail = errorBody?.detail ? JSON.stringify(errorBody.detail) : res.statusText;
-    throw new Error(`Error during updating risk inputs (${res.status}): ${detail}`);  
-  }
-
-  return res.json()
-}
+  await throwForStatus(res, "Saving your changes");
+  return res.json();
+};
 
 export const getLearningContent = async () => {
   const res = await fetch(`${API_URL}/learn`);

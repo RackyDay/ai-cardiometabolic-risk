@@ -3,7 +3,7 @@
 # validated on both sides of the API boundary.
 from typing import Literal, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class RiskInputData(BaseModel):
@@ -30,6 +30,13 @@ class RiskInputData(BaseModel):
     glucose: Optional[float] = Field(default=None, ge=40, le=500)
     totChol: Optional[float] = Field(default=None, ge=100, le=600)
 
+    @model_validator(mode="after")
+    def normalise_smoking_inputs(self):
+        if self.currentSmoker is False:
+            self.cigsPerDay = 0
+
+        return self
+
 
 class FeatureContribution(BaseModel):
     # One input feature's effect on a single prediction, from the EBM's
@@ -42,6 +49,10 @@ class FeatureContribution(BaseModel):
 class PredictionResponse(BaseModel):
     risk_score: float
     top_contributors: list[FeatureContribution]
+    # Only present when the request was authenticated (anonymous
+    # predictions aren't persisted, so there's no row to point to) - lets
+    # the frontend edit this exact assessment in place later.
+    riskcalc_id: Optional[str] = None
 
 
 class SignUpRequest(BaseModel):
@@ -103,9 +114,14 @@ class AuthResponse(BaseModel):
 
 class LatestPredictionResponse(BaseModel):
     has_history: bool
+    riskcalc_id: Optional[str] = None
     risk_score: Optional[float] = None
     # Not persisted in risk_calculations - recomputed from the stored
     # risk_inputs row via predict_risk() (deterministic, so this matches
     # what was shown at submission time).
     top_contributors: Optional[list[FeatureContribution]] = None
     riskcalc_timestamp: Optional[str] = None
+    # The stored form inputs behind this prediction, so the dashboard's
+    # what-if sliders can default to the user's actual saved values
+    # instead of each slider's minimum.
+    inputs: Optional[dict] = None

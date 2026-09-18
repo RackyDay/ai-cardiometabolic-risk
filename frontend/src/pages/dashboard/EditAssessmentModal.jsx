@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import RiskField from "../../components/common/RiskField";
 import { useEditAssessmentViewModel } from "./useEditAssessmentViewModel";
 
 import "../input/InputPage.css";
 
-function EditAssessmentModal({ onClose }) {
+function EditAssessmentModal({ onClose, onSaved }) {
 
     const {
         draftInputs,
@@ -32,12 +32,34 @@ function EditAssessmentModal({ onClose }) {
         onClose();
     };
 
-   
+
+    // onClose/onSaved are inline callbacks from the parent, so they're a
+    // new reference on every render - if this effect called onSaved()
+    // unconditionally, that state update would re-render the parent, hand
+    // down new callback references, and re-run the effect again (loop).
+    // hasNotifiedSaveRef makes onSaved() fire at most once per genuine
+    // saveSuccess transition, no matter how many times the effect re-runs.
+    const hasNotifiedSaveRef = useRef(false);
+
     useEffect(() => {
-        if (!saveSuccess) return;
+        if (!saveSuccess) {
+            hasNotifiedSaveRef.current = false;
+            return;
+        }
+
+        if (!hasNotifiedSaveRef.current) {
+            hasNotifiedSaveRef.current = true;
+            // Fires as soon as the save lands, not after the auto-close
+            // delay - callers use this to refetch anything derived from
+            // assessment history (e.g. the trend chart / Insights'
+            // "previous assessment"), which this edit just added a new
+            // row to.
+            onSaved?.();
+        }
+
         const timer = setTimeout(onClose, 1200);
         return () => clearTimeout(timer);
-    }, [saveSuccess, onClose]);
+    }, [saveSuccess, onClose, onSaved]);
 
     const currentCategory = pageOrder[page];
     const currentFields = categories[currentCategory];
@@ -81,15 +103,41 @@ function EditAssessmentModal({ onClose }) {
 
                     <>
 
-                        {currentFields.map((field) => (
-                            <RiskField
-                                key={field.name}
-                                field={field}
-                                value={draftInputs[field.name]}
-                                onChange={set(field.name)}
-                                error={errors[field.name]}
-                            />
-                        ))}
+                        {currentFields.map((field) => {
+
+                            const isCigarettesField =
+                                field.name === "cigsPerDay";
+
+                            const isNonSmoker =
+                                draftInputs.currentSmoker === false;
+
+                            const shouldDisableCigarettes =
+                                isCigarettesField &&
+                                isNonSmoker;
+
+
+                            return (
+
+                                <RiskField
+                                    key={field.name}
+                                    field={field}
+                                    value={draftInputs[field.name]}
+                                    onChange={set(field.name)}
+                                    error={errors[field.name]}
+
+                                    disabled={
+                                        shouldDisableCigarettes
+                                    }
+
+                                    disabledMessage={
+                                        shouldDisableCigarettes
+                                            ? "This field is disabled because you selected No for smoking status."
+                                            : undefined
+                                    }
+                                />
+
+                            );
+                        })}
 
 
                         {isLastPage && (

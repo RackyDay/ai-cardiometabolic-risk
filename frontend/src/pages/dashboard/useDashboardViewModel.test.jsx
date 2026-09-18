@@ -3,13 +3,19 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthContext } from "../../context/AuthContext";
 import { RiskContext } from "../../context/RiskContext";
-import { predictRisk, getLatestPrediction, getRiskCalculationHistory } from "../../services/api";
+import {
+  getLatestPrediction,
+  getRiskCalculation,
+  getRiskCalculationHistory,
+  predictRisk,
+} from "../../services/api";
 import { useDashboardViewModel } from "./useDashboardViewModel";
 
 vi.mock("../../services/api", () => ({
   predictRisk: vi.fn(),
   getLatestPrediction: vi.fn(),
   getRiskCalculationHistory: vi.fn(),
+  getRiskCalculation: vi.fn(),
 }));
 
 const originalInputs = { cigsPerDay: 5, age: 50, currentSmoker: true };
@@ -22,6 +28,7 @@ const context = {
   ],
   setRiskScore: vi.fn(),
   setTopContributors: vi.fn(),
+  setRiskInputs: vi.fn(),
 };
 const prediction = {
   risk_score: 15,
@@ -34,6 +41,14 @@ const prediction = {
 function Wrapper({ children }) {
   return <MemoryRouter>
     <AuthContext.Provider value={{ isAuthenticated: false, accessToken: null }}>
+      <RiskContext.Provider value={context}>{children}</RiskContext.Provider>
+    </AuthContext.Provider>
+  </MemoryRouter>;
+}
+
+function AuthenticatedWrapper({ children }) {
+  return <MemoryRouter>
+    <AuthContext.Provider value={{ isAuthenticated: true, accessToken: "token" }}>
       <RiskContext.Provider value={context}>{children}</RiskContext.Provider>
     </AuthContext.Provider>
   </MemoryRouter>;
@@ -75,6 +90,122 @@ describe("automatically loaded calculation title", () => {
         }),
       });
     }
+  });
+});
+
+describe("loading the latest saved assessment", () => {
+  it("defaults the what-if sliders to the inputs stored with the latest prediction", async () => {
+    getRiskCalculationHistory.mockResolvedValue([]);
+    getLatestPrediction.mockResolvedValue({
+      has_history: true,
+      risk_score: 20,
+      top_contributors: [],
+      riskcalc_timestamp: "2026-01-01T00:00:00Z",
+      inputs: { age: 55, cigsPerDay: 3, currentSmoker: false },
+    });
+
+    renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await act(async () => {});
+
+    expect(context.setRiskInputs)
+      .toHaveBeenCalledWith({ age: 55, cigsPerDay: 3, currentSmoker: false });
+  });
+
+  it("resets to blank inputs when the account has no saved history", async () => {
+    getRiskCalculationHistory.mockResolvedValue([]);
+    getLatestPrediction.mockResolvedValue({ has_history: false });
+
+    renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await act(async () => {});
+
+    const [resetInputs] = context.setRiskInputs.mock.calls.at(-1);
+    expect(resetInputs).toMatchObject({ age: "", gender: "" });
+  });
+});
+
+describe("insights", () => {
+  // `context.riskScore` (10), `context.topContributors` and
+  // `context.riskInputs` (originalInputs) stand in for "the current
+  // assessment" throughout - only the previous one varies per test.
+  const history = [
+    { riskcalc_id: "calc-current", risk_score: 10, riskcalc_timestamp: "2026-01-02T00:00:00Z" },
+    { riskcalc_id: "calc-previous", risk_score: 20, riskcalc_timestamp: "2026-01-01T00:00:00Z" },
+  ];
+
+  it("compares against the previous assessment by score and by changed factors", async () => {
+    getLatestPrediction.mockResolvedValue({ has_history: false });
+    getRiskCalculationHistory.mockResolvedValue(history);
+    getRiskCalculation.mockResolvedValue({
+      riskcalc_id: "calc-previous",
+      risk_score: 20,
+      inputs: { cigsPerDay: 5, age: 45, currentSmoker: true },
+      top_contributors: [{ feature: "age", contribution: 80 }],
+    });
+
+    const { result } = renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await act(async () => {});
+
+    expect(getRiskCalculation).toHaveBeenCalledWith("token", "calc-previous");
+    expect(result.current.hasPreviousAssessment).toBe(true);
+    expect(result.current.isLoadingInsights).toBe(false);
+    expect(result.current.insightsError).toBe("");
+    expect(result.current.insights.map((insight) => insight.key)).toEqual(["overall-risk-score", "age"]);
+    expect(result.current.insights[0]).toMatchObject({
+      text: "Overall risk score decreased from 20.0% to 10.0%.",
+      positive: true,
+    });
+    // age's contribution went from 80 to 98 (worse), even though the
+    // overall score improved - the two are tracked independently.
+    expect(result.current.insights[1]).toMatchObject({
+      text: "Age changed from 45 to 50.",
+      positive: false,
+    });
+  });
+
+  it("reports loading (not 'no previous assessment') while history is still being fetched", async () => {
+    let resolveHistory;
+    getLatestPrediction.mockResolvedValue({ has_history: false });
+    getRiskCalculationHistory.mockImplementation(
+      () => new Promise((resolve) => { resolveHistory = resolve; })
+    );
+
+    const { result } = renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await act(async () => {});
+
+    // History hasn't resolved yet, so whether there's a previous
+    // assessment is genuinely unknown - this must not be reported the
+    // same way as "loaded, and there isn't one".
+    expect(result.current.isLoadingInsights).toBe(true);
+
+    await act(async () => resolveHistory([history[0]]));
+
+    expect(result.current.isLoadingInsights).toBe(false);
+    expect(result.current.hasPreviousAssessment).toBe(false);
+  });
+
+  it("reports no previous assessment when there's only one history entry", async () => {
+    getLatestPrediction.mockResolvedValue({ has_history: false });
+    getRiskCalculationHistory.mockResolvedValue([history[0]]);
+
+    const { result } = renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await act(async () => {});
+
+    expect(getRiskCalculation).not.toHaveBeenCalled();
+    expect(result.current.hasPreviousAssessment).toBe(false);
+    expect(result.current.insights).toEqual([]);
+  });
+
+  it("surfaces an error when the previous assessment fails to load", async () => {
+    getLatestPrediction.mockResolvedValue({ has_history: false });
+    getRiskCalculationHistory.mockResolvedValue(history);
+    getRiskCalculation.mockRejectedValue(new Error("not found"));
+
+    const { result } = renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await act(async () => {});
+
+    expect(result.current.hasPreviousAssessment).toBe(true);
+    expect(result.current.insightsError).toBe("Couldn't load your previous assessment.");
+    expect(result.current.insights).toEqual([]);
   });
 });
 
@@ -143,7 +274,7 @@ describe("history transition loading", () => {
     }
     const { result, rerender } = renderHook(useDashboardViewModel, { wrapper: HistoryWrapper });
     await waitFor(() => expect(result.current.isLoadingAssessment).toBe(false));
-    activity = "Deleting calculation…";
+    activity = "Deleting calculationï¿½";
     rerender();
     expect(result.current.isLoadingAssessment).toBe(true);
     expect(result.current.assessmentLoadingMessage).toBe(activity);
@@ -154,7 +285,7 @@ describe("history transition loading", () => {
     await act(async () => finishRefresh({ has_history: false }));
     expect(result.current.isLoadingAssessment).toBe(false);
     expect(context.setRiskScore).toHaveBeenLastCalledWith(null);
-    activity = "Loading calculation…";
+    activity = "Loading calculationï¿½";
     rerender();
     expect(result.current.isLoadingAssessment).toBe(true);
     activity = "";

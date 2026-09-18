@@ -36,6 +36,34 @@ def test_selected_calculation_returns_its_saved_score_and_inputs(monkeypatch):
                                "inputs": VALID_PAYLOAD, "top_contributors": []}
 
 
+def test_selected_calculation_degrades_gracefully_with_stale_inputs_shape(monkeypatch):
+    _install_fake_auth(monkeypatch)
+    calculation_id = "00000000-0000-0000-0000-000000000002"
+    # Missing several now-required fields (e.g. an older submission from
+    # before they were added) - RiskInputData(**inputs) raises, so this
+    # must fall back to the raw stored inputs and skip recomputing
+    # top_contributors, rather than surfacing a 500.
+    stale_inputs = {"age": 40, "gender": "F"}
+
+    def fetch_selected(selected_id, token):
+        return ([{"riskcalc_id": selected_id, "risk_score": 30.0}],
+                [{"inputs_JSON": stale_inputs}])
+    monkeypatch.setattr(database_module, "fetch_risk_calculation", fetch_selected)
+
+    def predict_risk_should_not_run(inputs):
+        raise AssertionError("predict_risk should not run for inputs that fail validation")
+    monkeypatch.setattr(main_module, "predict_risk", predict_risk_should_not_run)
+
+    response = client.get(f"/api/risk-calculations/{calculation_id}",
+                          headers={"Authorization": "Bearer token"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["risk_score"] == 30.0
+    assert body["inputs"] == stale_inputs
+    assert body["top_contributors"] is None
+
+
 class FakeSelectQuery:
     def __init__(self, rows):
         # No copy: a reference to the same list FakeScopedClient stores in
@@ -47,6 +75,7 @@ class FakeSelectQuery:
         self._order_desc = False
         self._limit = None
         self._insert_row = None
+        self._update_values = None
 
     def select(self, *args, **kwargs):
         return self
@@ -71,6 +100,10 @@ class FakeSelectQuery:
         self._insert_row = row
         return self
 
+    def update(self, values):
+        self._update_values = values
+        return self
+
     def execute(self):
         if self._insert_row is not None:
             # Mirrors the real risk_calculations/risk_inputs tables' default
@@ -85,6 +118,12 @@ class FakeSelectQuery:
             row for row in self._rows
             if all(row.get(k) == v for k, v in self._filters.items())
         ]
+
+        if self._update_values is not None:
+            for row in matches:
+                row.update(self._update_values)
+            return SimpleNamespace(data=matches)
+
         if self._limit is not None:
             matches = matches[: self._limit]
 
@@ -113,7 +152,11 @@ def _install_fake_auth(monkeypatch, user_id="user-1"):
 
 
 def _install_fake_scoped_client(monkeypatch, tables):
-    monkeypatch.setattr(main_module, "get_user_scoped_client", lambda token: FakeScopedClient(tables))
+    # database.py holds its own `get_user_scoped_client` reference (via
+    # `from supabase_client import get_user_scoped_client`) - patching
+    # main's copy doesn't touch it, so every db.* call would still reach
+    # the real Supabase client.
+    monkeypatch.setattr(database_module, "get_user_scoped_client", lambda token: FakeScopedClient(tables))
 
 
 # --- POST /predict's optional-auth persistence -----------------------
@@ -137,6 +180,55 @@ def test_predict_persists_to_account_when_authenticated(monkeypatch):
     assert persisted["riskcalc_id"] == tables["risk_calculations"][0]["riskcalc_id"]
     assert persisted["inputs_JSON"] == VALID_PAYLOAD
 
+    # The frontend needs this back to be able to edit the assessment in
+    # place later (PUT /api/risk-calculations/{riskcalc_id}).
+    assert response.json()["riskcalc_id"] == tables["risk_calculations"][0]["riskcalc_id"]
+
+
+# --- PUT /api/risk-calculations/{id} - editing a saved assessment in place ---
+
+def test_edit_risk_calculation_updates_score_and_inputs_in_place(monkeypatch):
+    _install_fake_auth(monkeypatch)
+    calculation_id = "00000000-0000-0000-0000-000000000003"
+    tables = {
+        "risk_calculations": [
+            {"riskcalc_id": calculation_id, "risk_score": 12.3, "user_id": "user-1"},
+        ],
+        "risk_inputs": [
+            {"riskinput_id": "input-1", "riskcalc_id": calculation_id, "inputs_JSON": VALID_PAYLOAD},
+        ],
+    }
+    _install_fake_scoped_client(monkeypatch, tables)
+
+    updated_payload = {**VALID_PAYLOAD, "age": 60}
+
+    response = client.put(
+        f"/api/risk-calculations/{calculation_id}",
+        json=updated_payload,
+        headers={"Authorization": "Bearer token"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["riskcalc_id"] == calculation_id
+
+    # The existing row was updated - no new row was inserted anywhere.
+    assert len(tables["risk_calculations"]) == 1
+    assert len(tables["risk_inputs"]) == 1
+    assert tables["risk_calculations"][0]["risk_score"] == body["risk_score"]
+    assert tables["risk_inputs"][0]["inputs_JSON"] == updated_payload
+    # riskinput_id (risk_inputs' own primary key) must be left alone - only
+    # riskcalc_id is used to find the row to update.
+    assert tables["risk_inputs"][0]["riskinput_id"] == "input-1"
+
+
+def test_edit_risk_calculation_requires_auth():
+    response = client.put(
+        "/api/risk-calculations/00000000-0000-0000-0000-000000000004",
+        json=VALID_PAYLOAD,
+    )
+    assert response.status_code == 401
+
 
 # TC-40
 def test_predict_does_not_persist_when_anonymous(monkeypatch):
@@ -145,7 +237,7 @@ def test_predict_does_not_persist_when_anonymous(monkeypatch):
     # scoped client should never be reached for a logged-out submission.
     scoped_client_calls = []
     monkeypatch.setattr(
-        main_module, "get_user_scoped_client", lambda token: scoped_client_calls.append(token)
+        database_module, "get_user_scoped_client", lambda token: scoped_client_calls.append(token)
     )
 
     response = client.post("/predict", json=VALID_PAYLOAD)
@@ -164,9 +256,11 @@ def test_latest_prediction_with_no_history(monkeypatch):
     assert response.status_code == 200
     assert response.json() == {
         "has_history": False,
+        "riskcalc_id": None,
         "risk_score": None,
         "top_contributors": None,
         "riskcalc_timestamp": None,
+        "inputs": None,
     }
 
 
@@ -190,9 +284,13 @@ def test_latest_prediction_returns_most_recent_with_recomputed_contributors(monk
     body = response.json()
     assert body["has_history"] is True
     # Picks calc-2 (the later timestamp), not calc-1.
+    assert body["riskcalc_id"] == "calc-2"
     assert body["risk_score"] == 45.6
     assert body["riskcalc_timestamp"] == "2026-08-19T00:00:00Z"
     assert len(body["top_contributors"]) > 0
+    # The dashboard's what-if sliders default to these, so they must come
+    # back as saved - not just used server-side to recompute the score.
+    assert body["inputs"] == VALID_PAYLOAD
 
 
 # TC-43
@@ -213,3 +311,29 @@ def test_latest_prediction_degrades_gracefully_with_no_matching_inputs_row(monke
     assert body["has_history"] is True
     assert body["risk_score"] == 30.0
     assert body["top_contributors"] is None
+    assert body["inputs"] is None
+
+
+def test_latest_prediction_still_returns_inputs_when_they_no_longer_match_the_current_shape(monkeypatch):
+    _install_fake_auth(monkeypatch)
+    # Missing required fields (e.g. an older submission from before a field
+    # was added) - RiskInputData(**inputs_json) raises, so top_contributors
+    # can't be recomputed, but the raw inputs are still usable for
+    # defaulting whichever sliders they do cover.
+    stale_inputs = {"age": 40, "gender": "F"}
+    tables = {
+        "risk_calculations": [
+            {"riskcalc_id": "calc-1", "risk_score": 30.0, "riskcalc_timestamp": "2026-08-19T00:00:00Z"},
+        ],
+        "risk_inputs": [
+            {"riskcalc_id": "calc-1", "inputs_JSON": stale_inputs},
+        ],
+    }
+    _install_fake_scoped_client(monkeypatch, tables)
+
+    response = client.get("/predictions/latest", headers={"Authorization": "Bearer token"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["top_contributors"] is None
+    assert body["inputs"] == stale_inputs
