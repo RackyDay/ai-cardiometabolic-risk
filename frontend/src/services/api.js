@@ -167,3 +167,11 @@ export const getRiskCalculation = async (accessToken, calculationId) => {
   return res.json();
 };
 
+export const deleteRiskCalculation = async (accessToken, calculationId) => {
+  const res = await fetch(`${API_URL}/delete?assessment_id=${encodeURIComponent(calculationId)}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  await throwForStatus(res, "Deleting risk calculation");
+};
+

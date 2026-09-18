@@ -7,10 +7,24 @@ import { riskInputSchema } from "../schemas/riskInputSchema";
 export function RiskProvider({ children }) {
   const { user, isAuthenticated } = useContext(AuthContext);
   const [historySelection, setHistorySelection] = useState(null);
+  const [historyRevision, setHistoryRevision] = useState(0);
+  const [historyActivity, setHistoryActivity] = useState("");
+  const [viewingCalculationId, setViewingCalculationId] = useState(null);
+  const calculationDeleted = (id, remaining) => {
+    setHistorySelection((current) => {
+      if (!current) return current;
+      const index = remaining.findIndex((item) => item.riskcalc_id === current.calculation.riskcalc_id);
+      return index === -1 ? null : { ...current, calculation: {
+        ...current.calculation, calculationNumber: remaining.length - index,
+      } };
+    });
+    setHistoryRevision((value) => value + 1);
+  };
   const userId = isAuthenticated ? user?.id : null;
   // Clear ownership on sign-out/account changes; token refresh keeps selection.
   useEffect(() => {
     setHistorySelection((current) => current?.userId === userId ? current : null);
+    setViewingCalculationId(null);
   }, [userId]);
   const selectedCalculation = userId && historySelection?.userId === userId
     ? historySelection.calculation : null;
@@ -53,6 +67,12 @@ export function RiskProvider({ children }) {
       value={{
         // Original assessment
         selectedCalculation,
+        historyRevision,
+        viewingCalculationId,
+        setViewingCalculationId,
+        historyActivity,
+        setHistoryActivity,
+        calculationDeleted,
         selectCalculation,
         riskInputs,
         setRiskInputs,

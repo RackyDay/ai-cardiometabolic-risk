@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthContext } from "../../context/AuthContext";
@@ -55,6 +55,62 @@ function AuthenticatedWrapper({ children }) {
 }
 
 beforeEach(() => vi.resetAllMocks());
+
+describe("past calculation status", () => {
+  // Regression test: a returning user who logs back in (or refreshes)
+  // without submitting anything new this session was previously having
+  // their own current/latest assessment mislabeled as a "past
+  // calculation", which also disabled the "Edit original assessment"
+  // button. Simply auto-loading the latest saved assessment - with
+  // nothing picked from history - must never count as "past".
+  it("does not treat the auto-loaded latest assessment as a past calculation", async () => {
+    const timestamp = "2026-09-16T10:00:00Z";
+    getLatestPrediction.mockResolvedValue({
+      has_history: true, risk_score: 10, riskcalc_timestamp: timestamp,
+    });
+    getRiskCalculationHistory.mockResolvedValue([
+      { riskcalc_id: "latest", riskcalc_timestamp: timestamp, risk_score: 10 },
+      { riskcalc_id: "older", riskcalc_timestamp: "2026-09-01T10:00:00Z", risk_score: 12 },
+    ]);
+    getRiskCalculation.mockResolvedValue({
+      riskcalc_id: "older", risk_score: 12, inputs: originalInputs, top_contributors: [],
+    });
+    const { result } = renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await waitFor(() => {
+      expect(result.current.isLoadingAssessment).toBe(false);
+      expect(result.current.isLoadingTrend).toBe(false);
+    });
+    expect(result.current.pastCalculation).toBeNull();
+  });
+
+  it("treats an explicitly selected history entry as a past calculation", async () => {
+    getLatestPrediction.mockResolvedValue({ has_history: false });
+    getRiskCalculationHistory.mockResolvedValue([]);
+    const timestamp = "2026-09-01T10:00:00Z";
+    function HistoryWrapper({ children }) {
+      return <MemoryRouter>
+        <AuthContext.Provider value={{ isAuthenticated: true, accessToken: "token" }}>
+          <RiskContext.Provider value={{
+            ...context,
+            selectedCalculation: {
+              riskcalc_id: "older", risk_score: 12, calculationNumber: 1, riskcalc_timestamp: timestamp,
+            },
+          }}>
+            {children}
+          </RiskContext.Provider>
+        </AuthContext.Provider>
+      </MemoryRouter>;
+    }
+    const { result } = renderHook(useDashboardViewModel, { wrapper: HistoryWrapper });
+    await waitFor(() => expect(result.current.isLoadingTrend).toBe(false));
+    expect(result.current.pastCalculation).toEqual({
+      number: 1,
+      date: new Date(timestamp).toLocaleString(undefined, {
+        day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit",
+      }),
+    });
+  });
+});
 
 describe("loading the latest saved assessment", () => {
   it("defaults the what-if sliders to the inputs stored with the latest prediction", async () => {
@@ -215,5 +271,44 @@ describe("what-if contribution updates", () => {
     expect(result.current.hypotheticalError).toContain("Couldn't update");
     expect(result.current.isCalculatingHypothetical).toBe(false);
     log.mockRestore();
+  });
+});
+
+describe("history transition loading", () => {
+  it("hides the previous assessment until the post-deletion refresh finishes", async () => {
+    let revision = 0;
+    let activity = "";
+    let finishRefresh;
+    getLatestPrediction.mockResolvedValueOnce({ has_history: true, risk_score: 10 });
+    getLatestPrediction.mockImplementationOnce(() => new Promise((resolve) => { finishRefresh = resolve; }));
+    getRiskCalculationHistory.mockResolvedValue([]);
+    function HistoryWrapper({ children }) {
+      return <MemoryRouter>
+        <AuthContext.Provider value={{ isAuthenticated: true, accessToken: "token" }}>
+          <RiskContext.Provider value={{ ...context, historyRevision: revision, historyActivity: activity }}>
+            {children}
+          </RiskContext.Provider>
+        </AuthContext.Provider>
+      </MemoryRouter>;
+    }
+    const { result, rerender } = renderHook(useDashboardViewModel, { wrapper: HistoryWrapper });
+    await waitFor(() => expect(result.current.isLoadingAssessment).toBe(false));
+    activity = "Deleting calculation�";
+    rerender();
+    expect(result.current.isLoadingAssessment).toBe(true);
+    expect(result.current.assessmentLoadingMessage).toBe(activity);
+    activity = "";
+    revision = 1;
+    rerender();
+    expect(result.current.isLoadingAssessment).toBe(true);
+    await act(async () => finishRefresh({ has_history: false }));
+    expect(result.current.isLoadingAssessment).toBe(false);
+    expect(context.setRiskScore).toHaveBeenLastCalledWith(null);
+    activity = "Loading calculation�";
+    rerender();
+    expect(result.current.isLoadingAssessment).toBe(true);
+    activity = "";
+    rerender();
+    expect(result.current.isLoadingAssessment).toBe(false);
   });
 });

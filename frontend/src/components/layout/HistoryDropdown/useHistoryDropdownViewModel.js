@@ -2,9 +2,13 @@ import { useEffect, useState, useRef } from "react";
 import {
   getRiskCalculationHistory,
   getRiskCalculation,
+  deleteRiskCalculation,
 } from "../../../services/api.js"
 
-function useHistoryDropdownViewModel(accessToken, onLoadCalculation) {
+function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCalculation, setHistoryActivity) {
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
+  const deletePending = useRef(false);
   const [result, setResult] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [selectedId, setSelectedId] = useState("");
@@ -66,9 +70,10 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation) {
   }, [accessToken, retryCount]);
 
   const viewCalculation = async () => {
-    if (isViewing || !accessToken || !history.some((item) => item.riskcalc_id === selectedId)) return;
+    if (isViewing || deletePending.current || !accessToken || !history.some((item) => item.riskcalc_id === selectedId)) return;
     const version = requestVersion.current;
     setIsViewing(true);
+    setHistoryActivity?.("Loading calculation…");
     setViewError("");
 
     try {
@@ -77,7 +82,12 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation) {
         selectedId
       );
       if (version === requestVersion.current) {
-        onLoadCalculation(data);
+        const index = history.findIndex((item) => item.riskcalc_id === selectedId);
+        onLoadCalculation({
+          ...data,
+          calculationNumber: history.length - index,
+          riskcalc_timestamp: history[index].riskcalc_timestamp,
+        });
         setIsOpen(false);
       }
 
@@ -86,10 +96,38 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation) {
       if (version === requestVersion.current) setViewError("Couldn't load this calculation. Please try again.");
     } finally {
       setIsViewing(false);
+      setHistoryActivity?.("");
+    }
+  };
+
+  const deleteCalculation = async (id) => {
+    if (deletePending.current || isViewing || !accessToken || !history.some((item) => item.riskcalc_id === id)) return;
+    const version = requestVersion.current;
+    deletePending.current = true;
+    setDeletingId(id);
+    setHistoryActivity?.("Deleting calculation…");
+    setDeleteError("");
+    try {
+      await deleteRiskCalculation(accessToken, id);
+      if (version !== requestVersion.current) return;
+      const remaining = history.filter((item) => item.riskcalc_id !== id);
+      setResult({ accessToken, retryCount, history: remaining, error: "" });
+      setSelectedId((current) => current === id ? "" : current);
+      onDeleteCalculation?.(id, remaining);
+      return true;
+    } catch {
+      if (version === requestVersion.current) setDeleteError("Couldn't delete this calculation. Please try again.");
+    } finally {
+      deletePending.current = false;
+      setDeletingId(null);
+      setHistoryActivity?.("");
     }
   };
 
   return {
+    deletingId,
+    deleteError,
+    deleteCalculation,
     history,
     selectedId: history.some((item) => item.riskcalc_id === selectedId) ? selectedId : "",
     setSelectedId,

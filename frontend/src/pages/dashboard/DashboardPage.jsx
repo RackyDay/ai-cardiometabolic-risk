@@ -210,6 +210,7 @@ function RiskFactorToggle({
 function DashboardPage() {
 
   const {
+    pastCalculation,
     displayScore,
 
     isAuthenticated,
@@ -225,6 +226,7 @@ function DashboardPage() {
     retryTrend,
 
     isLoadingAssessment,
+    assessmentLoadingMessage,
     assessmentError,
 
     riskFactors,
@@ -313,7 +315,7 @@ function DashboardPage() {
       >
 
         {isLoadingAssessment
-          ? "Loading assessment…"
+          ? assessmentLoadingMessage
           : assessmentError ||
             "No assessment to display. Complete a risk calculation to get started."}
 
@@ -356,6 +358,7 @@ function DashboardPage() {
     <div className="dashboard-page">
 
 
+
       {/* =====================================================
           RISK SCORE
       ====================================================== */}
@@ -367,9 +370,16 @@ function DashboardPage() {
 
           <div className="card-header-row">
 
-            <h2 className="card-title">
-              Risk Score
-            </h2>
+            <div className="risk-score-heading">
+              <h2 className="card-title">Risk Score</h2>
+              {pastCalculation && (
+                <span className="past-calculation-chip">
+                  <strong>Past calculation #{pastCalculation.number}</strong>
+                  <span aria-hidden="true">{" \u00b7 "}</span>
+                  <span>{pastCalculation.date}</span>
+                </span>
+              )}
+            </div>
 
 
             <div className="disclaimer-wrapper">
@@ -476,6 +486,8 @@ function DashboardPage() {
             className="edit-assessment-button"
 
             aria-label="Edit original assessment"
+            disabled={Boolean(pastCalculation)}
+            title={pastCalculation ? "Past calculations cannot be edited" : undefined}
 
             onClick={() =>
               setIsEditOpen(true)
@@ -1853,7 +1865,7 @@ function DashboardPage() {
           EDIT ASSESSMENT MODAL
       ====================================================== */}
 
-      {isEditOpen && (
+      {isEditOpen && !pastCalculation && (
 
         <EditAssessmentModal
           onClose={() =>

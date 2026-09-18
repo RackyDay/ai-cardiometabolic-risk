@@ -357,9 +357,12 @@ export function useDashboardViewModel() {
     topContributors: contextTopContributors,
     setTopContributors,
     riskInputs: contextRiskInputs,
+    selectedCalculation,
+    historyRevision = 0,
+    historyActivity = "",
+    setViewingCalculationId,
     setRiskInputs,
     setRiskCalculationId,
-    selectedCalculation
   } = useContext(RiskContext);
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
@@ -374,7 +377,7 @@ export function useDashboardViewModel() {
   const originalInputsRef = useRef(riskInputs);
   const [trendResponse, setTrendResponse] = useState(null);
   const [trendRetry, setTrendRetry] = useState(0);
-  const trendKey = `${accessToken}:${location.key}:${trendRetry}`;
+  const trendKey = `${accessToken}:${location.key}:${trendRetry}:${historyRevision}`;
   // Stable identity: EditAssessmentModal relies on this staying the same
   // function across renders when it's passed in as an effect dependency
   // (an unstable one would re-fire that effect and refetch on every
@@ -395,8 +398,9 @@ export function useDashboardViewModel() {
     return () => { cancelled = true; };
   }, [isAuthenticated, accessToken, trendKey]);
   const [latestRequest, setLatestRequest] = useState(null);
-  const isLoadingAssessment = isAuthenticated && !fromHistory && latestRequest?.token !== accessToken;
-  const assessmentError = !fromHistory && latestRequest?.token === accessToken
+  const latestIsCurrent = latestRequest?.token === accessToken && latestRequest?.revision === historyRevision;
+  const isLoadingAssessment = Boolean(historyActivity) || (isAuthenticated && !fromHistory && !latestIsCurrent);
+  const assessmentError = !fromHistory && latestIsCurrent
     ? latestRequest.error : "";
 
   /* =========================================================
@@ -583,7 +587,7 @@ export function useDashboardViewModel() {
     getLatestPrediction(accessToken)
       .then((result) => {
           if (cancelled) return;
-          setLatestRequest({ token: accessToken, error: "", timestamp: result.riskcalc_timestamp });
+          setLatestRequest({ token: accessToken, revision: historyRevision, error: "", timestamp: result.riskcalc_timestamp, hasHistory: result.has_history });
           if (!result.has_history) {
             setRiskScore(null);
             setTopContributors([]);
@@ -606,7 +610,7 @@ export function useDashboardViewModel() {
         setRiskCalculationId(result.riskcalc_id ?? null);
       })
       .catch(() => {
-        if (!cancelled) setLatestRequest({ token: accessToken, error: "Couldn't load your assessment. Please refresh to try again." });
+        if (!cancelled) setLatestRequest({ token: accessToken, revision: historyRevision, error: "Couldn't load your assessment. Please refresh to try again." });
       });
 
     return () => {
@@ -616,6 +620,7 @@ export function useDashboardViewModel() {
     isAuthenticated,
     accessToken,
     fromHistory,
+    historyRevision,
     setRiskScore,
     setTopContributors,
     setRiskInputs,
@@ -842,7 +847,38 @@ export function useDashboardViewModel() {
      Return values to Dashboard
   ======================================================== */
 
+  const loadedHistory = trendResponse?.key === trendKey ? trendResponse.history : null;
+  const latestIndex = loadedHistory?.findIndex(
+    (item) => item.riskcalc_timestamp === latestRequest?.timestamp
+  ) ?? -1;
+  const displayedCalculationId = isLoadingAssessment || assessmentError
+    ? null
+    : selectedCalculation?.riskcalc_id ?? (latestIsCurrent && latestRequest?.hasHistory && latestIndex !== -1
+      ? loadedHistory[latestIndex].riskcalc_id : null);
+
+  useEffect(() => {
+    setViewingCalculationId?.(displayedCalculationId);
+    return () => setViewingCalculationId?.(null);
+  }, [displayedCalculationId, setViewingCalculationId]);
+
+  // "Past calculation" means the user explicitly picked an older entry
+  // from history - not just "isn't a fresh submission this session".
+  // Someone who logs back in (or refreshes) is still looking at their
+  // current assessment, and editing it should stay enabled: it's not
+  // "past" just because they didn't just submit it in this browser tab.
+  const pastAssessment = selectedCalculation ?? null;
+
   return {
+    pastCalculation: pastAssessment ? {
+      number: pastAssessment.calculationNumber,
+      date: new Date(pastAssessment.riskcalc_timestamp).toLocaleString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    } : null,
     isAuthenticated,
     trendData: isAuthenticated && trendResponse?.key === trendKey
       ? buildRiskTrend(trendResponse.history ?? [], fromHistory ? calculationId : null, latestRequest?.timestamp)
@@ -851,6 +887,7 @@ export function useDashboardViewModel() {
     trendError: trendResponse?.key === trendKey ? trendResponse.error : "",
     retryTrend,
     isLoadingAssessment,
+    assessmentLoadingMessage: historyActivity || "Loading calculation…",
     assessmentError,
 
     /* Original assessment */
