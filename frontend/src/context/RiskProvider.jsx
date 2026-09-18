@@ -20,20 +20,16 @@ export function RiskProvider({ children }) {
     });
     setHistoryRevision((value) => value + 1);
   };
-  const [freshCalculationUserId, setFreshCalculationUserId] = useState(null);
   const userId = isAuthenticated ? user?.id : null;
   // Clear ownership on sign-out/account changes; token refresh keeps selection.
   useEffect(() => {
     setHistorySelection((current) => current?.userId === userId ? current : null);
-    setFreshCalculationUserId(null);
     setViewingCalculationId(null);
   }, [userId]);
   const selectedCalculation = userId && historySelection?.userId === userId
     ? historySelection.calculation : null;
   const selectCalculation = (calculation) => {
     setHistorySelection(calculation && userId ? { userId, calculation } : null);
-    // Clearing the selection after a successful submission displays a fresh result.
-    setFreshCalculationUserId(calculation ? null : userId);
   };
   const [riskInputs, setRiskInputs] = useState(
     createInitalRiskInputs(riskInputSchema)
@@ -77,7 +73,6 @@ export function RiskProvider({ children }) {
         historyActivity,
         setHistoryActivity,
         calculationDeleted,
-        hasFreshCalculation: Boolean(userId && freshCalculationUserId === userId),
         selectCalculation,
         riskInputs,
         setRiskInputs,

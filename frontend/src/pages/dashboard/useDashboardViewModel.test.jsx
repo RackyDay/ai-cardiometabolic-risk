@@ -56,8 +56,14 @@ function AuthenticatedWrapper({ children }) {
 
 beforeEach(() => vi.resetAllMocks());
 
-describe("automatically loaded calculation title", () => {
-  it.each([false, true])("handles a fresh submission flag of %s", async (hasFreshCalculation) => {
+describe("past calculation status", () => {
+  // Regression test: a returning user who logs back in (or refreshes)
+  // without submitting anything new this session was previously having
+  // their own current/latest assessment mislabeled as a "past
+  // calculation", which also disabled the "Edit original assessment"
+  // button. Simply auto-loading the latest saved assessment - with
+  // nothing picked from history - must never count as "past".
+  it("does not treat the auto-loaded latest assessment as a past calculation", async () => {
     const timestamp = "2026-09-16T10:00:00Z";
     getLatestPrediction.mockResolvedValue({
       has_history: true, risk_score: 10, riskcalc_timestamp: timestamp,
@@ -66,30 +72,43 @@ describe("automatically loaded calculation title", () => {
       { riskcalc_id: "latest", riskcalc_timestamp: timestamp, risk_score: 10 },
       { riskcalc_id: "older", riskcalc_timestamp: "2026-09-01T10:00:00Z", risk_score: 12 },
     ]);
-    function AuthenticatedWrapper({ children }) {
-      return <MemoryRouter>
-        <AuthContext.Provider value={{ isAuthenticated: true, accessToken: "token" }}>
-          <RiskContext.Provider value={{ ...context, hasFreshCalculation }}>
-            {children}
-          </RiskContext.Provider>
-        </AuthContext.Provider>
-      </MemoryRouter>;
-    }
+    getRiskCalculation.mockResolvedValue({
+      riskcalc_id: "older", risk_score: 12, inputs: originalInputs, top_contributors: [],
+    });
     const { result } = renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
     await waitFor(() => {
       expect(result.current.isLoadingAssessment).toBe(false);
       expect(result.current.isLoadingTrend).toBe(false);
     });
-    if (hasFreshCalculation) {
-      expect(result.current.pastCalculation).toBeNull();
-    } else {
-      expect(result.current.pastCalculation).toEqual({
-        number: 2,
-        date: new Date(timestamp).toLocaleString(undefined, {
-          day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit",
-        }),
-      });
+    expect(result.current.pastCalculation).toBeNull();
+  });
+
+  it("treats an explicitly selected history entry as a past calculation", async () => {
+    getLatestPrediction.mockResolvedValue({ has_history: false });
+    getRiskCalculationHistory.mockResolvedValue([]);
+    const timestamp = "2026-09-01T10:00:00Z";
+    function HistoryWrapper({ children }) {
+      return <MemoryRouter>
+        <AuthContext.Provider value={{ isAuthenticated: true, accessToken: "token" }}>
+          <RiskContext.Provider value={{
+            ...context,
+            selectedCalculation: {
+              riskcalc_id: "older", risk_score: 12, calculationNumber: 1, riskcalc_timestamp: timestamp,
+            },
+          }}>
+            {children}
+          </RiskContext.Provider>
+        </AuthContext.Provider>
+      </MemoryRouter>;
     }
+    const { result } = renderHook(useDashboardViewModel, { wrapper: HistoryWrapper });
+    await waitFor(() => expect(result.current.isLoadingTrend).toBe(false));
+    expect(result.current.pastCalculation).toEqual({
+      number: 1,
+      date: new Date(timestamp).toLocaleString(undefined, {
+        day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit",
+      }),
+    });
   });
 });
 

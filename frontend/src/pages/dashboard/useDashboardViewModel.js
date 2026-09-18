@@ -361,10 +361,8 @@ export function useDashboardViewModel() {
     historyRevision = 0,
     historyActivity = "",
     setViewingCalculationId,
-    hasFreshCalculation,
     setRiskInputs,
     setRiskCalculationId,
-    selectedCalculation
   } = useContext(RiskContext);
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
@@ -630,13 +628,6 @@ export function useDashboardViewModel() {
   ]);
 
   /* =======================================================
-     Keep the user's original assessment untouched
-  ======================================================== */
-
-  const originalInputsRef =
-    useRef(riskInputs);
-
-  /* =======================================================
      Hypothetical inputs
   ======================================================== */
 
@@ -870,13 +861,12 @@ export function useDashboardViewModel() {
     return () => setViewingCalculationId?.(null);
   }, [displayedCalculationId, setViewingCalculationId]);
 
-  const pastAssessment = selectedCalculation ?? (
-    isAuthenticated && !hasFreshCalculation && latestRequest?.token === accessToken &&
-    latestRequest.hasHistory && latestIndex !== -1
-      ? { calculationNumber: loadedHistory.length - latestIndex,
-          riskcalc_timestamp: latestRequest.timestamp }
-      : null
-  );
+  // "Past calculation" means the user explicitly picked an older entry
+  // from history - not just "isn't a fresh submission this session".
+  // Someone who logs back in (or refreshes) is still looking at their
+  // current assessment, and editing it should stay enabled: it's not
+  // "past" just because they didn't just submit it in this browser tab.
+  const pastAssessment = selectedCalculation ?? null;
 
   return {
     pastCalculation: pastAssessment ? {

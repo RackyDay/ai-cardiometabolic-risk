@@ -79,9 +79,8 @@ def predict(data: RiskInputData, auth=Depends(get_optional_user)):
 
 @app.post("/delete")
 def delete(assessment_id: UUID, auth = Depends(get_current_user_and_token)):
-    if auth is not None:
-        _, token = auth
-        db.delete_assessment(str(assessment_id), token)
+    _, token = auth
+    db.delete_assessment(str(assessment_id), token)
 
 @app.put("/api/risk-calculations/{calculation_id}", response_model=PredictionResponse)
 def edit_risk_calculation(calculation_id: UUID, data: RiskInputData, auth = Depends(get_current_user_and_token)):
