@@ -182,6 +182,10 @@
 }
 
 @media (min-width: 1025px) {
+  .menu-drawer-button {
+    display: none;
+  }
+  
   .menu-profile-button {
     display: none;
   }

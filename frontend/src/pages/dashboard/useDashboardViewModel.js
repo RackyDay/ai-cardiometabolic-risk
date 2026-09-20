@@ -225,6 +225,10 @@ function buildInsights({
     (currentContributors ?? [])
       .map((currentContributor) => {
 
+        if (currentContributor.feature === "age") {
+          return null;
+        }
+
         const previousContributor =
           previousContributorMap.get(
             currentContributor.feature
