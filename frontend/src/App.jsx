@@ -10,6 +10,7 @@ import ResetPasswordPage from "./pages/resetPassword/ResetPasswordPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import { RiskProvider } from "./context/RiskProvider";
 import { AuthProvider } from "./context/AuthProvider";
+import { UnitProvider } from "./context/UnitProvider";
 import MenuBar from "./components/layout/MenuBar/MenuBar";
 import SideNav from "./components/layout/SideNav/SideNav";
 import useAppLayoutViewModel from "./viewmodels/useAppLayoutViewModel";
@@ -66,7 +67,9 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <RiskProvider>
-          <AppLayout />
+          <UnitProvider>
+            <AppLayout />
+          </UnitProvider>
         </RiskProvider>
       </AuthProvider>
     </BrowserRouter>

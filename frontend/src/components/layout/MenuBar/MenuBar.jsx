@@ -6,6 +6,8 @@ import useMenuBarViewModel from "./useMenuBarViewModel";
 import { useLocation, useNavigate } from "react-router-dom";
 import { RiskContext } from "../../../context/RiskContext";
 import { AuthContext } from "../../../context/AuthContext";
+import { UnitContext } from "../../../context/UnitContext";
+import { MG_DL, MMOL_L } from "../../../utils/unitConversion";
 import HistoryDropdown from "../HistoryDropdown/HistoryDropdown";
 
 
@@ -14,6 +16,7 @@ function MenuBar({ showMenuButton, onMenuClick }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logOut } = useContext(AuthContext);
+  const { clinicalUnit, toggleClinicalUnit } = useContext(UnitContext);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -121,6 +124,15 @@ function MenuBar({ showMenuButton, onMenuClick }) {
       <h1 className="menu-bar-title">{pageTitle}</h1>
 
       <div className="menu-bar-actions">
+        <button
+          type="button"
+          className="menu-unit-toggle"
+          onClick={toggleClinicalUnit}
+          aria-label={`Units: ${clinicalUnit}. Switch to ${clinicalUnit === MG_DL ? MMOL_L : MG_DL}`}
+          title="Switch glucose and cholesterol units"
+        >
+          {clinicalUnit}
+        </button>
         <HistoryDropdown onLoadCalculation={handleLoadCalculation}/>
         <div className="menu-profile-wrapper" ref={dropdownRef}>
           <button

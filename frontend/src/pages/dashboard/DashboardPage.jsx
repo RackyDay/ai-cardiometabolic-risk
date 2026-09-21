@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 
 import {
   LineChart,
@@ -24,6 +24,12 @@ import { buildPieData } from "./buildPieData";
 import { getRiskFactorColor } from "./riskFactorColors";
 
 import EditAssessmentModal from "./EditAssessmentModal";
+
+import { UnitContext } from "../../context/UnitContext";
+
+import { riskInputSchema } from "../../schemas/riskInputSchema";
+
+import { canonicalToDisplay } from "../../utils/unitConversion";
 
 import {
   useDashboardViewModel,
@@ -54,11 +60,35 @@ function RiskFactorSlider({
   onChange,
 }) {
 
+  const { clinicalUnit } =
+    useContext(UnitContext);
+
   const numericValue =
     value === null ||
     value === undefined
       ? config.min
       : Number(value);
+
+  // The slider itself always works in canonical mg/dL (that's what the
+  // what-if prediction consumes); only the labels are shown in the
+  // app-wide unit.
+  const schemaField =
+    riskInputSchema[factor.feature];
+
+  const conversionFactor =
+    schemaField?.mmolConversionFactor;
+
+  const displayUnit =
+    conversionFactor
+      ? clinicalUnit
+      : config.unit;
+
+  const toDisplay = (canonical) =>
+    canonicalToDisplay(
+      canonical,
+      displayUnit,
+      conversionFactor
+    );
 
 
   return (
@@ -71,10 +101,10 @@ function RiskFactorSlider({
         </span>
 
         <strong>
-          {numericValue}
+          {toDisplay(numericValue)}
 
-          {config.unit
-            ? ` ${config.unit}`
+          {displayUnit
+            ? ` ${displayUnit}`
             : ""}
         </strong>
 
@@ -108,18 +138,18 @@ function RiskFactorSlider({
       <div className="what-if-range">
 
         <span>
-          {config.min}
+          {toDisplay(config.min)}
 
-          {config.unit
-            ? ` ${config.unit}`
+          {displayUnit
+            ? ` ${displayUnit}`
             : ""}
         </span>
 
         <span>
-          {config.max}
+          {toDisplay(config.max)}
 
-          {config.unit
-            ? ` ${config.unit}`
+          {displayUnit
+            ? ` ${displayUnit}`
             : ""}
         </span>
 

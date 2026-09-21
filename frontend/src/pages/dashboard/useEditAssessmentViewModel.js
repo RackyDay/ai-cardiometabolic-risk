@@ -1,6 +1,8 @@
 import { useContext, useState } from "react";
 import { RiskContext } from "../../context/RiskContext";
 import { AuthContext } from "../../context/AuthContext";
+import { UnitContext } from "../../context/UnitContext";
+import { canonicalToDisplay, getDisplayUnit } from "../../utils/unitConversion";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { buildPredictionPayload } from "../input/riskInputTransform";
 import { editRiskCalculation, predictRisk } from "../../services/api";
@@ -19,6 +21,7 @@ export function useEditAssessmentViewModel() {
     } = useContext(RiskContext);
 
     const { accessToken } = useContext(AuthContext);
+    const { clinicalUnit } = useContext(UnitContext);
 
     // Whichever assessment is actually on screen right now: the one
     // selected from history, or the current/latest one tracked separately.
@@ -80,7 +83,12 @@ export function useEditAssessmentViewModel() {
             }
 
             if (n < riskField.min || n > riskField.max) {
-                return riskField.print_name + " must be between " + riskField.min + " and " + riskField.max;
+                // Compare in mg/dL (canonical) but word the message in the unit on screen.
+                const displayUnit = getDisplayUnit(riskField, clinicalUnit);
+                const factor = riskField.mmolConversionFactor;
+                const displayMin = canonicalToDisplay(riskField.min, displayUnit, factor);
+                const displayMax = canonicalToDisplay(riskField.max, displayUnit, factor);
+                return riskField.print_name + " must be between " + displayMin + " and " + displayMax;
             }
         }
         return "";

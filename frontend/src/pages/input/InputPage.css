@@ -530,39 +530,6 @@
   margin-bottom: 0;
 }
 
-.clinical-unit-control {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.clinical-unit-control span {
-  font-size: 0.85rem;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.clinical-unit-button {
-  border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #3d6fd4;
-
-  padding: 0.4rem 0.8rem;
-
-  font-size: 0.85rem;
-  font-weight: 600;
-  font-family: inherit;
-
-  cursor: pointer;
-}
-
-.clinical-unit-button:hover {
-  background: #f0f4ff;
-}
-
 @media (max-width: 1350px) {
   .input-content-layout {
     display: block;

@@ -12,19 +12,6 @@ function InputPage() {
   const currentFields = categories[currentCategory];
   const isLastPage = page === pageOrder.length - 1;
   const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
-  const [clinicalUnit, setClinicalUnit] = useState("mg/dL");
-
-  const toggleClinicalUnit = () => {
-    setClinicalUnit((current) =>
-      current === "mg/dL" ? "mmol/L" : "mg/dL"
-    );
-  };
-
-  const showUnitToggle = currentFields.some(
-    (field) =>
-      field.name === "glucose" ||
-      field.name === "totChol"
-  );
 
   return (
     <div className="inputs-page">
@@ -36,20 +23,6 @@ function InputPage() {
       <div className="input-content-layout">
         
         <div className="form-card-column">
-
-          {showUnitToggle && (
-            <div className="clinical-unit-control">
-              <span>Units:</span>
-
-              <button
-                type="button"
-                className="clinical-unit-button"
-                onClick={toggleClinicalUnit}
-              >
-                {clinicalUnit}
-              </button>
-            </div>
-          )}
 
           <div className="form-card">
             {isLastPage && (
@@ -81,7 +54,6 @@ function InputPage() {
                       ? "This field is disabled because you selected No for smoking status."
                       : undefined
                   }
-                  clinicalUnit={clinicalUnit}
                 />
               );
             })}

@@ -1,32 +1,14 @@
+import { useContext } from "react";
 import Dropdown from "./Dropdown";
 import InputTextField from "./InputTextField";
 import BooleanField from "./BooleanField";
-
-// function to convert mg/dl to mmo/l
-function canonicalToDisplay(value, unit, factor) {
-  if (value === null || value === undefined || value === "") {
-    return "";
-  }
-
-  if (unit === "mmol/L" && factor) {
-    return Number((Number(value) / factor).toFixed(2));
-  }
-
-  return value;
-}
-
-// function to convert mmo/l to mg/dl
-function displayToCanonical(value, unit, factor) {
-  if (value === "") {
-    return "";
-  }
-
-  if (unit === "mmol/L" && factor) {
-    return Number((Number(value) * factor).toFixed(2));
-  }
-
-  return value;
-}
+import { UnitContext } from "../../context/UnitContext";
+import {
+  MMOL_L,
+  canonicalToDisplay,
+  displayToCanonical,
+  getDisplayUnit,
+} from "../../utils/unitConversion";
 
 function getNumberPlaceholder(field) {
     const { min, max, units } = field;
@@ -35,7 +17,9 @@ function getNumberPlaceholder(field) {
     return `Enter a value between ${min}\u2013${max}${unitSuffix}`;
 }
 
-function RiskField({ field, value, onChange, error, disabled = false, disabledMessage, clinicalUnit }) {
+function RiskField({ field, value, onChange, error, disabled = false, disabledMessage }) {
+    const { clinicalUnit } = useContext(UnitContext);
+
     switch (field.type) {
         case "select":
             return (
@@ -50,11 +34,7 @@ function RiskField({ field, value, onChange, error, disabled = false, disabledMe
                 />
             )
         case "number": {
-            const isConvertible = Boolean(field.mmolConversionFactor);
-
-            const displayUnit = isConvertible
-                ? clinicalUnit
-                : field.units;
+            const displayUnit = getDisplayUnit(field, clinicalUnit);
 
             const displayValue = canonicalToDisplay(
                 value,
@@ -89,7 +69,7 @@ function RiskField({ field, value, onChange, error, disabled = false, disabledMe
                 }
                 min={displayMin}
                 max={displayMax}
-                step={displayUnit === "mmol/L" ? 0.01 : field.step || 1}
+                step={displayUnit === MMOL_L ? 0.01 : field.step || 1}
                 error={error}
                 required={field.required}
                 placeholder={
@@ -99,7 +79,11 @@ function RiskField({ field, value, onChange, error, disabled = false, disabledMe
                         }`
                     : ""
                 }
-                tooltip={field.tooltip}
+                tooltip={
+                    displayUnit === MMOL_L && field.tooltipMmol
+                        ? field.tooltipMmol
+                        : field.tooltip
+                }
                 disabled={disabled}
                 disabledMessage={disabledMessage}
                 onKeyDown={(e) => {
