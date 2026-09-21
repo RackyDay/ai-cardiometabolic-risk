@@ -2,6 +2,8 @@ import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RiskContext } from "../../context/RiskContext";
 import { AuthContext } from "../../context/AuthContext";
+import { UnitContext } from "../../context/UnitContext";
+import { canonicalToDisplay, getDisplayUnit } from "../../utils/unitConversion";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { buildPredictionPayload } from "./riskInputTransform";
 import { predictRisk } from "../../services/api";
@@ -12,6 +14,7 @@ export function useInputViewModel() {
     const [errors, setErrors] = useState({});
     const { riskInputs, setRiskInputs, setRiskScore, setTopContributors, setRiskCalculationId, selectCalculation } = useContext(RiskContext);
     const { accessToken } = useContext(AuthContext);
+    const { clinicalUnit } = useContext(UnitContext);
     const [page, setPage] = useState(0);
     // Tracks the in-flight /predict request so the View can disable the
     // submit button and avoid duplicate submissions.
@@ -74,7 +77,12 @@ export function useInputViewModel() {
             }
             
             if (n < riskField.min || n > riskField.max) {
-                return riskField.print_name + " must be between " + riskField.min + " and " + riskField.max;
+                // Compare in mg/dL (canonical) but word the message in the unit on screen.
+                const displayUnit = getDisplayUnit(riskField, clinicalUnit);
+                const factor = riskField.mmolConversionFactor;
+                const displayMin = canonicalToDisplay(riskField.min, displayUnit, factor);
+                const displayMax = canonicalToDisplay(riskField.max, displayUnit, factor);
+                return riskField.print_name + " must be between " + displayMin + " and " + displayMax;
             }
         }
         return "";

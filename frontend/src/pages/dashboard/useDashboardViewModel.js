@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import { RiskContext } from "../../context/RiskContext";
+import { UnitContext } from "../../context/UnitContext";
 import { AuthContext } from "../../context/AuthContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import {
@@ -47,7 +48,11 @@ function labelForFeature(feature) {
    Build dashboard risk factors
 ========================================================= */
 
-function buildRiskFactors(contributors, originalInputs) {
+function buildRiskFactors(
+  contributors,
+  originalInputs,
+  clinicalUnit
+) {
   const safeContributors =
     contributors ?? [];
 
@@ -102,7 +107,8 @@ function buildRiskFactors(contributors, originalInputs) {
         savedValue:
           formatSavedValue(
             schemaKey,
-            originalInputs?.[schemaKey]
+            originalInputs?.[schemaKey],
+            clinicalUnit
           ),
       };
     });
@@ -159,6 +165,7 @@ function buildInsights({
   previousAssessment,
   currentInputs,
   currentContributors,
+  clinicalUnit,
 }) {
   if (!previousAssessment) {
     return [];
@@ -304,13 +311,15 @@ function buildInsights({
         const currentDisplay =
           formatSavedValue(
             schemaKey,
-            currentValue
+            currentValue,
+            clinicalUnit
           );
 
         const previousDisplay =
           formatSavedValue(
             schemaKey,
-            previousValue
+            previousValue,
+            clinicalUnit
           );
 
 
@@ -370,6 +379,7 @@ export function useDashboardViewModel() {
   } = useContext(RiskContext);
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
+  const { clinicalUnit } = useContext(UnitContext);
 
   const location = useLocation();
   const fromHistory = Boolean(selectedCalculation);
@@ -571,6 +581,8 @@ export function useDashboardViewModel() {
 
         currentContributors:
           contributors,
+
+        clinicalUnit,
       });
 
 
@@ -695,7 +707,8 @@ export function useDashboardViewModel() {
   const riskFactors =
     buildRiskFactors(
       contributors,
-      originalInputsRef.current
+      originalInputsRef.current,
+      clinicalUnit
     );
 
 
