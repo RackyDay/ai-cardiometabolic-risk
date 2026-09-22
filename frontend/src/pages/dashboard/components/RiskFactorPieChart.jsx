@@ -244,7 +244,7 @@ function RiskFactorTooltip({
       <div className="risk-chart-tooltip-row">
 
         <span>
-          Share of risk-raising effects
+          Share of total contribution
         </span>
 
         <strong>
@@ -468,6 +468,19 @@ function RiskFactorPieChart({
           highlightedIndex
         ]
       : null;
+
+  // What the donut's center shows: the hovered slice's own share while
+  // hovering, or the combined share of every risk-raising factor at rest -
+  // so the number there isn't just static decoration and always reflects
+  // whatever the chart is currently highlighting.
+  const totalRaisingShare = chartData.reduce(
+    (sum, factor) => sum + (Number(factor.value) || 0),
+    0
+  );
+
+  const centerValue = highlightedFactor
+    ? Number(highlightedFactor.value)
+    : totalRaisingShare;
 
 
   /* =======================================================
@@ -744,14 +757,14 @@ function RiskFactorPieChart({
 
           <div className="risk-chart-center-text">
 
-            <strong>
-              {isHypotheticalActive
-                ? "What-if"
-                : "Original"}
+            <strong className="risk-chart-center-value">
+              {centerValue.toFixed(1)}%
             </strong>
 
             <span>
-              Risk-raising effects
+              {highlightedFactor
+                ? "of total contribution"
+                : "of contribution raises risk"}
             </span>
 
           </div>
@@ -806,7 +819,7 @@ function RiskFactorPieChart({
             <div className="risk-chart-selected-factor-row">
 
               <span>
-                Share of risk-raising effects
+                Share of total contribution
               </span>
 
               <strong>

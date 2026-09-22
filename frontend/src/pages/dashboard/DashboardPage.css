@@ -79,6 +79,14 @@
   min-height: 320px;
 }
 
+.risk-score-subtitle {
+  margin: -0.5rem 0 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #6b7280;
+  max-width: 38rem;
+}
+
 .gauge-center {
   display: flex;
   justify-content: center;
@@ -598,9 +606,15 @@
 ========================================================= */
 
 .merged-risk-factor-item
-.risk-factor-label {
+.risk-factor-label-group {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-width: 0;
+  gap: 0.05rem;
+}
+
+.risk-factor-label {
   font-size: 0.95rem;
   font-weight: 600;
   color: #1e293b;
@@ -610,9 +624,13 @@
 }
 
 .risk-factor-value {
+  display: block;
+  font-size: 0.75rem;
   font-weight: 500;
   color: #64748b;
-  margin-left: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 
@@ -647,6 +665,16 @@
   background: #f0fdf4;
 
   color: #15803d;
+}
+
+.risk-factor-tag-minor {
+  background: #f1f5f9;
+
+  color: #64748b;
+
+  font-weight: 600;
+
+  white-space: nowrap;
 }
 
 

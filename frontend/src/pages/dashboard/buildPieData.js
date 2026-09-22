@@ -12,6 +12,14 @@ export function buildPieData(riskFactors, referenceFactors = riskFactors) {
     referenceFactors.map((factor, index) => [factor.feature, index])
   );
 
+  // `value` is left as the factor's own weightPercent (share of ALL
+  // contributions, matching the number shown in the breakdown list) rather
+  // than being renormalized to sum to 100 across just this pie's slices.
+  // Recharts computes each slice's angle from value / sum-of-all-values in
+  // the dataset regardless, so the pie's geometry comes out identical
+  // either way - but the label/tooltip/center text (which read this same
+  // `value`) now match the list instead of showing a second, different
+  // percentage for the same factor.
   return [...riskFactors].sort((a, b) =>
     (factorOrder.get(a.feature) ?? Infinity) -
       (factorOrder.get(b.feature) ?? Infinity) ||
@@ -19,9 +27,7 @@ export function buildPieData(riskFactors, referenceFactors = riskFactors) {
   ).map((factor) => ({
     feature: factor.feature,
     name: factor.label,
-    value: totalRaisingWeight > 0
-      ? (raisingWeight(factor) / totalRaisingWeight) * 100
-      : 0,
+    value: totalRaisingWeight > 0 ? raisingWeight(factor) : 0,
     raisesRisk: factor.raisesRisk,
   }));
 }
