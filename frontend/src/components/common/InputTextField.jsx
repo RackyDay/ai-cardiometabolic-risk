@@ -1,9 +1,9 @@
 import FieldLabel from "./FieldLabel";
 
-function InputTextField({ label, value, onChange, min, step, max, error, required = true, placeholder, onKeyDown, tooltip, disabled = false, disabledMessage }) {
+function InputTextField({ label, value, onChange, min, step, max, error, required = true, placeholder, onKeyDown, tooltip, disabled = false, disabledMessage, unitToggle }) {
     return (
     <div className={`form-field ${disabled ? "form-field-disabled" : ""}`}>
-      <FieldLabel label={label} required={required} tooltip={tooltip} />
+      <FieldLabel label={label} required={required} tooltip={tooltip} unitToggle={unitToggle} />
       <div className="form-input-with-unit">
         <input
           className={`form-input ${error ? "error" : ""}`}

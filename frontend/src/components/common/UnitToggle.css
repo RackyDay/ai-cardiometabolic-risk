@@ -1,0 +1,41 @@
+.unit-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 2px;
+  gap: 2px;
+}
+
+.unit-toggle-option {
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  font-family: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.unit-toggle-option:hover {
+  color: #3d6fd4;
+}
+
+.unit-toggle-option.active {
+  background: #3d6fd4;
+  color: #ffffff;
+}
+
+.unit-toggle-option.active:hover {
+  color: #ffffff;
+}
+
+/* Compact variant: sits inline at the end of a form question. */
+.unit-toggle--compact .unit-toggle-option {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+}

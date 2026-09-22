@@ -19,6 +19,8 @@ function EditAssessmentModal({ onClose, onSaved }) {
         submitError,
         isDirty,
         saveSuccess,
+        fieldUnits = {},
+        setFieldUnit,
     } = useEditAssessmentViewModel();
 
 
@@ -134,6 +136,9 @@ function EditAssessmentModal({ onClose, onSaved }) {
                                             ? "This field is disabled because you selected No for smoking status."
                                             : undefined
                                     }
+
+                                    unit={fieldUnits[field.name]}
+                                    onUnitChange={setFieldUnit?.(field.name)}
                                 />
 
                             );
