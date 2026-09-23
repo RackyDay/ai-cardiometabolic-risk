@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 function InputPage() {
 
-  const {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit, isSubmitting, submitError} = useInputViewModel();
+  const {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit, isSubmitting, submitError, fieldUnits, setFieldUnit} = useInputViewModel();
   const navigate = useNavigate();
   const currentCategory = pageOrder[page];
   const currentFields = categories[currentCategory];
@@ -54,6 +54,8 @@ function InputPage() {
                       ? "This field is disabled because you selected No for smoking status."
                       : undefined
                   }
+                  unit={fieldUnits[field.name]}
+                  onUnitChange={setFieldUnit(field.name)}
                 />
               );
             })}

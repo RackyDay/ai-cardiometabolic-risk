@@ -7,8 +7,9 @@ import { MG_DL } from "../utils/unitConversion";
 // full reload on every edit to either.
 //
 // Unlike AuthContext/RiskContext this has a usable default (mg/dL, no-op
-// toggle) so components that read units still render without a provider.
+// setters) so components that read units still render without a provider.
 export const UnitContext = createContext({
   clinicalUnit: MG_DL,
   toggleClinicalUnit: () => {},
+  setClinicalUnit: () => {},
 });

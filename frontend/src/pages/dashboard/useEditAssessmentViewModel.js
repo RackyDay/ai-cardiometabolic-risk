@@ -1,8 +1,7 @@
 import { useContext, useState } from "react";
 import { RiskContext } from "../../context/RiskContext";
 import { AuthContext } from "../../context/AuthContext";
-import { UnitContext } from "../../context/UnitContext";
-import { canonicalToDisplay, getDisplayUnit } from "../../utils/unitConversion";
+import { MG_DL, canonicalToDisplay, getDisplayUnit } from "../../utils/unitConversion";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { buildPredictionPayload } from "../input/riskInputTransform";
 import { editRiskCalculation, predictRisk } from "../../services/api";
@@ -21,7 +20,6 @@ export function useEditAssessmentViewModel() {
     } = useContext(RiskContext);
 
     const { accessToken } = useContext(AuthContext);
-    const { clinicalUnit } = useContext(UnitContext);
 
     // Whichever assessment is actually on screen right now: the one
     // selected from history, or the current/latest one tracked separately.
@@ -33,6 +31,11 @@ export function useEditAssessmentViewModel() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [saveSuccess, setSaveSuccess] = useState(false);
+    // Each convertible question picks its own display unit independently,
+    // same as the input form - unrelated to the dashboard's unit setting.
+    const [fieldUnits, setFieldUnits] = useState({});
+    const setFieldUnit = (field) => (unit) =>
+        setFieldUnits((prev) => ({ ...prev, [field]: unit }));
 
     const categories = Object.entries(riskInputSchema).reduce(
         (acc, [key, field]) => {
@@ -83,8 +86,9 @@ export function useEditAssessmentViewModel() {
             }
 
             if (n < riskField.min || n > riskField.max) {
-                // Compare in mg/dL (canonical) but word the message in the unit on screen.
-                const displayUnit = getDisplayUnit(riskField, clinicalUnit);
+                // Compare in mg/dL (canonical) but word the message in this
+                // field's own display unit, not any other field's.
+                const displayUnit = getDisplayUnit(riskField, fieldUnits[field] || MG_DL);
                 const factor = riskField.mmolConversionFactor;
                 const displayMin = canonicalToDisplay(riskField.min, displayUnit, factor);
                 const displayMax = canonicalToDisplay(riskField.max, displayUnit, factor);
@@ -201,5 +205,7 @@ export function useEditAssessmentViewModel() {
         submitError,
         isDirty,
         saveSuccess,
+        fieldUnits,
+        setFieldUnit,
     };
 }

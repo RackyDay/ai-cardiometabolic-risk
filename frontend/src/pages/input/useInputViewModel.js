@@ -2,8 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RiskContext } from "../../context/RiskContext";
 import { AuthContext } from "../../context/AuthContext";
-import { UnitContext } from "../../context/UnitContext";
-import { canonicalToDisplay, getDisplayUnit } from "../../utils/unitConversion";
+import { MG_DL, canonicalToDisplay, getDisplayUnit } from "../../utils/unitConversion";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { buildPredictionPayload } from "./riskInputTransform";
 import { predictRisk } from "../../services/api";
@@ -14,8 +13,13 @@ export function useInputViewModel() {
     const [errors, setErrors] = useState({});
     const { riskInputs, setRiskInputs, setRiskScore, setTopContributors, setRiskCalculationId, selectCalculation } = useContext(RiskContext);
     const { accessToken } = useContext(AuthContext);
-    const { clinicalUnit } = useContext(UnitContext);
     const [page, setPage] = useState(0);
+    // Each convertible question (glucose, cholesterol) picks its own
+    // display unit independently - this is unrelated to the dashboard's
+    // app-wide unit setting. Fields not present here default to mg/dL.
+    const [fieldUnits, setFieldUnits] = useState({});
+    const setFieldUnit = (field) => (unit) =>
+        setFieldUnits((prev) => ({ ...prev, [field]: unit }));
     // Tracks the in-flight /predict request so the View can disable the
     // submit button and avoid duplicate submissions.
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,8 +81,9 @@ export function useInputViewModel() {
             }
             
             if (n < riskField.min || n > riskField.max) {
-                // Compare in mg/dL (canonical) but word the message in the unit on screen.
-                const displayUnit = getDisplayUnit(riskField, clinicalUnit);
+                // Compare in mg/dL (canonical) but word the message in this
+                // field's own display unit, not any other field's.
+                const displayUnit = getDisplayUnit(riskField, fieldUnits[field] || MG_DL);
                 const factor = riskField.mmolConversionFactor;
                 const displayMin = canonicalToDisplay(riskField.min, displayUnit, factor);
                 const displayMax = canonicalToDisplay(riskField.max, displayUnit, factor);
@@ -175,5 +180,5 @@ export function useInputViewModel() {
         }
     };
 
-    return {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit, isSubmitting, submitError};
+    return {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit, isSubmitting, submitError, fieldUnits, setFieldUnit};
 }

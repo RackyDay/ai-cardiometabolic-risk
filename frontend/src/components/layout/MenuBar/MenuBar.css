@@ -54,22 +54,31 @@
   box-sizing: border-box;
 }
 
-.menu-unit-toggle {
+.menu-unit-control {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   flex-shrink: 0;
-  border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #3d6fd4;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  font-family: inherit;
-  white-space: nowrap;
-  cursor: pointer;
 }
 
-.menu-unit-toggle:hover {
-  background: #f0f4ff;
+.menu-unit-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+/* Slightly roomier than the compact per-question variant, to stay an easy
+   click target in the header. */
+.unit-toggle--menu .unit-toggle-option {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 767px) {
+  .menu-unit-label {
+    display: none;
+  }
 }
 
 .menu-icon-button {

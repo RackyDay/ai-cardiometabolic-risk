@@ -31,9 +31,17 @@ export function UnitProvider({ children }) {
     setClinicalUnit((current) => (current === MG_DL ? MMOL_L : MG_DL));
   }, []);
 
+  // Explicit setter (as opposed to toggleClinicalUnit's flip) for the
+  // segmented mg/dL | mmol/L control, which needs to set a specific side
+  // rather than just flip - clicking the already-active option is then a
+  // no-op instead of switching away from it.
+  const setUnit = useCallback((unit) => {
+    setClinicalUnit(unit === MMOL_L ? MMOL_L : MG_DL);
+  }, []);
+
   const value = useMemo(
-    () => ({ clinicalUnit, toggleClinicalUnit }),
-    [clinicalUnit, toggleClinicalUnit]
+    () => ({ clinicalUnit, toggleClinicalUnit, setClinicalUnit: setUnit }),
+    [clinicalUnit, toggleClinicalUnit, setUnit]
   );
 
   return <UnitContext.Provider value={value}>{children}</UnitContext.Provider>;

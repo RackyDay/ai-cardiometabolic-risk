@@ -1,25 +1,22 @@
-import { useContext } from "react";
 import Dropdown from "./Dropdown";
 import InputTextField from "./InputTextField";
 import BooleanField from "./BooleanField";
-import { UnitContext } from "../../context/UnitContext";
+import UnitToggle from "./UnitToggle";
 import {
+  MG_DL,
   MMOL_L,
   canonicalToDisplay,
   displayToCanonical,
   getDisplayUnit,
 } from "../../utils/unitConversion";
 
-function getNumberPlaceholder(field) {
-    const { min, max, units } = field;
-    if (min == null || max == null) return "";
-    const unitSuffix = units ? ` ${units}` : "";
-    return `Enter a value between ${min}\u2013${max}${unitSuffix}`;
-}
-
-function RiskField({ field, value, onChange, error, disabled = false, disabledMessage }) {
-    const { clinicalUnit } = useContext(UnitContext);
-
+// unit/onUnitChange are per-field, not app-wide: each convertible question
+// (glucose, cholesterol) tracks and shows its own mg/dL <-> mmol/L choice,
+// independently of every other question and of the dashboard's own unit
+// setting. The caller (InputPage/EditAssessmentModal, via their view
+// models) owns that state so it can also word validation errors in
+// whichever unit is currently on screen for that field.
+function RiskField({ field, value, onChange, error, disabled = false, disabledMessage, unit = MG_DL, onUnitChange }) {
     switch (field.type) {
         case "select":
             return (
@@ -34,7 +31,8 @@ function RiskField({ field, value, onChange, error, disabled = false, disabledMe
                 />
             )
         case "number": {
-            const displayUnit = getDisplayUnit(field, clinicalUnit);
+            const isConvertible = Boolean(field.mmolConversionFactor);
+            const displayUnit = getDisplayUnit(field, unit);
 
             const displayValue = canonicalToDisplay(
                 value,
@@ -93,6 +91,16 @@ function RiskField({ field, value, onChange, error, disabled = false, disabledMe
                     e.preventDefault();
                     }
                 }}
+                unitToggle={
+                    isConvertible && onUnitChange ? (
+                        <UnitToggle
+                            unit={displayUnit}
+                            onChange={onUnitChange}
+                            ariaLabel={`Units for ${field.print_name}`}
+                            className="unit-toggle--compact"
+                        />
+                    ) : null
+                }
                 />
             );
             }
