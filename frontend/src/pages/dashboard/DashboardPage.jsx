@@ -23,6 +23,8 @@ import { buildPieData } from "./buildPieData";
 
 import { getRiskFactorColor } from "./riskFactorColors";
 
+import { formatSavedValue } from "./formatSavedValue";
+
 import EditAssessmentModal from "./EditAssessmentModal";
 
 import { UnitContext } from "../../context/UnitContext";
@@ -39,6 +41,15 @@ import "./DashboardPage.css";
 
 
 const VISIBLE_RISK_FACTOR_ROWS = 5;
+
+// The backend's risk factor list only carries the model's top 10
+// contributors (out of 15 input fields) - the schema keys here don't match
+// the model's raw feature names one-to-one, so this maps the two where they
+// differ (mirrors useDashboardViewModel's FEATURE_TO_SCHEMA_KEY, in reverse).
+const SCHEMA_KEY_TO_FEATURE = {
+  gender: "male",
+  bpMeds: "BPMeds",
+};
 
 
 const RISK_SCORE_DISCLAIMER =
@@ -357,9 +368,7 @@ function DashboardPage() {
   /*
    * The pie chart mirrors whichever tab the factor list is on: only
    * changeable factors while that tab is active, only fixed factors on
-   * the other. buildPieData renormalizes against just this subset, so
-   * the chart still reads as a full breakdown of the factors it's
-   * currently showing rather than a handful of slivers out of 100%.
+   * the other.
    */
   const isChangeableFactor = (factor) =>
     Boolean(changeableRiskFactors[factor.feature]);
@@ -382,6 +391,47 @@ function DashboardPage() {
     tabHypotheticalRiskFactors,
     tabRiskFactors
   );
+
+  // Row order stays pinned to the original assessment (matching buildPieData's
+  // own referenceFactors behavior above) so rows don't reshuffle while a
+  // slider is being dragged - only each row's displayed contribution swaps
+  // over to its what-if value.
+  const hypotheticalFactorsByFeature = new Map(
+    hypotheticalRiskFactors.map((factor) => [factor.feature, factor])
+  );
+
+  // riskFactors only covers the model's top 10 contributors, so a field the
+  // user actually filled in (e.g. cholesterol, if it wasn't very impactful
+  // for them) can otherwise have no row anywhere. Fill in the remaining
+  // submitted fields as plain rows - name and value, no weightPercent/
+  // raisesRisk since we don't have a contribution score for them - so every
+  // answer from the input form is visible somewhere in the breakdown.
+  const coveredFeatures = new Set(
+    riskFactors.map((factor) => factor.feature)
+  );
+
+  const uncoveredFactors = Object.entries(riskInputSchema)
+    .map(([schemaKey, field]) => {
+      const feature = SCHEMA_KEY_TO_FEATURE[schemaKey] ?? schemaKey;
+      if (coveredFeatures.has(feature)) return null;
+
+      const savedValue = formatSavedValue(
+        schemaKey,
+        originalInputs?.[schemaKey]
+      );
+      if (savedValue === null) return null;
+
+      return {
+        feature,
+        label: field.print_name,
+        weightPercent: null,
+        raisesRisk: null,
+        savedValue,
+      };
+    })
+    .filter(Boolean);
+
+  const displayableRiskFactors = [...riskFactors, ...uncoveredFactors];
 
 
   return (
@@ -464,6 +514,14 @@ function DashboardPage() {
           </div>
 
 
+          <p className="risk-score-subtitle">
+            Your estimated 10-year risk of developing coronary heart disease
+            (CHD), based on your current health profile. This is a snapshot
+            of your risk today &mdash; it will change if your health factors
+            or habits change.
+          </p>
+
+
           <div className="gauge-center">
 
             <RiskGauge
@@ -501,9 +559,13 @@ function DashboardPage() {
 
             <p className="risk-chart-description">
 
-              {isHypotheticalActive
-                ? "Showing the estimated contribution of each factor after your changes."
-                : "Relative contribution of the factors used in your current risk assessment."}
+              {`Shows how much each factor drives your ${Number(
+                isHypotheticalActive && hypotheticalScore !== null
+                  ? hypotheticalScore
+                  : displayScore
+              ).toFixed(
+                1
+              )}% risk score above, relative to the other factors — not a portion of that percentage itself.`}
 
             </p>
 
@@ -548,7 +610,7 @@ function DashboardPage() {
 
           <div className="risk-breakdown-list-panel">
 
-            {riskFactors.length > 0 && (
+            {displayableRiskFactors.length > 0 && (
 
               <div className="risk-breakdown-controls">
 
@@ -703,7 +765,7 @@ function DashboardPage() {
                   }}
                 >
 
-                  {riskFactors
+                  {displayableRiskFactors
                     .filter(
                       (factor) => {
 
@@ -730,6 +792,20 @@ function DashboardPage() {
                     )
                     .map(
                     (factor, i) => {
+
+                      // While a what-if scenario is active, show that
+                      // scenario's contribution and direction for this
+                      // factor instead of the original assessment's.
+                      const displayFactor =
+                        isHypotheticalActive &&
+                        hypotheticalFactorsByFeature.has(
+                          factor.feature
+                        )
+                          ? hypotheticalFactorsByFeature.get(
+                              factor.feature
+                            )
+                          : factor;
+
 
                       const config =
                         changeableRiskFactors[
@@ -926,38 +1002,51 @@ function DashboardPage() {
 
                             {/* =============================
                                 Factor name + saved value
+
+                                Two lines instead of one so the value
+                                the user actually entered (e.g. "182
+                                mg/dL") never gets clipped behind the
+                                row's ellipsis truncation the way it
+                                did sharing a single line with longer
+                                factor names.
                             ============================== */}
 
                             <span
-                              className="risk-factor-label"
+                              className="risk-factor-label-group"
 
                               title={
                                 factor.savedValue
                                   ? `${factor.label}: ${factor.savedValue}`
                                   : factor.label
                               }
-
-                              style={{
-                                fontWeight:
-                                  isPieHighlighted
-                                    ? 700
-                                    : undefined,
-
-                                color:
-                                  isPieHighlighted
-                                    ? "#0f172a"
-                                    : undefined,
-                              }}
                             >
 
-                              {factor.label}
+                              <span
+                                className="risk-factor-label"
+
+                                style={{
+                                  fontWeight:
+                                    isPieHighlighted
+                                      ? 700
+                                      : undefined,
+
+                                  color:
+                                    isPieHighlighted
+                                      ? "#0f172a"
+                                      : undefined,
+                                }}
+                              >
+
+                                {factor.label}
+
+                              </span>
 
 
                               {factor.savedValue && (
 
                                 <span className="risk-factor-value">
 
-                                  : {factor.savedValue}
+                                  You entered: {factor.savedValue}
 
                                 </span>
 
@@ -968,25 +1057,39 @@ function DashboardPage() {
 
                             {/* Contribution */}
 
-                            <span
-                              className={`risk-factor-tag ${
-                                factor.raisesRisk
-                                  ? "risk-factor-tag-up"
-                                  : "risk-factor-tag-down"
-                              }`}
-                            >
+                            {typeof displayFactor.weightPercent ===
+                            "number" ? (
 
-                              {factor.raisesRisk
-                                ? "+"
-                                : "-"}
+                              <span
+                                className={`risk-factor-tag ${
+                                  displayFactor.raisesRisk
+                                    ? "risk-factor-tag-up"
+                                    : "risk-factor-tag-down"
+                                }`}
+                              >
 
-                              {Math.round(
-                                factor.weightPercent
-                              )}
+                                {displayFactor.raisesRisk
+                                  ? "+"
+                                  : "-"}
 
-                              %
+                                {Math.round(
+                                  displayFactor.weightPercent
+                                )}
 
-                            </span>
+                                %
+
+                              </span>
+
+                            ) : (
+
+                              <span
+                                className="risk-factor-tag risk-factor-tag-minor"
+                                title="Not among the top contributing factors for this assessment"
+                              >
+                                Minor factor
+                              </span>
+
+                            )}
 
 
                             {/* =============================
@@ -1213,7 +1316,7 @@ function DashboardPage() {
 
                   ) : (
 
-                    riskFactors.filter(
+                    displayableRiskFactors.filter(
                       (factor) =>
                         Boolean(
                           changeableRiskFactors[

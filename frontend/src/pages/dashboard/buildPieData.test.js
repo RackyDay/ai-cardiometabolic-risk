@@ -15,24 +15,25 @@ describe("risk-raising pie contributions", () => {
     expect(edited[0].value).toBe(10);
   });
 
-  it("gives risk-lowering age no slice even with 26.15% overall influence", () => {
+  it("gives risk-lowering age no slice, and keeps BMI's own share even with 26.15% overall influence", () => {
     const editedAge = { ...age, weightPercent: 26.15, raisesRisk: false };
     const result = buildPieData([editedAge, { ...bmi, weightPercent: 73.85 }]);
     expect(result[0].value).toBe(0);
-    expect(result[1].value).toBe(100);
+    // Matches the same weightPercent shown for this factor in the risk
+    // factor breakdown list, rather than being rescaled to fill the pie.
+    expect(result[1].value).toBe(73.85);
     // Retain the signed influence information for the factor list.
     expect(editedAge.weightPercent).toBe(26.15);
     expect(editedAge.raisesRisk).toBe(false);
   });
 
-  it("preserves original slice order through sign changes and normalizes positive effects", () => {
+  it("preserves original slice order through sign changes and keeps each factor's own share", () => {
     const glucose = { feature: "glucose", label: "Glucose", raisesRisk: true, weightPercent: 10 };
     const original = [age, bmi, glucose];
     const changed = [glucose, { ...bmi, weightPercent: 30 }, { ...age, raisesRisk: false }];
     const result = buildPieData(changed, original);
     expect(result.map((factor) => factor.feature)).toEqual(["age", "BMI", "glucose"]);
-    expect(result.map((factor) => factor.value)).toEqual([0, 75, 25]);
-    expect(result.reduce((sum, factor) => sum + factor.value, 0)).toBe(100);
+    expect(result.map((factor) => factor.value)).toEqual([0, 30, 10]);
     expect(changed.map((factor) => factor.feature)).toEqual(["glucose", "BMI", "age"]);
     expect(buildPieData(original).map((factor) => factor.feature)).toEqual(["age", "BMI", "glucose"]);
   });
