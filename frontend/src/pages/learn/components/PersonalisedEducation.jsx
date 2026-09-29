@@ -11,9 +11,6 @@ function PersonalisedEducation() {
         Personalised education will appear here when it is available. You can
         explore all the topics below, with or without an assessment.
       </p>
-      <a className="learn-explore-link" href="#learn-explore">
-        Explore heart health <span aria-hidden="true">↓</span>
-      </a>
     </section>
   );
 }

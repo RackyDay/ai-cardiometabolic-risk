@@ -14,7 +14,6 @@ function LearnPage() {
         id="learn-explore"
         className="learn-explore"
         aria-labelledby="learn-explore-title"
-        tabIndex={-1}
       >
         <h2 id="learn-explore-title" className="learn-section-title">
           Explore heart health

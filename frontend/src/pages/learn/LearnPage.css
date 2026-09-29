@@ -38,33 +38,8 @@
   line-height: 1.6;
 }
 
-.learn-explore-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 44px;
-  margin-top: 0.75rem;
-  color: #2f5fc9;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.learn-explore-link:hover {
-  color: #234a9e;
-}
-
-.learn-explore-link:focus-visible,
-.learn-explore:focus-visible {
-  outline: 3px solid #2f5fc9;
-  outline-offset: 4px;
-  border-radius: 4px;
-}
-
 .learn-explore {
   min-width: 0;
-  scroll-margin-top: 1rem;
 }
 
 .learn-factor-group {
