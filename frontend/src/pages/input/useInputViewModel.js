@@ -11,7 +11,7 @@ export function useInputViewModel() {
 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
-    const { riskInputs, setRiskInputs, setRiskScore, setTopContributors, setRiskCalculationId, selectCalculation } = useContext(RiskContext);
+    const { riskInputs, setRiskInputs, setRiskScore, setTopContributors, setRiskCalculationId, selectCalculation, completeModule } = useContext(RiskContext);
     const { accessToken } = useContext(AuthContext);
     const [page, setPage] = useState(0);
     // Each convertible question (glucose, cholesterol) picks its own
@@ -170,6 +170,7 @@ export function useInputViewModel() {
             // afterward instead of inserting a new one - null for an
             // anonymous submission, since nothing was persisted.
             setRiskCalculationId(result.riskcalc_id ?? null);
+            completeModule("base-risk", riskInputs);
             navigate("/dashboard");
         } catch {
             // Network failure or a 4xx/5xx from the API — keep the user on

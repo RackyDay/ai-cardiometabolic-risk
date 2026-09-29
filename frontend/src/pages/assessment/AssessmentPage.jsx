@@ -2,11 +2,14 @@ import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
-import HeartECGIcon from "../../components/icons/HeartECGIcon";
+import AssessmentModuleCard from "../../components/common/AssessmentModuleCard";
+import { RiskContext } from "../../context/RiskContext";
+import { assessmentModules } from "./assessmentModules";
 import "./AssessmentPage.css";
 
 function AssessmentPage() {
   const { isAuthenticated } = useContext(AuthContext);
+  const risk = useContext(RiskContext);
 
   return (
     <div className="assessment-page">
@@ -20,32 +23,14 @@ function AssessmentPage() {
       </header>
 
       <section className="assessment-modules" aria-label="Assessment modules">
-        <article className="assessment-module">
-          <div className="assessment-module-body">
-            <div className="assessment-module-heading">
-              <div className="assessment-module-icon" aria-hidden="true">
-                <HeartECGIcon />
-              </div>
-              <span className="assessment-module-label">Cardiovascular health</span>
-            </div>
-            <h2>Base risk inputs</h2>
-            <p>
-              Build your health profile and calculate your cardiovascular risk
-              with our core assessment.
-            </p>
-            <ul className="assessment-module-topics" aria-label="Included in this module">
-              <li>Health measurements</li>
-              <li>Medical history</li>
-              <li>Lifestyle</li>
-            </ul>
-          </div>
-          <div className="assessment-module-footer">
-            <p>Your results will appear on your dashboard.</p>
-            <Link className="assessment-start" to="/inputs">
-              Start module <span aria-hidden="true">&rarr;</span>
-            </Link>
-          </div>
-        </article>
+        {assessmentModules.map(({ id, Icon, getInputs, ...module }) => (
+          <AssessmentModuleCard
+            key={id}
+            {...module}
+            icon={<Icon />}
+            complete={risk.isModuleComplete(id, getInputs(risk))}
+          />
+        ))}
       </section>
     </div>
   );
