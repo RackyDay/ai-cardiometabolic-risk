@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 function useAppLayoutViewModel() {
   const location = useLocation();
 
-  const pagesWithoutSideNav = ["/", "/inputs", "/auth", "/auth/callback"];
+  const pagesWithoutSideNav = ["/", "/assessment", "/inputs", "/auth", "/auth/callback"];
   const shouldShowSideNav = !pagesWithoutSideNav.includes(location.pathname);
 
   const [isSideNavOpen, setIsSideNavOpen] = useState(false);
