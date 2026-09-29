@@ -11,7 +11,6 @@ function LearnPage() {
       <PersonalisedEducation />
 
       <section
-        id="learn-explore"
         className="learn-explore"
         aria-labelledby="learn-explore-title"
       >

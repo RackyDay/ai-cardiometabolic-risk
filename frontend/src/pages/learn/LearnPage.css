@@ -6,6 +6,7 @@
   min-width: 0;
   box-sizing: border-box;
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .learn-personalised {
@@ -66,7 +67,6 @@
   border-radius: 1rem;
   background: #ffffff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  overflow-wrap: anywhere;
 }
 
 .learn-factor-title {
