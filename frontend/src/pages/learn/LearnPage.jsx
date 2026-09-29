@@ -1,61 +1,46 @@
 import useLearnViewModel from "./useLearnViewModel";
+import PersonalisedEducation from "./components/PersonalisedEducation";
+import RiskFactorEducationCard from "./components/RiskFactorEducationCard";
 import "./LearnPage.css";
 
 function LearnPage() {
-  const {
-    visibleSections,
-    cardScrollRef,
-    canScrollLeft,
-    canScrollRight,
-    scrollCardsLeft,
-    scrollCardsRight,
-    updateScrollButtons,
-  } = useLearnViewModel();
+  const { riskFactorGroups } = useLearnViewModel();
 
   return (
-    <section className="learn-page">
-      {visibleSections.map((section) => (
-        <section key={section.id} className="learn-section">
-          <h2 className="learn-section-title">{section.title}</h2>
+    <div className="learn-page">
+      <PersonalisedEducation />
 
-          <div className="learn-carousel">
-            {canScrollLeft && (
-              <button
-                type="button"
-                className="learn-arrow-button learn-arrow-left"
-                onClick={scrollCardsLeft}
-                aria-label="Scroll articles left"
-              >
-                ‹
-              </button>
-            )}
+      <section
+        id="learn-explore"
+        className="learn-explore"
+        aria-labelledby="learn-explore-title"
+        tabIndex={-1}
+      >
+        <h2 id="learn-explore-title" className="learn-section-title">
+          Explore heart health
+        </h2>
+        <p className="learn-section-description">
+          Learn about the information used in your cardiovascular risk assessment.
+        </p>
 
-            <div
-              ref={cardScrollRef}
-              className="learn-card-grid"
-              onScroll={updateScrollButtons}
-            >
-              {section.articles.map((article) => (
-                <a key={article.id} href={article.url} className="learn-card">
-                  {article.title}
-                </a>
+        {riskFactorGroups.map((group) => (
+          <section
+            key={group.id}
+            className="learn-factor-group"
+            aria-labelledby={`learn-group-${group.id}`}
+          >
+            <h3 id={`learn-group-${group.id}`} className="learn-group-title">
+              {group.title}
+            </h3>
+            <div className="learn-factor-grid">
+              {group.factors.map((factor) => (
+                <RiskFactorEducationCard key={factor.schemaKey} factor={factor} />
               ))}
             </div>
-
-            {canScrollRight && (
-              <button
-                type="button"
-                className="learn-arrow-button learn-arrow-right"
-                onClick={scrollCardsRight}
-                aria-label="Scroll articles right"
-              >
-                ›
-              </button>
-            )}
-          </div>
-        </section>
-      ))}
-    </section>
+          </section>
+        ))}
+      </section>
+    </div>
   );
 }
 
