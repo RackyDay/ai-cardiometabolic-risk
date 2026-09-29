@@ -1,5 +1,8 @@
+import { useId } from "react";
+
 function RiskFactorEducationCard({ factor }) {
-  const titleId = `learn-factor-${factor.schemaKey}`;
+  // A factor can appear in more than one section without duplicate DOM IDs.
+  const titleId = useId();
 
   return (
     <article className="learn-factor-card" aria-labelledby={titleId}>

@@ -1,5 +1,5 @@
-
-// RiskContext: its live inputs can contain an unfinished assessment draft.
+// Reserved for future personalisation. Do not interpret RiskContext's live
+// inputs here: they can contain an unfinished assessment draft.
 function PersonalisedEducation() {
   return (
     <section className="learn-personalised" aria-labelledby="learn-personalised-title">

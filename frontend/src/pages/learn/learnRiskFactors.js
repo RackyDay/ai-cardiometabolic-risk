@@ -84,6 +84,8 @@ const factorContent = {
 
 // Keep display labels and categories in sync with the input form. Most model
 // features have the same name; the two exceptions are explicit above.
+// schemaKey addresses assessment inputs; featureKey addresses model contributors.
+// aliases contains only alternative model names, never display labels.
 export const learnRiskFactors = Object.entries(factorContent).map(
   ([schemaKey, { featureKey = schemaKey, description, searchTerms }]) => ({
     schemaKey,

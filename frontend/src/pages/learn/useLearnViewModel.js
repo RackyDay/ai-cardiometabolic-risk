@@ -1,6 +1,6 @@
 import { learnRiskFactors } from "./learnRiskFactors";
 
-// Preserve schema category order without repeating either labels or card JSX.
+// Group the configured factors without repeating either labels or card JSX.
 const riskFactorGroups = Array.from(
   new Set(learnRiskFactors.map((factor) => factor.category)),
   (category) => ({
