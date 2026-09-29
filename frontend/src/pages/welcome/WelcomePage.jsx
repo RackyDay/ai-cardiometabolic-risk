@@ -30,7 +30,7 @@ function WelcomePage() {
         </p>
 
 
-        <ActionButton label="Click to get started" to="/inputs" />
+        <ActionButton label="Click to get started" to="/assessment" />
 
         <ActionButton label="Log In / Sign Up" to="/auth" />
 

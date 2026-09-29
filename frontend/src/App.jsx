@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./App.css";
 import InputPage from "./pages/input/InputPage";
+import AssessmentPage from "./pages/assessment/AssessmentPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import LearnPage from "./pages/learn/LearnPage";
 import WelcomePage from "./pages/welcome/WelcomePage";
@@ -48,6 +49,7 @@ function AppLayout() {
         <main className="app-content">
           <Routes>
             <Route path="/" element={<WelcomePage />} />
+            <Route path="/assessment" element={<AssessmentPage />} />
             <Route path="/inputs" element={<InputPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/learn" element={<LearnPage />} />

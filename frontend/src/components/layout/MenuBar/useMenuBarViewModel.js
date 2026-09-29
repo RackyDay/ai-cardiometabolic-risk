@@ -5,6 +5,7 @@ function useMenuBarViewModel() {
 
   const pageTitles = {
     "/": "",
+    "/assessment": "Risk Assessment",
     "/inputs": "My Health Information",
     "/dashboard": "Overview",
     "/learn": "Learn",

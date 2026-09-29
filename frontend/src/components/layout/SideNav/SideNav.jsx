@@ -28,7 +28,7 @@ function SideNav({ isOpen = false, onNavigate }) {
       </nav>
 
       <div className="side-nav-footer">
-        <ActionButton label="Add Assessment" to="/inputs" />
+        <ActionButton label="Add Assessment" to="/assessment" />
       </div>
     </aside>
   );
