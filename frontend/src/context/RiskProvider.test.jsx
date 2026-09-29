@@ -1,9 +1,26 @@
 import { useContext } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
 import { AuthContext } from "./AuthContext";
 import { RiskContext } from "./RiskContext";
 import { RiskProvider } from "./RiskProvider";
+
+it("tracks completion per module and input snapshot, and resets for a new assessment", () => {
+  const wrapper = ({ children }) => (
+    <AuthContext.Provider value={{ user: null, isAuthenticated: false }}>
+      <RiskProvider>{children}</RiskProvider>
+    </AuthContext.Provider>
+  );
+  const { result } = renderHook(() => useContext(RiskContext), { wrapper });
+  const inputs = { age: 40, currentSmoker: false };
+  expect(result.current.isModuleComplete("base-risk", inputs)).toBe(false);
+  act(() => result.current.completeModule("base-risk", inputs));
+  expect(result.current.isModuleComplete("base-risk", { ...inputs })).toBe(true);
+  expect(result.current.isModuleComplete("another-module", inputs)).toBe(false);
+  expect(result.current.isModuleComplete("base-risk", { ...inputs, age: 41 })).toBe(false);
+  act(() => result.current.startNewAssessment());
+  expect(result.current.isModuleComplete("base-risk", inputs)).toBe(false);
+});
 
 function Dashboard() {
   const { selectedCalculation, selectCalculation } = useContext(RiskContext);

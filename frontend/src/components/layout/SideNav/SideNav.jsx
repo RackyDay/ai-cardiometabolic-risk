@@ -1,8 +1,11 @@
 import { NavLink } from "react-router-dom";
+import { useContext } from "react";
+import { RiskContext } from "../../../context/RiskContext";
 import "./SideNav.css";
 import ActionButton from "../../common/ActionButton";
 
 function SideNav({ isOpen = false, onNavigate }) {
+  const { startNewAssessment } = useContext(RiskContext);
   return (
     <aside className={isOpen ? "side-nav open" : "side-nav"}>
       <nav className="side-nav-links">
@@ -28,7 +31,7 @@ function SideNav({ isOpen = false, onNavigate }) {
       </nav>
 
       <div className="side-nav-footer">
-        <ActionButton label="Add Assessment" to="/assessment" />
+        <ActionButton label="Add Assessment" to="/assessment" onClick={startNewAssessment} />
       </div>
     </aside>
   );

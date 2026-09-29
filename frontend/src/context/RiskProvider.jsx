@@ -21,10 +21,25 @@ export function RiskProvider({ children }) {
     setHistoryRevision((value) => value + 1);
   };
   const userId = isAuthenticated ? user?.id : null;
+  const [moduleCompletion, setModuleCompletion] = useState({});
+  const startNewAssessment = () => setModuleCompletion({});
+  const completeModule = (id, inputs) => {
+    setModuleCompletion((current) => ({
+      ...current,
+      [id]: { userId, inputs: { ...inputs } },
+    }));
+  };
+  const isModuleComplete = (id, inputs) => {
+    const completed = moduleCompletion[id];
+    return Boolean(completed && completed.userId === userId &&
+      Object.keys(completed.inputs).length === Object.keys(inputs).length &&
+      Object.entries(inputs).every(([key, value]) => completed.inputs[key] === value));
+  };
   // Clear ownership on sign-out/account changes; token refresh keeps selection.
   useEffect(() => {
     setHistorySelection((current) => current?.userId === userId ? current : null);
     setViewingCalculationId(null);
+    setModuleCompletion({});
   }, [userId]);
   const selectedCalculation = userId && historySelection?.userId === userId
     ? historySelection.calculation : null;
@@ -66,6 +81,9 @@ export function RiskProvider({ children }) {
     <RiskContext.Provider
       value={{
         // Original assessment
+        startNewAssessment,
+        completeModule,
+        isModuleComplete,
         selectedCalculation,
         historyRevision,
         viewingCalculationId,
