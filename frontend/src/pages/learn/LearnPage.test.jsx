@@ -1,11 +1,17 @@
-import { render, screen, within } from "@testing-library/react";
-import { expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, expect, it, vi } from "vitest";
 import { AuthContext } from "../../context/AuthContext";
 import { RiskContext } from "../../context/RiskContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { learnRiskFactors } from "./learnRiskFactors";
 import LearnPage from "./LearnPage";
 import RiskFactorEducationCard from "./components/RiskFactorEducationCard";
+import { searchMedlinePlus } from "../../services/medlinePlusApi";
+
+vi.mock("../../services/medlinePlusApi", () => ({ searchMedlinePlus: vi.fn() }));
+beforeEach(() => {
+  searchMedlinePlus.mockReset().mockImplementation(() => new Promise(() => {}));
+});
 
 const schemaFields = Object.values(riskInputSchema);
 
@@ -42,8 +48,7 @@ it.each([
     .toHaveTextContent("with or without an assessment");
 });
 
-it("keeps static education available across sign-in and sign-out without fetching or changing an assessment", () => {
-  const fetchSpy = vi.spyOn(globalThis, "fetch");
+it("keeps general education available across sign-in and sign-out without changing an assessment", () => {
   const setRiskInputs = vi.fn();
   const setRiskScore = vi.fn();
   const selectCalculation = vi.fn();
@@ -64,21 +69,101 @@ it("keeps static education available across sign-in and sign-out without fetchin
     </AuthContext.Provider>
   );
 
-  try {
-    const { rerender } = render(page(false));
-    for (const signedIn of [true, false]) {
-      rerender(page(signedIn));
-      expect(screen.getAllByRole("article")).toHaveLength(schemaFields.length);
-      expect(screen.getByRole("region", { name: "Based on your assessment" }))
-        .toHaveTextContent("Personalised education will appear here when it is available.");
-    }
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(setRiskInputs).not.toHaveBeenCalled();
-    expect(setRiskScore).not.toHaveBeenCalled();
-    expect(selectCalculation).not.toHaveBeenCalled();
-  } finally {
-    fetchSpy.mockRestore();
+  const { rerender } = render(page(false));
+  for (const signedIn of [true, false]) {
+    rerender(page(signedIn));
+    expect(screen.getAllByRole("article")).toHaveLength(schemaFields.length);
+    expect(screen.getByRole("region", { name: "Based on your assessment" }))
+      .toHaveTextContent("Personalised education will appear here when it is available.");
   }
+  const publicQueries = learnRiskFactors.flatMap((factor) => factor.searchTerms);
+  expect(searchMedlinePlus).toHaveBeenCalled();
+  for (const [query] of searchMedlinePlus.mock.calls) expect(publicQueries).toContain(query);
+  expect(setRiskInputs).not.toHaveBeenCalled();
+  expect(setRiskScore).not.toHaveBeenCalled();
+  expect(selectCalculation).not.toHaveBeenCalled();
+});
+
+const article = {
+  id: "https://medlineplus.gov/heartdiseases.html", title: "Heart Diseases",
+  summary: "An educational overview.", url: "https://medlineplus.gov/heartdiseases.html", source: "MedlinePlus",
+};
+
+it("loads real article links through the service with bounded, deduplicated queries", async () => {
+  let resolve;
+  const pending = new Promise((done) => { resolve = done; });
+  searchMedlinePlus.mockReturnValue(pending);
+  render(<LearnPage />);
+  expect(screen.getByRole("status")).toHaveTextContent("Loading educational articles");
+  expect(searchMedlinePlus).toHaveBeenCalledTimes(3);
+  await act(async () => resolve([article]));
+
+  await waitFor(() => expect(screen.getByRole("status")).not.toHaveTextContent("Loading"));
+  const queries = new Set(learnRiskFactors.flatMap((factor) => factor.searchTerms));
+  expect(searchMedlinePlus).toHaveBeenCalledTimes(queries.size);
+  const links = screen.getAllByRole("link", { name: /Heart Diseases/ });
+  expect(links).toHaveLength(schemaFields.length);
+  expect(links[0]).toHaveAttribute("href", article.url);
+  expect(links[0]).toHaveAttribute("rel", "noopener noreferrer");
+  expect(links[0]).toHaveAccessibleName("Heart Diseases (opens in a new tab)");
+  expect(screen.getAllByText("Source: MedlinePlus")).toHaveLength(schemaFields.length);
+  for (const [, options] of searchMedlinePlus.mock.calls) expect(options.limit).toBe(1);
+});
+
+it("distinguishes empty results from failures, keeps the overview, and can retry", async () => {
+  searchMedlinePlus.mockImplementation(async (query) => {
+    if (query === learnRiskFactors[0].searchTerms[0]) throw new Error("Unavailable");
+    return [];
+  });
+  render(<LearnPage />);
+  const retry = await screen.findByRole("button", { name: "Retry articles" });
+  await waitFor(() => expect(retry).toBeEnabled());
+  expect(screen.getAllByText(/No MedlinePlus articles found/)).toHaveLength(schemaFields.length - 1);
+  expect(screen.getByText(/Articles are unavailable right now/)).toBeInTheDocument();
+  expect(screen.getByText(learnRiskFactors[0].description)).toBeInTheDocument();
+
+  searchMedlinePlus.mockResolvedValue([article]);
+  fireEvent.click(retry);
+  await waitFor(() => expect(screen.getAllByRole("link", { name: /Heart Diseases/ })).toHaveLength(schemaFields.length));
+  expect(screen.queryByRole("button", { name: "Retry articles" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/Articles are unavailable right now/)).not.toBeInTheDocument();
+});
+
+it("cancels pending article searches when leaving Learn", async () => {
+  let resolve;
+  searchMedlinePlus.mockReturnValue(new Promise((done) => { resolve = done; }));
+  const { unmount } = render(<LearnPage />);
+  const signals = searchMedlinePlus.mock.calls.map(([, options]) => options.signal);
+  unmount();
+  expect(signals.every((signal) => signal.aborted)).toBe(true);
+  await act(async () => resolve([article]));
+  expect(searchMedlinePlus).toHaveBeenCalledTimes(3);
+});
+
+it("combines configured topics and retains available articles when another topic fails", async () => {
+  const factor = learnRiskFactors.find((item) => item.searchTerms.length === 2);
+  const secondArticle = {
+    ...article, id: "https://medlineplus.gov/cholesterol.html",
+    url: "https://medlineplus.gov/cholesterol.html", title: "Cholesterol",
+  };
+  searchMedlinePlus.mockImplementation(async (query) => (
+    query === factor.searchTerms[1] ? [secondArticle] : [article]
+  ));
+  const { unmount } = render(<LearnPage />);
+  let card = screen.getByRole("article", { name: factor.title });
+  await waitFor(() => expect(within(card).getAllByRole("link")).toHaveLength(2));
+  expect(within(card).getByRole("link", { name: /Cholesterol/ })).toHaveAttribute("href", secondArticle.url);
+  unmount();
+
+  searchMedlinePlus.mockImplementation(async (query) => {
+    if (query === factor.searchTerms[1]) throw new Error("Unavailable");
+    return [article];
+  });
+  render(<LearnPage />);
+  card = screen.getByRole("article", { name: factor.title });
+  await waitFor(() => expect(within(card).getAllByRole("link")).toHaveLength(1));
+  expect(within(card).getByText(/Some additional articles couldn't be loaded/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Retry articles" })).toBeInTheDocument();
 });
 
 it("gives repeated factor cards distinct accessible heading IDs", () => {

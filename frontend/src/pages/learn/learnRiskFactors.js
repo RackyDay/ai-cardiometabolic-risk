@@ -1,7 +1,7 @@
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 
 // Static educational copy for KAN-242, keyed by the existing input schema.
-// Search terms are metadata for a future content provider; nothing fetches them.
+// These general search terms are shared by all users, independent of assessment values.
 const factorContent = {
   gender: {
     featureKey: "male",
