@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from risk_model import predict_risk
+from learning_router import router as learning_router
 from schemas import (
     AuthResponse,
     DeleteAccountRequest,
@@ -38,6 +39,7 @@ from uuid import UUID
 import database as db
 
 app = FastAPI()
+app.include_router(learning_router)
 
 origins = ["https://ai-cardiometabolic-risk.onrender.com",
            "http://localhost:5173",
@@ -183,10 +185,6 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
         riskcalc_timestamp=calculation["riskcalc_timestamp"],
         inputs=inputs["inputs_JSON"] if inputs and inputs.get("inputs_JSON") else None
     )
-
-@app.get("/learn")
-def learn():
-    pass
 
 @app.get("/")
 def root():

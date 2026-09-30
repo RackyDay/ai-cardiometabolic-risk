@@ -112,6 +112,19 @@ class AuthResponse(BaseModel):
     email_confirmation_required: bool = False
 
 
+class LearningArticle(BaseModel):
+    id: str
+    title: str
+    summary: str
+    url: str
+    source: Literal["MedlinePlus"]
+
+
+class LearningContentResponse(BaseModel):
+    query: str
+    articles: list[LearningArticle]
+
+
 class LatestPredictionResponse(BaseModel):
     has_history: bool
     riskcalc_id: Optional[str] = None
