@@ -6,7 +6,7 @@ import "./AssessmentModuleCard.css";
 export default function AssessmentModuleCard({
   title, category, description, icon, topics = [], required = false,
   complete = false, to, footer, actionLabel = "Start module",
-  completedActionLabel = "Review module", editTo = to,
+  completedActionLabel = "Review module", editTo = to, comingSoon = false,
 }) {
   const titleId = useId();
 
@@ -21,10 +21,10 @@ export default function AssessmentModuleCard({
               {required && <span aria-hidden="true">*</span>}
               {required ? "Required" : "Optional"}
             </span>
-            <span className={`assessment-module-badge ${complete ? "complete" : "incomplete"}`}>
+            {!comingSoon && <span className={`assessment-module-badge ${complete ? "complete" : "incomplete"}`}>
               <span aria-hidden="true">{complete ? "✓" : "○"}</span>
               {complete ? "Complete" : "Incomplete"}
-            </span>
+            </span>}
           </div>
         </div>
         <h2 id={titleId}>{title}</h2>
@@ -38,6 +38,11 @@ export default function AssessmentModuleCard({
       <div className="assessment-module-footer">
         {footer && <p>{footer}</p>}
         <div className="assessment-module-actions">
+          {comingSoon ? (
+            <button className="assessment-start" type="button" disabled aria-describedby={titleId}>
+              Coming soon
+            </button>
+          ) : <>
           {complete ? (
             <Link className="assessment-edit" to={editTo} aria-describedby={titleId}>
               Edit inputs
@@ -51,6 +56,7 @@ export default function AssessmentModuleCard({
         <Link className="assessment-start" to={to} aria-describedby={titleId}>
           {complete ? completedActionLabel : actionLabel} <span aria-hidden="true">&rarr;</span>
         </Link>
+          </>}
         </div>
       </div>
     </article>
