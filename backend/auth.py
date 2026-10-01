@@ -2,11 +2,17 @@ from types import SimpleNamespace
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from postgrest.exceptions import APIError
 
 from supabase_client import supabase, supabase_admin
 from schemas import AuthResponse, LoginRequest, SignUpRequest, UserOut
 
 security = HTTPBearer(auto_error=False)
+
+# PostgREST's error code for "no function matches this name/signature in
+# the schema cache" - i.e. a migration adding a given RPC function hasn't
+# been applied to this database yet, rather than a real failure.
+_RPC_NOT_FOUND = "PGRST202"
 
 def _maybe_single_data(query) -> dict | None:
     """.maybe_single().execute() returns None outright (not a response
@@ -50,32 +56,47 @@ def get_current_user_and_token(auth = Depends(get_optional_user)):
 
 def _resolve_login_email(identifier: str) -> str:
     """Accept either an email or a username and return the email to
-    authenticate with. Username -> user_id goes through the service-role
-    client (RLS on public.profiles only lets a user read their own row);
-    user_id -> email is then read live from auth.users via the Admin API,
-    rather than a denormalized copy - one extra round trip per username
-    login, but no second copy of email that could ever drift out of sync.
+    authenticate with. Email is read live from auth.users, not a
+    denormalized copy in public.profiles, so there's no second copy that
+    could ever drift out of sync - resolve_username_to_email (a
+    SECURITY DEFINER function - see the 2026-10-01 migration) does that
+    join server-side in one round trip. Falls back to the original
+    two-call approach (profiles lookup, then the Admin API for email) if
+    that migration isn't applied yet, so this code works regardless of
+    deploy/migration ordering.
     """
     if "@" in identifier:
         return identifier
 
-    data = _maybe_single_data(
-        supabase_admin.table("profiles").select("user_id").eq("user_displayname", identifier).maybe_single()
-    )
-    if not data or not data.get("user_id"):
+    try:
+        response = supabase_admin.rpc("resolve_username_to_email", {"p_username": identifier}).execute()
+        email = response.data
+    except APIError as exc:
+        if exc.code != _RPC_NOT_FOUND:
+            raise
+        email = _resolve_login_email_fallback(identifier)
+
+    if not email:
         # Unknown username - raise the same generic error the caller uses
         # for a wrong password, so login never reveals which part was wrong.
         raise HTTPException(status_code=401, detail="Invalid email/username or password")
 
+    return email
+
+
+def _resolve_login_email_fallback(identifier: str) -> str | None:
+    data = _maybe_single_data(
+        supabase_admin.table("profiles").select("user_id").eq("user_displayname", identifier).maybe_single()
+    )
+    if not data or not data.get("user_id"):
+        return None
+
     try:
         user = supabase_admin.auth.admin.get_user_by_id(data["user_id"]).user
     except Exception:
-        user = None
+        return None
 
-    if not user or not user.email:
-        raise HTTPException(status_code=401, detail="Invalid email/username or password")
-
-    return user.email
+    return user.email if user else None
 
 
 def sign_up(req: SignUpRequest) -> AuthResponse:

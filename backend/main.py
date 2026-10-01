@@ -73,7 +73,9 @@ def predict(data: RiskInputData, auth=Depends(get_optional_user)):
 
     if auth is not None:
         user, token = auth
-        result["riskcalc_id"] = db.save_assessment(user.id, result["risk_score"], "1", data.model_dump(), token)
+        result["riskcalc_id"] = db.save_assessment(
+            user.id, result["risk_score"], "1", data.model_dump(), result["top_contributors"], token
+        )
 
     return result
 
@@ -91,7 +93,9 @@ def edit_risk_calculation(calculation_id: UUID, data: RiskInputData, auth = Depe
     _, token = auth
 
     result = predict_risk(data)
-    db.update_assessment(str(calculation_id), result["risk_score"], data.model_dump(), token)
+    db.update_assessment(
+        str(calculation_id), result["risk_score"], data.model_dump(), result["top_contributors"], token
+    )
     result["riskcalc_id"] = str(calculation_id)
 
     return result
@@ -111,17 +115,21 @@ def get_risk_calculation(calculation_id: UUID, auth = Depends(get_current_user_a
         raise HTTPException(status_code=404, detail="Calculation not found")
     inputs = risk_inputs[0]["inputs_JSON"]
 
-    # Stored inputs might not match the current RiskInputData shape (e.g.
-    # an older submission from before a field was added) - degrade
-    # gracefully and still return the score/raw inputs rather than a 500,
-    # the same way /predictions/latest handles this exact situation.
-    try:
-        validated_inputs = RiskInputData(**inputs)
-        top_contributors = predict_risk(validated_inputs).get("top_contributors", [])
-        response_inputs = validated_inputs.model_dump()
-    except Exception:
-        top_contributors = None
-        response_inputs = inputs
+    # top_contributors is persisted as of the 2026-10-01 migration - only
+    # rows saved/edited before then need it recomputed. Stored inputs might
+    # also not match the current RiskInputData shape (e.g. an older
+    # submission from before a field was added) - degrade gracefully and
+    # still return the score/raw inputs rather than a 500, the same way
+    # /predictions/latest handles this exact situation.
+    top_contributors = risk_calc[0].get("top_contributors")
+    response_inputs = inputs
+    if top_contributors is None:
+        try:
+            validated_inputs = RiskInputData(**inputs)
+            top_contributors = predict_risk(validated_inputs).get("top_contributors", [])
+            response_inputs = validated_inputs.model_dump()
+        except Exception:
+            top_contributors = None
 
     return {
         "riskcalc_id": risk_calc[0]["riskcalc_id"],
@@ -148,13 +156,14 @@ def latest_prediction(auth=Depends(get_current_user_and_token)):
     calculation, inputs = latest
     inputs_json = inputs.get("inputs_JSON") if inputs else None
 
-    # top_contributors isn't persisted (only risk_score is) - recompute it
-    # from the stored inputs via predict_risk(), which is deterministic
-    # (see test_predict_is_deterministic), so this matches what was shown
-    # at submission time.
+    # top_contributors is persisted as of the 2026-10-01 migration - only
+    # rows saved/edited before then (top_contributors is None) need it
+    # recomputed from the stored inputs via predict_risk(), which is
+    # deterministic (see test_predict_is_deterministic), so this matches
+    # what was shown at submission time.
 
-    top_contributors = None
-    if inputs_json:
+    top_contributors = calculation.get("top_contributors")
+    if top_contributors is None and inputs_json:
         try:
             reconstructed = RiskInputData(**inputs_json)
             top_contributors = predict_risk(reconstructed)["top_contributors"]
