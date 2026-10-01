@@ -95,6 +95,7 @@ it("loads real article links through the service with bounded, deduplicated quer
   searchMedlinePlus.mockReturnValue(pending);
   render(<LearnPage />);
   expect(screen.getByRole("status")).toHaveTextContent("Loading educational articles");
+  expect(screen.queryByRole("button", { name: "Reload articles" })).not.toBeInTheDocument();
   expect(searchMedlinePlus).toHaveBeenCalledTimes(3);
   await act(async () => resolve([article]));
 
@@ -107,25 +108,27 @@ it("loads real article links through the service with bounded, deduplicated quer
   expect(links[0]).toHaveAttribute("rel", "noopener noreferrer");
   expect(links[0]).toHaveAccessibleName("Heart Diseases (opens in a new tab)");
   expect(screen.getAllByText("Source: MedlinePlus")).toHaveLength(schemaFields.length);
+  expect(screen.queryByRole("button", { name: "Reload articles" })).not.toBeInTheDocument();
   for (const [, options] of searchMedlinePlus.mock.calls) expect(options.limit).toBe(1);
 });
 
-it("distinguishes empty results from failures, keeps the overview, and can retry", async () => {
+it("distinguishes empty results from failures, keeps the overview, and can reload", async () => {
   searchMedlinePlus.mockImplementation(async (query) => {
     if (query === learnRiskFactors[0].searchTerms[0]) throw new Error("Unavailable");
     return [];
   });
   render(<LearnPage />);
-  const retry = await screen.findByRole("button", { name: "Retry articles" });
-  await waitFor(() => expect(retry).toBeEnabled());
+  const reload = await screen.findByRole("button", { name: "Reload articles" });
+  await waitFor(() => expect(reload).toBeEnabled());
   expect(screen.getAllByText(/No MedlinePlus articles found/)).toHaveLength(schemaFields.length - 1);
   expect(screen.getByText(/Articles are unavailable right now/)).toBeInTheDocument();
   expect(screen.getByText(learnRiskFactors[0].description)).toBeInTheDocument();
 
   searchMedlinePlus.mockResolvedValue([article]);
-  fireEvent.click(retry);
+  fireEvent.click(reload);
+  expect(screen.queryByRole("button", { name: "Reload articles" })).not.toBeInTheDocument();
   await waitFor(() => expect(screen.getAllByRole("link", { name: /Heart Diseases/ })).toHaveLength(schemaFields.length));
-  expect(screen.queryByRole("button", { name: "Retry articles" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Reload articles" })).not.toBeInTheDocument();
   expect(screen.queryByText(/Articles are unavailable right now/)).not.toBeInTheDocument();
 });
 
@@ -163,7 +166,7 @@ it("combines configured topics and retains available articles when another topic
   card = screen.getByRole("article", { name: factor.title });
   await waitFor(() => expect(within(card).getAllByRole("link")).toHaveLength(1));
   expect(within(card).getByText(/Some additional articles couldn't be loaded/)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Retry articles" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Reload articles" })).toBeInTheDocument();
 });
 
 it("gives repeated factor cards distinct accessible heading IDs", () => {

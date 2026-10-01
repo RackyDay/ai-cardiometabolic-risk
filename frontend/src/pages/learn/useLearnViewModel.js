@@ -20,7 +20,7 @@ const loadingContent = { status: "loading", articles: [] };
 function useLearnViewModel() {
   const [attempt, setAttempt] = useState(0);
   const [response, setResponse] = useState({ attempt: 0, byQuery: {} });
-  const retryArticles = useCallback(() => setAttempt((current) => current + 1), []);
+  const reloadArticles = useCallback(() => setAttempt((current) => current + 1), []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -67,7 +67,7 @@ function useLearnViewModel() {
     articleContent,
     isLoadingArticles: states.some((content) => content.status === "loading"),
     hasArticleErrors: states.some((content) => content.status === "error" || content.partialError),
-    retryArticles,
+    reloadArticles,
   };
 }
 
