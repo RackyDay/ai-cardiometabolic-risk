@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import { RiskContext } from "./RiskContext";
 import { createInitalRiskInputs } from "../schemas/createInitialRiskInputs";
@@ -10,7 +10,11 @@ export function RiskProvider({ children }) {
   const [historyRevision, setHistoryRevision] = useState(0);
   const [historyActivity, setHistoryActivity] = useState("");
   const [viewingCalculationId, setViewingCalculationId] = useState(null);
-  const calculationDeleted = (id, remaining) => {
+  // useCallback (not a plain function) so these keep a stable identity
+  // across renders - otherwise they'd be a new function on every render,
+  // which would defeat the useMemo on the context value below (its
+  // dependency array would never actually stay equal).
+  const calculationDeleted = useCallback((id, remaining) => {
     setHistorySelection((current) => {
       if (!current) return current;
       const index = remaining.findIndex((item) => item.riskcalc_id === current.calculation.riskcalc_id);
@@ -19,7 +23,7 @@ export function RiskProvider({ children }) {
       } };
     });
     setHistoryRevision((value) => value + 1);
-  };
+  }, []);
   const userId = isAuthenticated ? user?.id : null;
   // Clear ownership on sign-out/account changes; token refresh keeps selection.
   useEffect(() => {
@@ -28,9 +32,9 @@ export function RiskProvider({ children }) {
   }, [userId]);
   const selectedCalculation = userId && historySelection?.userId === userId
     ? historySelection.calculation : null;
-  const selectCalculation = (calculation) => {
+  const selectCalculation = useCallback((calculation) => {
     setHistorySelection(calculation && userId ? { userId, calculation } : null);
-  };
+  }, [userId]);
   const [riskInputs, setRiskInputs] = useState(
     createInitalRiskInputs(riskInputSchema)
   );
@@ -56,45 +60,63 @@ export function RiskProvider({ children }) {
   const [hypotheticalTopContributors, setHypotheticalTopContributors] =
     useState([]);
 
-  const resetHypothetical = () => {
+  const resetHypothetical = useCallback(() => {
     setHypotheticalInputs(null);
     setHypotheticalRiskScore(null);
     setHypotheticalTopContributors([]);
-  };
+  }, []);
 
-  return (
-    <RiskContext.Provider
-      value={{
-        // Original assessment
-        selectedCalculation,
-        historyRevision,
-        viewingCalculationId,
-        setViewingCalculationId,
-        historyActivity,
-        setHistoryActivity,
-        calculationDeleted,
-        selectCalculation,
-        riskInputs,
-        setRiskInputs,
-        riskCalculationId,
-        setRiskCalculationId,
-        riskScore,
-        setRiskScore,
-        topContributors,
-        setTopContributors,
+  // Memoized so consumers only re-render when a value they actually read
+  // changes, instead of on every RiskProvider render (e.g. every what-if
+  // slider drag updating hypotheticalInputs would otherwise re-render every
+  // RiskContext consumer, not just the ones showing the hypothetical score).
+  const value = useMemo(
+    () => ({
+      // Original assessment
+      selectedCalculation,
+      historyRevision,
+      viewingCalculationId,
+      setViewingCalculationId,
+      historyActivity,
+      setHistoryActivity,
+      calculationDeleted,
+      selectCalculation,
+      riskInputs,
+      setRiskInputs,
+      riskCalculationId,
+      setRiskCalculationId,
+      riskScore,
+      setRiskScore,
+      topContributors,
+      setTopContributors,
 
-        // Hypothetical assessment
-        hypotheticalInputs,
-        setHypotheticalInputs,
-        hypotheticalRiskScore,
-        setHypotheticalRiskScore,
-        hypotheticalTopContributors,
-        setHypotheticalTopContributors,
+      // Hypothetical assessment
+      hypotheticalInputs,
+      setHypotheticalInputs,
+      hypotheticalRiskScore,
+      setHypotheticalRiskScore,
+      hypotheticalTopContributors,
+      setHypotheticalTopContributors,
 
-        resetHypothetical,
-      }}
-    >
-      {children}
-    </RiskContext.Provider>
+      resetHypothetical,
+    }),
+    [
+      selectedCalculation,
+      historyRevision,
+      viewingCalculationId,
+      historyActivity,
+      calculationDeleted,
+      selectCalculation,
+      riskInputs,
+      riskCalculationId,
+      riskScore,
+      topContributors,
+      hypotheticalInputs,
+      hypotheticalRiskScore,
+      hypotheticalTopContributors,
+      resetHypothetical,
+    ]
   );
+
+  return <RiskContext.Provider value={value}>{children}</RiskContext.Provider>;
 }

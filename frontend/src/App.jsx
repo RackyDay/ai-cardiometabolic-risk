@@ -1,19 +1,26 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./App.css";
-import InputPage from "./pages/input/InputPage";
-import DashboardPage from "./pages/dashboard/DashboardPage";
-import LearnPage from "./pages/learn/LearnPage";
+// WelcomePage and AuthPage stay eagerly imported - they're the first thing
+// a logged-out visitor sees, so they belong in the initial bundle. The rest
+// (especially DashboardPage, which pulls in recharts) are lazy: nothing
+// visiting "/" or "/auth" should have to download and parse the dashboard's
+// charting code before it can render a login form.
 import WelcomePage from "./pages/welcome/WelcomePage";
 import AuthPage from "./pages/auth/AuthPage";
-import AuthCallbackPage from "./pages/authCallback/AuthCallbackPage";
-import ResetPasswordPage from "./pages/resetPassword/ResetPasswordPage";
-import SettingsPage from "./pages/settings/SettingsPage";
 import { RiskProvider } from "./context/RiskProvider";
 import { AuthProvider } from "./context/AuthProvider";
 import { UnitProvider } from "./context/UnitProvider";
 import MenuBar from "./components/layout/MenuBar/MenuBar";
 import SideNav from "./components/layout/SideNav/SideNav";
 import useAppLayoutViewModel from "./viewmodels/useAppLayoutViewModel";
+
+const InputPage = lazy(() => import("./pages/input/InputPage"));
+const DashboardPage = lazy(() => import("./pages/dashboard/DashboardPage"));
+const LearnPage = lazy(() => import("./pages/learn/LearnPage"));
+const AuthCallbackPage = lazy(() => import("./pages/authCallback/AuthCallbackPage"));
+const ResetPasswordPage = lazy(() => import("./pages/resetPassword/ResetPasswordPage"));
+const SettingsPage = lazy(() => import("./pages/settings/SettingsPage"));
 
 function AppLayout() {
   const {
@@ -46,16 +53,18 @@ function AppLayout() {
         )}
 
         <main className="app-content">
-          <Routes>
-            <Route path="/" element={<WelcomePage />} />
-            <Route path="/inputs" element={<InputPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/learn" element={<LearnPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
+          <Suspense fallback={null}>
+            <Routes>
+              <Route path="/" element={<WelcomePage />} />
+              <Route path="/inputs" element={<InputPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/learn" element={<LearnPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
     </div>

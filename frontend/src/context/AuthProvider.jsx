@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import {
   deleteAccount as apiDeleteAccount,
@@ -196,7 +196,12 @@ export function AuthProvider({ children }) {
     return false;
   }, [finalizeSession]);
 
-  const signUpUser = async (credentials) => {
+  // useCallback throughout below (not plain functions) so the context
+  // value memoized further down doesn't have to treat every one of these
+  // as "changed" on every render - without it, the value object would be
+  // rebuilt (and every consumer re-rendered) on every AuthProvider render,
+  // including ones triggered by unrelated state like the toast or MFA modal.
+  const signUpUser = useCallback(async (credentials) => {
     const authResponse = await signUp(credentials);
     if (authResponse.email_confirmation_required) {
       return authResponse;
@@ -210,9 +215,9 @@ export function AuthProvider({ children }) {
       user: authResponse.user,
     });
     return authResponse;
-  };
+  }, [checkAssuranceAndFinalize]);
 
-  const logInUser = async (credentials) => {
+  const logInUser = useCallback(async (credentials) => {
     const authResponse = await logIn(credentials);
     const gated = await checkAssuranceAndFinalize({
       accessToken: authResponse.access_token,
@@ -220,7 +225,7 @@ export function AuthProvider({ children }) {
       user: authResponse.user,
     });
     return gated ? { mfaRequired: true } : authResponse;
-  };
+  }, [checkAssuranceAndFinalize]);
 
   // Redirects the whole page to Google - nothing after this call runs in
   // the current page load. Always comes back to /auth/callback rather than
@@ -231,14 +236,14 @@ export function AuthProvider({ children }) {
   // an actual cross-site navigation, so it rides along as a query param
   // instead of React Router state. The session itself is picked up by the
   // onAuthStateChange listener below via supabase-js's detectSessionInUrl.
-  const signInWithGoogle = async (from) => {
+  const signInWithGoogle = useCallback(async (from) => {
     const callbackUrl = new URL("/auth/callback", window.location.origin);
     callbackUrl.searchParams.set("from", from);
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: callbackUrl.toString() },
     });
-  };
+  }, []);
 
   // Sends a password-reset email. Deliberately email-only, unlike login's
   // email-or-username: there's no secure way to prove account ownership
@@ -246,27 +251,27 @@ export function AuthProvider({ children }) {
   // address it's actually tied to. Goes straight to Supabase (no backend
   // endpoint) - resetPasswordForEmail is a plain passthrough with no extra
   // business logic, same reasoning as the Google OAuth flow.
-  const requestPasswordReset = async (email) => {
+  const requestPasswordReset = useCallback(async (email) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) throw error;
-  };
+  }, []);
 
   // Only valid while the caller holds the temporary recovery session
   // Supabase establishes when the emailed reset link is clicked (see
   // ResetPasswordPage) - there's no "reset someone else's password" API,
   // this always acts on whoever's session is currently active.
-  const updatePassword = async (newPassword) => {
+  const updatePassword = useCallback(async (newPassword) => {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;
-  };
+  }, []);
 
   // Account edits from SettingsPage. Unlike updatePassword above (which runs
   // on the temporary recovery session), these go through our backend on the
   // live logged-in session - the backend re-checks username uniqueness and
   // the current password, neither of which the frontend can do on its own.
-  const changeUsername = async (newUsername) => {
+  const changeUsername = useCallback(async (newUsername) => {
     const updated = await apiUpdateUsername({
       username: newUsername,
       accessToken: session?.accessToken,
@@ -280,17 +285,17 @@ export function AuthProvider({ children }) {
       return next;
     });
     return updated;
-  };
+  }, [session?.accessToken]);
 
-  const changePassword = async (currentPassword, newPassword) => {
+  const changePassword = useCallback(async (currentPassword, newPassword) => {
     await apiUpdatePassword({
       currentPassword,
       newPassword,
       accessToken: session?.accessToken,
     });
-  };
+  }, [session?.accessToken]);
 
-  const deleteAccount = async (currentPassword) => {
+  const deleteAccount = useCallback(async (currentPassword) => {
     await apiDeleteAccount({ currentPassword, accessToken: session?.accessToken });
     // The account - and the user this token belonged to - no longer exists,
     // so there's nothing to revoke server-side (no /auth/logout call): just
@@ -298,21 +303,21 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut().catch(() => {});
     setSession(null);
     persistSession(null);
-  };
+  }, [session?.accessToken]);
 
   // MFA enrollment/management, used by SettingsPage. All plain passthroughs
   // to Supabase Auth - acting on whichever session the frontend client
   // currently holds, same as everything else in this file.
-  const enrollMfa = async () => {
+  const enrollMfa = useCallback(async () => {
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
     if (error) throw error;
     return data; // { id, totp: { qr_code, secret, uri } }
-  };
+  }, []);
 
   // Enrolling alone doesn't activate a factor - Supabase requires one
   // successful challenge/verify to confirm the user actually captured the
   // secret correctly before it counts for login gating.
-  const confirmMfaEnrollment = async (factorId, code) => {
+  const confirmMfaEnrollment = useCallback(async (factorId, code) => {
     const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
     if (challengeError) throw challengeError;
     const { error: verifyError } = await supabase.auth.mfa.verify({
@@ -321,18 +326,18 @@ export function AuthProvider({ children }) {
       code,
     });
     if (verifyError) throw verifyError;
-  };
+  }, []);
 
-  const unenrollMfa = async (factorId) => {
+  const unenrollMfa = useCallback(async (factorId) => {
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
     if (error) throw error;
-  };
+  }, []);
 
-  const listMfaFactors = async () => {
+  const listMfaFactors = useCallback(async () => {
     const { data, error } = await supabase.auth.mfa.listFactors();
     if (error) throw error;
     return data; // { totp: [...], phone: [...] }
-  };
+  }, []);
 
   // Submits the code from the global step-up modal - completes whichever
   // sign-in (password or Google) is currently pending in pendingMfa.
@@ -378,7 +383,7 @@ export function AuthProvider({ children }) {
     setMfaError("");
   };
 
-  const logOutUser = async () => {
+  const logOutUser = useCallback(async () => {
     await logOut(session?.accessToken).catch(() => {});
     // Also clears supabase-js's own separately-persisted session. Without
     // this, a Google-authenticated session would still be sitting in its
@@ -388,7 +393,7 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut().catch(() => {});
     setSession(null);
     persistSession(null);
-  };
+  }, [session?.accessToken]);
 
   // The other half of the Google flow, and now also where a completed MFA
   // step-up can surface (its exact event name isn't load-bearing here -
@@ -423,27 +428,51 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, [checkAssuranceAndFinalize]);
 
+  // Memoized so consumers (MenuBar, SettingsPage, every route guard, etc.)
+  // only re-render when auth itself actually changes, not on every
+  // AuthProvider render - e.g. the toast timer and MFA modal's own state
+  // (toastMessage, mfaCode, ...) live in this same component and would
+  // otherwise rebuild this object, and ripple a re-render app-wide, on
+  // every keystroke of an MFA code with nothing to do with auth state.
+  const value = useMemo(
+    () => ({
+      user: session?.user ?? null,
+      accessToken: session?.accessToken ?? null,
+      isAuthenticated: Boolean(session?.accessToken),
+      signUp: signUpUser,
+      logIn: logInUser,
+      signInWithGoogle,
+      requestPasswordReset,
+      updatePassword,
+      changeUsername,
+      changePassword,
+      deleteAccount,
+      enrollMfa,
+      confirmMfaEnrollment,
+      unenrollMfa,
+      listMfaFactors,
+      logOut: logOutUser,
+    }),
+    [
+      session,
+      signUpUser,
+      logInUser,
+      signInWithGoogle,
+      requestPasswordReset,
+      updatePassword,
+      changeUsername,
+      changePassword,
+      deleteAccount,
+      enrollMfa,
+      confirmMfaEnrollment,
+      unenrollMfa,
+      listMfaFactors,
+      logOutUser,
+    ]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user: session?.user ?? null,
-        accessToken: session?.accessToken ?? null,
-        isAuthenticated: Boolean(session?.accessToken),
-        signUp: signUpUser,
-        logIn: logInUser,
-        signInWithGoogle,
-        requestPasswordReset,
-        updatePassword,
-        changeUsername,
-        changePassword,
-        deleteAccount,
-        enrollMfa,
-        confirmMfaEnrollment,
-        unenrollMfa,
-        listMfaFactors,
-        logOut: logOutUser,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {/* Rendered here (inside the provider, above all routes) so a sign-in
           toast survives the navigate() that immediately follows it, instead
           of being tied to whichever page triggered it. role="status" so

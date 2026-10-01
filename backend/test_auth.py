@@ -10,6 +10,7 @@
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
+from postgrest.exceptions import APIError
 
 import auth as auth_module
 import main as main_module
@@ -73,6 +74,13 @@ class FakeTableClient:
     def table(self, name):
         return FakeQuery(self._tables.get(name, []))
 
+    def rpc(self, name, params):
+        # No real Postgres function behind this fixture, so every call
+        # looks like the resolve_username_to_email migration not being
+        # applied yet - which exercises _resolve_login_email's fallback
+        # path, the one this suite's username-login tests already cover.
+        raise APIError({"code": "PGRST202", "message": f"Could not find function {name}"})
+
 
 class FakeAuthAdminAPI:
     def __init__(self, users):
@@ -131,6 +139,15 @@ class FakeAuth:
         if not record:
             raise Exception("Invalid or expired token")
         return SimpleNamespace(user=SimpleNamespace(id=record["id"], email=record["email"]))
+
+    def get_claims(self, token):
+        # get_optional_user() calls this instead of get_user() now (local
+        # JWT verification instead of a round trip) - same token -> record
+        # lookup, just the claims-dict shape get_claims() actually returns.
+        record = self._tokens.get(token)
+        if not record:
+            raise Exception("Invalid or expired token")
+        return {"claims": {"sub": record["id"], "email": record["email"]}}
 
     def sign_up(self, payload):
         email = payload["email"]
@@ -320,6 +337,32 @@ def test_login_by_username_succeeds(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["user"]["email"] == "user@example.com"
+
+
+# _install_fake_supabase's FakeTableClient.rpc() always raises "function
+# not found" (simulating a database the migration hasn't reached yet),
+# which is what the test above actually exercises - the fallback path.
+# This instead fakes a *working* RPC to verify the happy path: that
+# _resolve_login_email calls .rpc() and uses its result directly, without
+# ever touching the Admin API fallback.
+def test_resolve_login_email_uses_rpc_when_available(monkeypatch):
+    rpc_calls = []
+
+    class FakeAdminWithWorkingRpc:
+        def rpc(self, name, params):
+            rpc_calls.append((name, params))
+            return SimpleNamespace(execute=lambda: SimpleNamespace(data="user@example.com"))
+
+        @property
+        def auth(self):
+            raise AssertionError("Admin API fallback should not run when the RPC succeeds")
+
+    monkeypatch.setattr(auth_module, "supabase_admin", FakeAdminWithWorkingRpc())
+
+    email = auth_module._resolve_login_email("someone")
+
+    assert email == "user@example.com"
+    assert rpc_calls == [("resolve_username_to_email", {"p_username": "someone"})]
 
 
 # TC-27

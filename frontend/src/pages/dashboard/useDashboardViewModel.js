@@ -2,6 +2,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -569,21 +570,19 @@ export function useDashboardViewModel() {
         : "";
 
 
-    const insights =
-      buildInsights({
-        currentScore:
-          riskScore,
-
+    // useMemo so this only recomputes when one of these actually changes,
+    // not on every render of this ~900-line hook (e.g. a hypothetical
+    // slider drag, which doesn't touch any of the inputs below).
+    const insights = useMemo(
+      () => buildInsights({
+        currentScore: riskScore,
         previousAssessment,
-
-        currentInputs:
-          riskInputs,
-
-        currentContributors:
-          contributors,
-
+        currentInputs: riskInputs,
+        currentContributors: contributors,
         clinicalUnit,
-      });
+      }),
+      [riskScore, previousAssessment, riskInputs, contributors, clinicalUnit]
+    );
 
 
   /* =======================================================
@@ -704,12 +703,14 @@ export function useDashboardViewModel() {
      Original risk factors
   ======================================================== */
 
-  const riskFactors =
-    buildRiskFactors(
-      contributors,
-      originalInputsRef.current,
-      clinicalUnit
-    );
+  // originalInputsRef.current is kept equal to riskInputs (see the effect
+  // above that sets both together), so riskInputs is the correct reactive
+  // dependency to recompute this from - the ref itself can't be a useMemo
+  // dependency (reading .current wouldn't trigger a recompute).
+  const riskFactors = useMemo(
+    () => buildRiskFactors(contributors, originalInputsRef.current, clinicalUnit),
+    [contributors, riskInputs, clinicalUnit]
+  );
 
 
   /* =======================================================
@@ -823,10 +824,10 @@ export function useDashboardViewModel() {
      Hypothetical risk factors
   ======================================================== */
 
-  const hypotheticalRiskFactors =
-    buildRiskFactors(
-      hypotheticalContributors
-    );
+  const hypotheticalRiskFactors = useMemo(
+    () => buildRiskFactors(hypotheticalContributors),
+    [hypotheticalContributors]
+  );
 
 
   /* =======================================================
@@ -885,6 +886,15 @@ export function useDashboardViewModel() {
   // "past" just because they didn't just submit it in this browser tab.
   const pastAssessment = selectedCalculation ?? null;
 
+  const trendData = useMemo(
+    () => (
+      isAuthenticated && trendResponse?.key === trendKey
+        ? buildRiskTrend(trendResponse.history ?? [], fromHistory ? calculationId : null, latestRequest?.timestamp)
+        : []
+    ),
+    [isAuthenticated, trendResponse, trendKey, fromHistory, calculationId, latestRequest]
+  );
+
   return {
     pastCalculation: pastAssessment ? {
       number: pastAssessment.calculationNumber,
@@ -897,9 +907,7 @@ export function useDashboardViewModel() {
       }),
     } : null,
     isAuthenticated,
-    trendData: isAuthenticated && trendResponse?.key === trendKey
-      ? buildRiskTrend(trendResponse.history ?? [], fromHistory ? calculationId : null, latestRequest?.timestamp)
-      : [],
+    trendData,
     isLoadingTrend: isAuthenticated && trendResponse?.key !== trendKey,
     trendError: trendResponse?.key === trendKey ? trendResponse.error : "",
     retryTrend,
