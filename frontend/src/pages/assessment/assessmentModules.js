@@ -1,7 +1,7 @@
 import HeartECGIcon from "../../components/icons/HeartECGIcon";
 
 // Add modules here and register their input routes in App.jsx. On successful
-// submission, call completeModule(id, inputs) with that module's input snapshot.
+// input save, call completeModule(id, inputs) with that module's input snapshot.
 export const assessmentModules = [
   {
     id: "base-risk",
