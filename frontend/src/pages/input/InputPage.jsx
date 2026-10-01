@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 function InputPage() {
 
-  const {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit, isSubmitting, submitError, fieldUnits, setFieldUnit} = useInputViewModel();
+  const {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSave, fieldUnits, setFieldUnit} = useInputViewModel();
   const navigate = useNavigate();
   const currentCategory = pageOrder[page];
   const currentFields = categories[currentCategory];
@@ -16,7 +16,7 @@ function InputPage() {
   return (
     <div className="inputs-page">
       <div className="page-body">
-      <button className="back-btn" onClick={() => navigate("/")}>
+      <button className="back-btn" onClick={() => navigate("/assessment")}>
         ‹ Back
       </button>
 
@@ -62,9 +62,8 @@ function InputPage() {
 
             {isLastPage && (
               <div className="submit-wrapper">
-                {submitError && <div className="form-error">{submitError}</div>}
-                <button className="submit-btn" onClick={handleSubmit} disabled={isSubmitting}>
-                  {isSubmitting ? "Calculating..." : "Submit"}
+                <button className="submit-btn" onClick={handleSave}>
+                  Save inputs
                 </button>
               </div>
             )}

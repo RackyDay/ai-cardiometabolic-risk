@@ -1,18 +1,14 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RiskContext } from "../../context/RiskContext";
-import { AuthContext } from "../../context/AuthContext";
 import { MG_DL, canonicalToDisplay, getDisplayUnit } from "../../utils/unitConversion";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
-import { buildPredictionPayload } from "./riskInputTransform";
-import { predictRisk } from "../../services/api";
 
 export function useInputViewModel() {
 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
-    const { riskInputs, setRiskInputs, setRiskScore, setTopContributors, setRiskCalculationId, selectCalculation, completeModule } = useContext(RiskContext);
-    const { accessToken } = useContext(AuthContext);
+    const { riskInputs, setRiskInputs, completeModule } = useContext(RiskContext);
     const [page, setPage] = useState(0);
     // Each convertible question (glucose, cholesterol) picks its own
     // display unit independently - this is unrelated to the dashboard's
@@ -20,11 +16,6 @@ export function useInputViewModel() {
     const [fieldUnits, setFieldUnits] = useState({});
     const setFieldUnit = (field) => (unit) =>
         setFieldUnits((prev) => ({ ...prev, [field]: unit }));
-    // Tracks the in-flight /predict request so the View can disable the
-    // submit button and avoid duplicate submissions.
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitError, setSubmitError] = useState("");
-
     const categories = Object.entries(riskInputSchema).reduce(
         (acc, [key, field]) => {
             if (!acc[field.category]) {
@@ -137,7 +128,7 @@ export function useInputViewModel() {
         });
     };
 
-    const handleSubmit = async () => {
+    const handleSave = () => {
         const newErrors = {};
         Object.keys(riskInputs).forEach((field) => {
         const error = validateField(field, riskInputs[field]);
@@ -152,34 +143,9 @@ export function useInputViewModel() {
         return;
         }
 
-        // All fields passed validation above, so it's safe to build the API
-        // payload and ask the model for a risk score.
-        setSubmitError("");
-        setIsSubmitting(true);
-
-        try {
-            const payload = buildPredictionPayload(riskInputs, riskInputSchema);
-            const result = await predictRisk(payload, accessToken);
-            // Persist the score and its explanation on the shared
-            // RiskContext (Model) so DashboardPage can read them after
-            // navigation.
-            setRiskScore(result.risk_score);
-            selectCalculation(null);
-            setTopContributors(result.top_contributors);
-            // Lets "Edit original assessment" update this exact row
-            // afterward instead of inserting a new one - null for an
-            // anonymous submission, since nothing was persisted.
-            setRiskCalculationId(result.riskcalc_id ?? null);
-            completeModule("base-risk", riskInputs);
-            navigate("/dashboard");
-        } catch {
-            // Network failure or a 4xx/5xx from the API — keep the user on
-            // this page and surface a generic, non-technical message.
-            setSubmitError("We couldn't calculate your risk score. Please try again.");
-        } finally {
-            setIsSubmitting(false);
-        }
+        completeModule("base-risk", riskInputs);
+        navigate("/assessment");
     };
 
-    return {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSubmit, isSubmitting, submitError, fieldUnits, setFieldUnit};
+    return {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSave, fieldUnits, setFieldUnit};
 }
