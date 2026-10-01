@@ -38,7 +38,7 @@
   padding: 16px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1024px) {
   .side-nav {
     position: absolute;
     top: 0;
@@ -56,5 +56,11 @@
 
   .side-nav.open {
     transform: translateX(0);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .side-nav {
+    width: 260px;
   }
 }

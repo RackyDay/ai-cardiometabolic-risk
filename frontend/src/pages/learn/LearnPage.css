@@ -95,3 +95,92 @@
 .learn-arrow-right {
   right: 8px;
 }
+
+/* =========================================================
+   Tablet
+   768px - 1024px
+========================================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  .learn-section {
+    margin-bottom: 28px;
+  }
+
+  .learn-section-title {
+    margin-bottom: 14px;
+    font-size: 24px;
+  }
+
+  .learn-card-grid {
+    grid-auto-columns: clamp(190px, 26vw, 220px);
+    gap: 18px;
+
+    padding: 4px 0 10px;
+  }
+
+  .learn-card {
+    min-height: 76px;
+
+    padding: 14px;
+
+    font-size: 15px;
+    line-height: 1.3;
+  }
+
+  .learn-arrow-button {
+    width: 40px;
+    height: 40px;
+
+    font-size: 32px;
+  }
+
+  .learn-arrow-left {
+    left: 6px;
+  }
+
+  .learn-arrow-right {
+    right: 6px;
+  }
+}
+
+/* =========================================================
+   Mobile
+   0px - 767px
+========================================================= */
+
+@media (max-width: 767px) {
+
+  .learn-section {
+    margin-bottom: 24px;
+  }
+
+  .learn-section-title {
+    margin-bottom: 12px;
+
+    font-size: 21px;
+  }
+
+  .learn-card-grid {
+    grid-auto-columns: min(78vw, 220px);
+
+    gap: 14px;
+
+    padding-bottom: 8px;
+
+    scroll-snap-type: x mandatory;
+  }
+
+  .learn-card {
+    padding: 14px;
+
+    font-size: 14px;
+  }
+
+  /*
+   * Touch scrolling is more natural on phones.
+   */
+  .learn-arrow-button {
+    display: none;
+  }
+}
