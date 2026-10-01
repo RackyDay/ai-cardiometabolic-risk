@@ -4,7 +4,7 @@ import RiskFactorEducationCard from "./components/RiskFactorEducationCard";
 import "./LearnPage.css";
 
 function LearnPage() {
-  const { riskFactorGroups, articleContent, isLoadingArticles, hasArticleErrors, retryArticles } = useLearnViewModel();
+  const { riskFactorGroups, articleContent, isLoadingArticles, hasArticleErrors, reloadArticles } = useLearnViewModel();
 
   return (
     <div className="learn-page">
@@ -21,15 +21,17 @@ function LearnPage() {
           Learn about the information used in your cardiovascular risk assessment.
         </p>
 
-        <div className="learn-content-status" role="status">
-          {isLoadingArticles && <p>Loading educational articles from MedlinePlus…</p>}
-          {hasArticleErrors && <p>Some articles couldn't be loaded. The topic overviews are still available.</p>}
+        <div className="learn-feedback">
+          <div className="learn-content-status" role="status">
+            {isLoadingArticles && <p>Loading educational articles from MedlinePlus…</p>}
+            {hasArticleErrors && <p>Some articles couldn't be loaded. The topic overviews are still available.</p>}
+          </div>
+          {hasArticleErrors && (
+            <button className="learn-reload-button" type="button" onClick={reloadArticles} disabled={isLoadingArticles}>
+              Reload articles
+            </button>
+          )}
         </div>
-        {hasArticleErrors && (
-          <button className="learn-retry-button" type="button" onClick={retryArticles} disabled={isLoadingArticles}>
-            Retry articles
-          </button>
-        )}
 
         {riskFactorGroups.map((group) => (
           <section
