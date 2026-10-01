@@ -7,6 +7,17 @@ Optional `actionLabel` and `completedActionLabel` override the card's button tex
 `editTo` optionally sets a separate edit route (defaults to `to`). The Edit inputs
 control is disabled until the module is complete.
 
+Set `comingSoon: true` for a placeholder module without a form route. Its card
+shows a disabled Coming soon action and no completion badge or edit control.
+Stress Levels is an optional placeholder for the Perceived Stress Scale (PSS)
+test and does not block risk calculation.
+
+The hub displays one module at a time in an arrow-controlled carousel, ending
+with a More modules coming soon placeholder. Inactive cards are hidden from
+assistive technology and cannot receive keyboard focus. The arrows stop at
+neither end: navigation loops continuously in both directions. Transitions
+respect reduced-motion preferences.
+
 `AssessmentModuleCard` in `components/common` owns the shared layout and badges.
 It receives a `complete` boolean and has no dependency on assessment state.
 

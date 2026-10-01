@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
@@ -40,6 +40,34 @@ function lastPage() {
   fireEvent.click(pages[pages.length - 1]);
 }
 beforeEach(() => vi.resetAllMocks());
+
+it("loops modules in both directions without an end stop", () => {
+  setup();
+  fireEvent.click(screen.getByRole("button", { name: /Back/ }));
+  const previous = screen.getByRole("button", { name: "Previous module" });
+  const next = screen.getByRole("button", { name: "Next module" });
+  vi.useFakeTimers();
+  const move = (button) => {
+    fireEvent.click(button);
+    act(() => vi.advanceTimersByTime(450));
+  };
+  expect(previous).toBeEnabled();
+  expect(screen.getByRole("heading", { name: "Base risk inputs" })).toBeInTheDocument();
+  move(next);
+  expect(screen.getByRole("heading", { name: "Stress Levels" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Coming soon" })).toBeDisabled();
+  move(next);
+  expect(screen.getByRole("heading", { name: "More modules coming soon" })).toBeInTheDocument();
+  expect(next).toBeEnabled();
+  move(next);
+  expect(screen.getByRole("heading", { name: "Base risk inputs" })).toBeInTheDocument();
+  move(previous);
+  expect(screen.getByRole("heading", { name: "More modules coming soon" })).toBeInTheDocument();
+  move(previous);
+  expect(screen.getByRole("heading", { name: "Stress Levels" })).toBeInTheDocument();
+  expect(predictRisk).not.toHaveBeenCalled();
+  vi.useRealTimers();
+});
 
 it("returns Back to modules and prevents calculation before saving", () => {
   setup();

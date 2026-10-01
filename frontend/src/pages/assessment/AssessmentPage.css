@@ -38,10 +38,78 @@
 }
 .assessment-header p { color: #617089; line-height: 1.65; }
 .assessment-modules {
+  --carousel-gap: clamp(1rem, 3vw, 3rem);
+  --carousel-card-width: min(64vw, 46rem);
+  position: relative;
   display: grid;
-  gap: 1.5rem;
-  width: min(100%, 46rem);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: .5rem 1rem;
+  width: calc(100% + 64px);
+  margin: 0 -32px;
+}
+.assessment-modules .assessment-module-footer { flex-wrap: wrap; gap: .75rem; }
+.assessment-carousel-viewport {
+  overflow: hidden;
+  /* Allow the card shadows to fade out without increasing the layout height. */
+  padding: 40px 0;
+  margin: -28px 0;
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+}
+.assessment-carousel-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 100%;
+  gap: var(--carousel-gap);
+  width: var(--carousel-card-width);
   margin: 0 auto;
+  transition: transform .45s cubic-bezier(.22, .68, .2, 1);
+}
+.assessment-carousel-slide {
+  min-width: 0;
+  display: flex;
+  transition: opacity .45s ease, scale .45s ease;
+}
+.assessment-carousel-slide[aria-hidden="true"] { opacity: .55; scale: .95; }
+.assessment-carousel-track[data-moving="false"] .assessment-carousel-slide { transition: none; }
+.assessment-carousel-slide > .assessment-module { width: 100%; }
+.assessment-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 2px solid #3d6fd4;
+  border-radius: 50%;
+  background: #3d6fd4;
+  color: #fff;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 22px #285bbd40;
+}
+.assessment-carousel-arrow svg { display: block; width: 30px; height: 30px; }
+.assessment-carousel-arrow[aria-label="Previous module"] { left: 16px; }
+.assessment-carousel-arrow[aria-label="Next module"] { right: 16px; }
+.assessment-carousel-arrow:hover:not(:disabled) { background: #285bbd; border-color: #285bbd; }
+.assessment-carousel-arrow:disabled { background: #e0e8f6; border-color: #b8c9e5; color: #8195b6; box-shadow: none; cursor: default; }
+.assessment-carousel-arrow:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .assessment-carousel-track, .assessment-carousel-slide { transition: none; }
+}
+@media (max-width: 600px) {
+  .assessment-modules { --carousel-card-width: 76vw; --carousel-gap: .75rem; }
+  .assessment-carousel-arrow { width: 44px; height: 44px; }
+  .assessment-carousel-arrow svg { width: 24px; height: 24px; }
+  .assessment-carousel-arrow[aria-label="Previous module"] { left: 6px; }
+  .assessment-carousel-arrow[aria-label="Next module"] { right: 6px; }
+  .assessment-carousel-viewport { mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); }
+  .assessment-modules .assessment-module-body { padding: 1rem; }
+  .assessment-modules .assessment-module-footer { padding: 1rem; }
+  .assessment-modules .assessment-module-actions { flex-shrink: 1; }
 }
 .assessment-actions {
   align-self: end;

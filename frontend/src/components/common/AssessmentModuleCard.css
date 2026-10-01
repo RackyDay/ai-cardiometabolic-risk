@@ -1,4 +1,6 @@
 .assessment-module {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: #fff;
   border: 1px solid #d7e2f3;
@@ -6,6 +8,7 @@
   box-shadow: 0 12px 40px -16px rgba(35, 67, 119, .22);
 }
 .assessment-module-body {
+  flex: 1;
   padding: 1.5rem 2.25rem;
   background: linear-gradient(120deg, #fff 55%, #f4f8ff);
 }
@@ -56,6 +59,8 @@
 }
 .assessment-module-footer p { color: #6a7890; font-size: .75rem; line-height: 1.5; }
 .assessment-start {
+  border: none;
+  font-family: inherit;
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -71,6 +76,7 @@
   transition: background .15s;
 }
 .assessment-start:hover { background: #2e5ebd; }
+.assessment-start:disabled { background: #edf0f6; color: #68758b; cursor: not-allowed; }
 .assessment-module-actions { display: flex; flex-wrap: wrap; gap: .65rem; flex-shrink: 0; }
 .assessment-edit {
   display: inline-flex;
