@@ -377,6 +377,7 @@ export function useDashboardViewModel() {
     setViewingCalculationId,
     setRiskInputs,
     setRiskCalculationId,
+    setAssessedInputs,
   } = useContext(RiskContext);
 
   const { isAuthenticated, accessToken } = useContext(AuthContext);
@@ -605,12 +606,14 @@ export function useDashboardViewModel() {
           setLatestRequest({ token: accessToken, revision: historyRevision, error: "", timestamp: result.riskcalc_timestamp, hasHistory: result.has_history });
           if (!result.has_history) {
             setRiskScore(null);
+            setAssessedInputs?.(null);
             setTopContributors([]);
             setRiskInputs(createInitalRiskInputs(riskInputSchema));
             setRiskCalculationId(null);
             return;
           }
         setRiskScore(result.risk_score);
+        setAssessedInputs?.(result.inputs ?? null);
         setTopContributors(result.top_contributors ?? []);
 
         // Powers the what-if sliders' starting values and the "saved
@@ -640,6 +643,7 @@ export function useDashboardViewModel() {
     setTopContributors,
     setRiskInputs,
     setRiskCalculationId,
+    setAssessedInputs,
   ]);
 
   /* =======================================================

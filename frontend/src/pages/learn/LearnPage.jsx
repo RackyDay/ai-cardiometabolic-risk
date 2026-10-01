@@ -1,10 +1,18 @@
 import useLearnViewModel from "./useLearnViewModel";
+import useLearnSearchViewModel from "./useLearnSearchViewModel";
 import PersonalisedEducation from "./components/PersonalisedEducation";
 import RiskFactorEducationCard from "./components/RiskFactorEducationCard";
+import LearnSearch from "./components/LearnSearch";
+import LearnSearchResults from "./components/LearnSearchResults";
+import RiskFactorFilter from "./components/RiskFactorFilter";
 import "./LearnPage.css";
 
 function LearnPage() {
-  const { riskFactorGroups, articleContent, isLoadingArticles, hasArticleErrors, reloadArticles } = useLearnViewModel();
+  const {
+    riskFactorGroups, visibleGroups, activeGroupId, setActiveGroupId,
+    articleContent, isLoadingArticles, hasArticleErrors, reloadArticles,
+  } = useLearnViewModel();
+  const { query, setQuery, search, submitSearch, clearSearch } = useLearnSearchViewModel();
 
   return (
     <div className="learn-page">
@@ -14,12 +22,23 @@ function LearnPage() {
         className="learn-explore"
         aria-labelledby="learn-explore-title"
       >
-        <h2 id="learn-explore-title" className="learn-section-title">
-          Explore heart health
-        </h2>
-        <p className="learn-section-description">
-          Learn about the information used in your cardiovascular risk assessment.
-        </p>
+        <div className="learn-explore-header">
+          <div className="learn-explore-intro">
+            <h2 id="learn-explore-title" className="learn-section-title">
+              Explore heart health
+            </h2>
+            <p className="learn-section-description">
+              Learn about the information used in your cardiovascular risk assessment.
+            </p>
+          </div>
+          <LearnSearch
+            query={query}
+            onQueryChange={setQuery}
+            onSubmit={submitSearch}
+          />
+        </div>
+
+        <LearnSearchResults search={search} onClear={clearSearch} />
 
         <div className="learn-feedback">
           <div className="learn-content-status" role="status">
@@ -33,7 +52,9 @@ function LearnPage() {
           )}
         </div>
 
-        {riskFactorGroups.map((group) => (
+        <RiskFactorFilter groups={riskFactorGroups} activeGroupId={activeGroupId} onChange={setActiveGroupId} />
+
+        {visibleGroups.map((group) => (
           <section
             key={group.id}
             className="learn-factor-group"

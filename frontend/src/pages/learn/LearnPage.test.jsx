@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthContext } from "../../context/AuthContext";
 import { RiskContext } from "../../context/RiskContext";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { learnRiskFactors } from "./learnRiskFactors";
+import { buildPersonalisedTopics, generalTopic } from "./learnPersonalisedTopics";
 import LearnPage from "./LearnPage";
 import RiskFactorEducationCard from "./components/RiskFactorEducationCard";
 import { searchMedlinePlus } from "../../services/medlinePlusApi";
@@ -74,9 +75,12 @@ it("keeps general education available across sign-in and sign-out without changi
     rerender(page(signedIn));
     expect(screen.getAllByRole("article")).toHaveLength(schemaFields.length);
     expect(screen.getByRole("region", { name: "Based on your assessment" }))
-      .toHaveTextContent("Personalised education will appear here when it is available.");
+      .toHaveTextContent("Topics picked from the answers in your latest assessment.");
   }
-  const publicQueries = learnRiskFactors.flatMap((factor) => factor.searchTerms);
+  const publicQueries = [
+    ...learnRiskFactors.flatMap((factor) => factor.searchTerms),
+    ...buildPersonalisedTopics(assessment.selectedCalculation.inputs, []).map((topic) => topic.searchTerm),
+  ];
   expect(searchMedlinePlus).toHaveBeenCalled();
   for (const [query] of searchMedlinePlus.mock.calls) expect(publicQueries).toContain(query);
   expect(setRiskInputs).not.toHaveBeenCalled();
@@ -193,4 +197,166 @@ it("covers the schema exactly and preserves the backend's two feature aliases", 
     .toMatchObject({ featureKey: "male", aliases: ["male"] });
   expect(learnRiskFactors.find((factor) => factor.schemaKey === "bpMeds"))
     .toMatchObject({ featureKey: "BPMeds", aliases: ["BPMeds"] });
+});
+
+describe("personalised education", () => {
+  const completed = {
+    gender: "M", age: 52, education: 2, currentSmoker: true, cigsPerDay: 10, bpMeds: false,
+    prevalentStroke: false, prevalentHyp: false, diabetes: false,
+    sysBP: 150, diaBP: 85, BMI: 31.2, heartRate: 72, glucose: 90, totChol: 180,
+  };
+  const terms = (inputs, contributors = []) =>
+    buildPersonalisedTopics(inputs, contributors).map((topic) => topic.searchTerm);
+
+  it("maps values to topics using Australian thresholds", () => {
+    expect(terms(completed)).toEqual(["quitting smoking", "high blood pressure", "obesity", "heart health tests"]);
+    expect(terms({ sysBP: 139, diaBP: 89, BMI: 24.9, totChol: 212, glucose: 109, heartRate: 60, age: 44 }))
+      .toEqual([generalTopic.searchTerm]);
+    expect(terms({ totChol: 213, glucose: 110, heartRate: 101 })).toEqual(["prediabetes", "cholesterol levels", "tachycardia"]);
+    expect(terms({ glucose: 127, BMI: 26, sysBP: 85, diaBP: 55 })).toEqual(["low blood pressure", "diabetes", "weight control"]);
+    expect(terms({ prevalentHyp: true, bpMeds: true, diabetes: true, prevalentStroke: true, BMI: 17 }))
+      .toEqual(["high blood pressure", "blood pressure medicines", "diabetic heart disease", "healthy weight"]);
+  });
+
+  it("ranks topics by model contribution, accepts form strings and never returns values in search terms", () => {
+    const contributors = [
+      { feature: "BMI", contribution: 0.9 },
+      { feature: "sysBP", contribution: 0.4 },
+      { feature: "currentSmoker", contribution: -0.2 },
+    ];
+    expect(terms(completed, contributors)).toEqual(["obesity", "high blood pressure", "quitting smoking", "heart health tests"]);
+    expect(terms({ ...completed, sysBP: "150", BMI: "31.2", age: "52" })).toEqual(terms(completed));
+    const [topic] = buildPersonalisedTopics({ BMI: 31.2 }, []);
+    expect(topic.reason).toContain("31.2");
+    expect(topic.searchTerm).not.toMatch(/\d/);
+    expect(buildPersonalisedTopics(null, [])).toBeNull();
+  });
+
+  it("uses the completed assessment snapshot, never the live draft inputs", async () => {
+    searchMedlinePlus.mockResolvedValue([article]);
+    render(
+      <RiskContext.Provider value={{ riskInputs: { ...completed, currentSmoker: false }, riskScore: 9, assessedInputs: completed, topContributors: [] }}>
+        <LearnPage />
+      </RiskContext.Provider>,
+    );
+    const region = screen.getByRole("region", { name: "Based on your assessment" });
+    expect(region).toHaveTextContent("You told us that you currently smoke.");
+    expect(region).toHaveTextContent("150.0 mmHg");
+    await waitFor(() => expect(within(region).getAllByRole("link", { name: /Heart Diseases/ })).toHaveLength(4));
+    for (const term of terms(completed)) expect(searchMedlinePlus).toHaveBeenCalledWith(term, expect.objectContaining({ limit: 1 }));
+  });
+
+  it("prefers a selected history calculation and keeps the placeholder for a draft without a score", () => {
+    const { unmount } = render(
+      <RiskContext.Provider value={{ assessedInputs: completed, selectedCalculation: { inputs: { diabetes: true } } }}>
+        <LearnPage />
+      </RiskContext.Provider>,
+    );
+    const region = screen.getByRole("region", { name: "Based on your assessment" });
+    expect(region).toHaveTextContent("diagnosed with diabetes");
+    expect(region).not.toHaveTextContent("currently smoke");
+    unmount();
+
+    render(
+      <RiskContext.Provider value={{ riskInputs: completed, riskScore: null, assessedInputs: null }}>
+        <LearnPage />
+      </RiskContext.Provider>,
+    );
+    expect(screen.getByRole("region", { name: "Based on your assessment" }))
+      .toHaveTextContent("Personalised education will appear here when it is available.");
+  });
+
+  it("shows a per-topic message when an article can't be loaded", async () => {
+    searchMedlinePlus.mockImplementation(async (query) => {
+      if (query === "obesity") throw new Error("Unavailable");
+      return [article];
+    });
+    render(
+      <RiskContext.Provider value={{ assessedInputs: { BMI: 31.2 } }}>
+        <LearnPage />
+      </RiskContext.Provider>,
+    );
+    const region = screen.getByRole("region", { name: "Based on your assessment" });
+    expect(await within(region).findByText(/Articles are unavailable right now/)).toBeInTheDocument();
+  });
+});
+
+describe("search", () => {
+  const search = (value) => {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search MedlinePlus health topics" }), { target: { value } });
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+  };
+
+  it("searches only on submit and shows results without touching the topic cards", async () => {
+    render(<LearnPage />);
+    const callsBefore = searchMedlinePlus.mock.calls.length;
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search MedlinePlus health topics" }), { target: { value: "cholesterol" } });
+    expect(searchMedlinePlus).toHaveBeenCalledTimes(callsBefore);
+
+    searchMedlinePlus.mockResolvedValueOnce([article]);
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(searchMedlinePlus).toHaveBeenLastCalledWith("cholesterol", expect.objectContaining({ limit: 5 }));
+    const results = await screen.findByRole("list", { name: "Search results for cholesterol" });
+    expect(within(results).getByRole("link", { name: "Heart Diseases (opens in a new tab)" })).toHaveAttribute("href", article.url);
+    expect(screen.getByText("1 result for “cholesterol” from MedlinePlus.")).toBeInTheDocument();
+    expect(screen.getAllByRole("article")).toHaveLength(schemaFields.length);
+    expect(screen.getByRole("status")).toHaveTextContent("Loading educational articles");
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(screen.queryByRole("list", { name: /Search results/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Search MedlinePlus health topics" })).toHaveValue("");
+  });
+
+  it("handles blank, empty and failed searches with clear messages", async () => {
+    render(<LearnPage />);
+    const callsBefore = searchMedlinePlus.mock.calls.length;
+    search("   ");
+    expect(screen.getByText("Enter a search term.")).toBeInTheDocument();
+    expect(searchMedlinePlus).toHaveBeenCalledTimes(callsBefore);
+
+    searchMedlinePlus.mockResolvedValueOnce([]);
+    search("zzzz");
+    expect(await screen.findByText(/No MedlinePlus articles found for “zzzz”/)).toBeInTheDocument();
+
+    searchMedlinePlus.mockRejectedValueOnce(new Error("We couldn't load MedlinePlus articles. Please try again."));
+    search("stroke");
+    expect(await screen.findByText("We couldn't load MedlinePlus articles. Please try again.")).toBeInTheDocument();
+  });
+
+  it("cancels a pending search when a new one starts or the page closes", async () => {
+    const { unmount } = render(<LearnPage />);
+    search("stroke");
+    const first = searchMedlinePlus.mock.lastCall[1].signal;
+    let resolve;
+    searchMedlinePlus.mockReturnValueOnce(new Promise((done) => { resolve = done; }));
+    search("diabetes");
+    expect(first.aborted).toBe(true);
+    await act(async () => resolve([article]));
+    expect(await screen.findByRole("list", { name: "Search results for diabetes" })).toBeInTheDocument();
+
+    search("cholesterol");
+    const last = searchMedlinePlus.mock.lastCall[1].signal;
+    unmount();
+    expect(last.aborted).toBe(true);
+  });
+});
+
+describe("risk factor filter", () => {
+  it("filters topic cards by category without new article requests", () => {
+    render(<LearnPage />);
+    const filter = screen.getByRole("group", { name: "Explore by risk factor" });
+    expect(within(filter).getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+    const callsBefore = searchMedlinePlus.mock.calls.length;
+
+    fireEvent.click(within(filter).getByRole("button", { name: "clinical" }));
+    const clinical = schemaFields.filter((field) => field.category === "clinical");
+    expect(screen.getAllByRole("article")).toHaveLength(clinical.length);
+    expect(screen.getByRole("heading", { level: 3, name: "clinical" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3, name: "demographic" })).not.toBeInTheDocument();
+    expect(within(filter).getByRole("button", { name: "clinical" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(within(filter).getByRole("button", { name: "All" }));
+    expect(screen.getAllByRole("article")).toHaveLength(schemaFields.length);
+    expect(searchMedlinePlus).toHaveBeenCalledTimes(callsBefore);
+  });
 });

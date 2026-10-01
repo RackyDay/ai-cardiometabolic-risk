@@ -11,7 +11,7 @@ export function useInputViewModel() {
 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
-    const { riskInputs, setRiskInputs, setRiskScore, setTopContributors, setRiskCalculationId, selectCalculation } = useContext(RiskContext);
+    const { riskInputs, setRiskInputs, setRiskScore, setAssessedInputs, setTopContributors, setRiskCalculationId, selectCalculation } = useContext(RiskContext);
     const { accessToken } = useContext(AuthContext);
     const [page, setPage] = useState(0);
     // Each convertible question (glucose, cholesterol) picks its own
@@ -164,6 +164,8 @@ export function useInputViewModel() {
             // RiskContext (Model) so DashboardPage can read them after
             // navigation.
             setRiskScore(result.risk_score);
+            // Snapshot of exactly what was scored, for the Learn page.
+            setAssessedInputs?.(payload);
             selectCalculation(null);
             setTopContributors(result.top_contributors);
             // Lets "Edit original assessment" update this exact row

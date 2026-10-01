@@ -19,6 +19,9 @@ const loadingContent = { status: "loading", articles: [] };
 
 function useLearnViewModel() {
   const [attempt, setAttempt] = useState(0);
+  // Category filter for the topic cards. It only hides cards, so articles
+  // keep loading for every topic and switching back needs no new requests.
+  const [activeGroupId, setActiveGroupId] = useState("all");
   const [response, setResponse] = useState({ attempt: 0, byQuery: {} });
   const reloadArticles = useCallback(() => setAttempt((current) => current + 1), []);
 
@@ -64,6 +67,9 @@ function useLearnViewModel() {
   const states = Object.values(articleContent);
   return {
     riskFactorGroups,
+    visibleGroups: riskFactorGroups.filter((group) => activeGroupId === "all" || group.id === activeGroupId),
+    activeGroupId,
+    setActiveGroupId,
     articleContent,
     isLoadingArticles: states.some((content) => content.status === "loading"),
     hasArticleErrors: states.some((content) => content.status === "error" || content.partialError),
