@@ -1,5 +1,4 @@
 from supabase_client import get_user_scoped_client
-from auth import _maybe_single_data
 
 def save_assessment(user_id, risk_score, model_version, risk_inputs, token):
 
@@ -74,22 +73,20 @@ def fetch_risk_calculation(riskcalc_id, token):
 def fetch_latest_risk_calculation(token):
     user_client = get_user_scoped_client(token)
 
-    risk_calc = (user_client.table("risk_calculations")
-                .select("riskcalc_id, risk_score, riskcalc_timestamp")
+    # Embeds risk_inputs via the riskcalc_id foreign key so this is one
+    # round trip instead of a risk_calculations query followed by a
+    # separate risk_inputs query.
+    response = (user_client.table("risk_calculations")
+                .select("riskcalc_id, risk_score, riskcalc_timestamp, risk_inputs(inputs_JSON)")
                 .order("riskcalc_timestamp", desc=True)
                 .limit(1)
                 .execute())
 
-    if not risk_calc.data:
+    if not response.data:
         return None
 
-    latest = risk_calc.data[0]
+    row = response.data[0]
+    embedded_inputs = row.pop("risk_inputs", None) or []
+    inputs = embedded_inputs[0] if embedded_inputs else None
 
-    inputs = _maybe_single_data(
-        user_client.table("risk_inputs")
-        .select("inputs_JSON")
-        .eq("riskcalc_id", latest["riskcalc_id"])
-        .maybe_single()
-    )
-
-    return (latest, inputs)
+    return (row, inputs)

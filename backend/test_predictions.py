@@ -6,6 +6,7 @@
 # Test Case IDs (TC-39 through TC-43) map to the QA Plan's traceability
 # matrix - FR17 ("store and retrieve user risk data securely") had no test
 # cases at all in the original plan; this file is what closes that.
+import re
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
@@ -64,20 +65,32 @@ def test_selected_calculation_degrades_gracefully_with_stale_inputs_shape(monkey
     assert body["top_contributors"] is None
 
 
+# Matches PostgREST embedded-relation select syntax, e.g.
+# "riskcalc_id, risk_inputs(inputs_JSON)" -> [("risk_inputs", ["inputs_JSON"])]
+_EMBED_PATTERN = re.compile(r"(\w+)\(([^)]*)\)")
+
+
 class FakeSelectQuery:
-    def __init__(self, rows):
+    def __init__(self, rows, all_tables=None, table_name=None):
         # No copy: a reference to the same list FakeScopedClient stores in
         # self._tables[name], so an insert() here is visible to the test
         # afterward via the original `tables` dict it passed in.
         self._rows = rows
+        # Needed to resolve embedded relations (e.g. risk_inputs(inputs_JSON)
+        # embedded in a risk_calculations select) against their own table.
+        self._all_tables = all_tables or {}
+        self._table_name = table_name
         self._filters = {}
         self._is_maybe_single = False
         self._order_desc = False
         self._limit = None
         self._insert_row = None
         self._update_values = None
+        self._embeds = []
 
     def select(self, *args, **kwargs):
+        if args:
+            self._embeds = _EMBED_PATTERN.findall(args[0])
         return self
 
     def eq(self, field, value):
@@ -127,9 +140,25 @@ class FakeSelectQuery:
         if self._limit is not None:
             matches = matches[: self._limit]
 
+        if self._embeds:
+            matches = [self._with_embeds(dict(row)) for row in matches]
+
         if self._is_maybe_single:
             return SimpleNamespace(data=matches[0]) if matches else None
         return SimpleNamespace(data=matches)
+
+    def _with_embeds(self, row):
+        # Only relationship any caller actually embeds today: risk_inputs
+        # via its riskcalc_id foreign key back to risk_calculations.
+        for embedded_table, columns in self._embeds:
+            related_rows = self._all_tables.get(embedded_table, [])
+            wanted_columns = [c.strip() for c in columns.split(",") if c.strip()]
+            row[embedded_table] = [
+                {col: r.get(col) for col in wanted_columns} if wanted_columns else dict(r)
+                for r in related_rows
+                if r.get("riskcalc_id") == row.get("riskcalc_id")
+            ]
+        return row
 
 
 class FakeScopedClient:
@@ -141,12 +170,15 @@ class FakeScopedClient:
         # self._tables and is shared with FakeSelectQuery - required for
         # insert() to be visible back through the original `tables` dict.
         self._tables.setdefault(name, [])
-        return FakeSelectQuery(self._tables[name])
+        return FakeSelectQuery(self._tables[name], all_tables=self._tables, table_name=name)
 
 
 def _install_fake_auth(monkeypatch, user_id="user-1"):
     fake_auth = SimpleNamespace(
-        get_user=lambda token: SimpleNamespace(user=SimpleNamespace(id=user_id, email="user@example.com"))
+        get_user=lambda token: SimpleNamespace(user=SimpleNamespace(id=user_id, email="user@example.com")),
+        # get_optional_user() now calls get_claims() (local JWT
+        # verification) instead of get_user() (a network round trip).
+        get_claims=lambda token: {"claims": {"sub": user_id, "email": "user@example.com"}},
     )
     monkeypatch.setattr(auth_module, "supabase", SimpleNamespace(auth=fake_auth))
 

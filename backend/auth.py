@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -21,9 +23,22 @@ def get_optional_user(credentials: HTTPAuthorizationCredentials | None = Depends
         return None #non logged in user
     token = credentials.credentials
 
+    # get_claims() verifies the JWT locally (this project signs with ES256,
+    # so it checks the signature against Supabase's cached public key set
+    # instead of calling the Auth server on every request) rather than
+    # get_user()'s round trip to /auth/v1/user. The trade-off: a token
+    # revoked server-side (e.g. explicit logout, forced password reset)
+    # still verifies locally until it naturally expires - local
+    # verification can't see that revocation, only expiry.
     try:
-        response = supabase.auth.get_user(token)
-        return response.user, token
+        claims = supabase.auth.get_claims(token)
+        if claims is None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        payload = claims["claims"]
+        user = SimpleNamespace(id=payload["sub"], email=payload.get("email"))
+        return user, token
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 

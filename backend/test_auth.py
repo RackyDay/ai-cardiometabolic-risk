@@ -132,6 +132,15 @@ class FakeAuth:
             raise Exception("Invalid or expired token")
         return SimpleNamespace(user=SimpleNamespace(id=record["id"], email=record["email"]))
 
+    def get_claims(self, token):
+        # get_optional_user() calls this instead of get_user() now (local
+        # JWT verification instead of a round trip) - same token -> record
+        # lookup, just the claims-dict shape get_claims() actually returns.
+        record = self._tokens.get(token)
+        if not record:
+            raise Exception("Invalid or expired token")
+        return {"claims": {"sub": record["id"], "email": record["email"]}}
+
     def sign_up(self, payload):
         email = payload["email"]
         password = payload["password"]
