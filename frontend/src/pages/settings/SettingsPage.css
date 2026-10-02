@@ -286,41 +286,147 @@
   color: #5f6780;
 }
 
-@media (max-width: 767px) {
+/* =========================================================
+   Tablet
+   768px - 1024px
+========================================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+
   .settings-page {
-    padding: 1.25rem;
+    padding: 1.5rem;
   }
 
-  .settings-header h1 {
-    font-size: 2rem;
+  .settings-subheader {
+    margin-bottom: 0.875rem;
   }
 
   .settings-card {
-    padding: 1.25rem;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .settings-card-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .settings-card-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .profile-info-row {
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .mfa-action-box {
+    padding: 1.1rem;
+  }
+
+  .qr-section {
+    grid-template-columns: 11.5rem minmax(0, 1fr);
+    gap: 1.25rem;
+    padding: 1rem;
+  }
+
+  .qr-code-box {
+    width: 11.5rem;
+    height: 11.5rem;
+  }
+
+  .settings-field input {
+    max-width: 20rem;
+  }
+}
+
+/* =========================================================
+   Mobile
+   0px - 767px
+========================================================= */
+
+@media (max-width: 767px) {
+
+  .settings-page {
+    padding: 1rem;
+  }
+
+  .settings-subheader {
+    margin-bottom: 0.75rem;
+  }
+
+  .settings-subheader p {
+    font-size: 0.9375rem;
+  }
+
+  .settings-card {
+    padding: 1.1rem;
+    margin-bottom: 1rem;
     border-radius: 1rem;
   }
 
   .settings-card-header {
     flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .settings-card-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .settings-card-header p {
+    font-size: 0.9375rem;
+  }
+
+  .status-badge {
+    align-self: flex-start;
   }
 
   .profile-info-row {
     grid-template-columns: 1fr;
     gap: 0.35rem;
+    padding: 0.875rem;
+  }
+
+  .mfa-action-box {
+    padding: 1rem;
   }
 
   .qr-section {
     grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
   }
 
   .qr-code-box {
+    width: min(100%, 13.5rem);
+    height: auto;
+    aspect-ratio: 1;
+    margin-inline: auto;
+    padding: 0.75rem;
+    box-sizing: border-box;
+  }
+
+  .qr-code-box img {
     width: 100%;
     height: auto;
-    padding: 1rem;
-    box-sizing: border-box;
+  }
+
+  .manual-code-box {
+    padding: 0.75rem;
   }
 
   .settings-field input {
     max-width: 100%;
+  }
+
+  .settings-button-row {
+    flex-direction: column;
+  }
+
+  .settings-primary-button,
+  .settings-secondary-button,
+  .settings-danger-button {
+    width: 100%;
   }
 }

@@ -202,3 +202,119 @@
   color: #6b7280;
   cursor: pointer;
 }
+
+/* =========================================================
+   Tablet
+   768px - 1024px
+========================================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  .auth-page {
+    padding: 1.5rem;
+  }
+
+  .auth-card {
+    max-width: 30rem;
+    padding: 2rem 2.25rem;
+    border-radius: 1.5rem;
+  }
+
+  .auth-toggle {
+    margin-bottom: 1.75rem;
+  }
+
+  .auth-title {
+    font-size: 1.5rem;
+  }
+
+  .auth-description {
+    margin-bottom: 1.6rem;
+  }
+
+  .auth-field {
+    margin-bottom: 1.3rem;
+  }
+
+  .auth-field input {
+    height: 3rem;
+  }
+
+  .forgot-password-btn {
+    margin-bottom: 2rem;
+  }
+
+  .modal-card {
+    max-width: 26rem;
+    padding: 1.75rem;
+  }
+}
+
+/* =========================================================
+   Mobile
+   0px - 767px
+========================================================= */
+
+@media (max-width: 767px) {
+
+  .auth-page {
+    padding: 1rem;
+    place-items: start center;
+  }
+
+  .auth-card {
+    max-width: 100%;
+    padding: 1.5rem 1.25rem;
+    border-radius: 1.25rem;
+  }
+
+  .auth-toggle {
+    margin-bottom: 1.5rem;
+  }
+
+  .auth-toggle-btn {
+    padding: 0.65rem;
+    font-size: 0.85rem;
+  }
+
+  .auth-title {
+    font-size: 1.4rem;
+  }
+
+  .auth-description {
+    margin-bottom: 1.4rem;
+    font-size: 0.875rem;
+  }
+
+  .auth-field {
+    margin-bottom: 1.2rem;
+  }
+
+  .auth-field input {
+    height: 2.9rem;
+    font-size: 0.95rem;
+  }
+
+  .forgot-password-btn {
+    margin-top: -0.6rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .auth-submit-btn {
+    padding: 0.9rem 1rem;
+  }
+
+  .auth-google-btn {
+    padding: 0.8rem 1rem;
+  }
+
+  .modal-backdrop {
+    padding: 1rem;
+  }
+
+  .modal-card {
+    max-width: 100%;
+    padding: 1.5rem 1.25rem;
+    border-radius: 1rem;
+  }
+}

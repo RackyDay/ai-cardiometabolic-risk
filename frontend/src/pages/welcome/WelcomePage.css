@@ -67,3 +67,79 @@
   width: 5rem;
   height: 5rem;
 }
+
+/* =========================================================
+   Tablet
+========================================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  .welcome-page {
+    padding: 1.75rem;
+  }
+
+  .welcome-card {
+    max-width: 36rem;
+    padding: 2.5rem 2.25rem;
+    gap: 1.1rem;
+  }
+
+  .welcome-title {
+    font-size: 1.65rem;
+  }
+
+  .welcome-description {
+    font-size: 0.975rem;
+    line-height: 1.55;
+  }
+
+  .welcome-next {
+    font-size: 0.9rem;
+  }
+
+  .welcome-logo-wrapper svg {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+}
+
+/* =========================================================
+   Mobile
+========================================================= */
+
+@media (max-width: 767px) {
+
+  .welcome-page {
+    padding: 1rem;
+  }
+
+  .welcome-card {
+    max-width: none;
+    padding: 2rem 1.25rem;
+    border-radius: 1.25rem;
+    gap: 1rem;
+  }
+
+  .welcome-title {
+    font-size: 1.5rem;
+  }
+
+  .welcome-description {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  .welcome-next {
+    font-size: 0.875rem;
+  }
+
+  .welcome-logo-wrapper svg {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .welcome-btn-primary {
+    font-size: 0.9375rem;
+    padding: 0.8rem 1.25rem;
+  }
+}

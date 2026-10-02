@@ -565,6 +565,66 @@
   }
 }
 
+/* =========================================================
+   Tablet
+   768px - 1024px
+========================================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  .inputs-page {
+    --form-max-width: 44rem;
+    --form-horizontal-padding: 2rem;
+  }
+
+  .page-body {
+    padding: 1rem 1.5rem 2rem;
+  }
+
+  .back-btn {
+    max-width: var(--form-max-width);
+    margin-bottom: 0.75rem;
+  }
+
+  .form-card {
+    padding: 1.75rem var(--form-horizontal-padding);
+    border-radius: 18px;
+  }
+
+  .form-field {
+    margin-bottom: 1.35rem;
+  }
+
+  .form-label {
+    font-size: 0.95rem;
+  }
+
+  .form-select,
+  .form-input {
+    height: 2.9rem;
+    font-size: 0.95rem;
+  }
+
+  .boolean-button {
+    padding: 0.65rem;
+  }
+
+  .pagination {
+    margin-top: 0.6rem;
+  }
+
+  .page-nav-btn {
+    font-size: 0.85rem;
+    padding: 0.45em 0.75em;
+  }
+
+  .page-num-btn {
+    width: 1.7rem;
+    height: 1.7rem;
+    font-size: 0.85rem;
+  }
+}
+
 @media (max-width: 767px) {
   .inputs-page {
     --form-max-width: 100%;

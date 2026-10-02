@@ -1605,12 +1605,153 @@ strong {
   color: #111827;
 }
 
+/* =========================================================
+   Tablet
+   768px - 1024px
+========================================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  .dashboard-page {
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
+
+  /* =======================================================
+     Risk score
+  ======================================================= */
+
+  .risk-score-card {
+    min-height: 280px;
+  }
+
+  .risk-score-subtitle {
+    max-width: 34rem;
+  }
+
+
+  /* =======================================================
+     Risk factor breakdown
+  ======================================================= */
+
+  .risk-breakdown-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  /*
+   * Show the visual overview first, then the detailed list.
+   */
+  .risk-breakdown-chart-panel {
+    order: -1;
+  }
+
+  .risk-breakdown-chart-panel {
+    width: 100%;
+    justify-content: center;
+  }
+
+
+  /* =======================================================
+     Risk factor header
+  ======================================================= */
+
+  .risk-breakdown-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+  }
+
+  .risk-breakdown-header .risk-chart-description {
+    font-size: 0.875rem;
+    line-height: 1.45;
+  }
+
+  .edit-assessment-button {
+    min-height: 2.5rem;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+
+  /* =======================================================
+     Factor tabs
+  ======================================================= */
+
+  .risk-factor-tabs {
+    gap: 1.25rem;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .risk-factor-tab {
+    font-size: 0.9rem;
+  }
+
+  .changeable-factors-disclaimer {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+
+  /* =======================================================
+     Factor list
+  ======================================================= */
+
+  .risk-breakdown-controls-header {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .merged-risk-factor-item .risk-factor-row {
+    padding: 0.55rem 0.7rem;
+  }
+
+
+  /* =======================================================
+     What-if section
+  ======================================================= */
+
+  .what-if-summary {
+    padding: 1rem;
+  }
+
+  .what-if-score-row {
+    gap: 0.75rem;
+  }
+
+
+  /* =======================================================
+     Insights / Trend
+  ======================================================= */
+
+  .insights-message {
+    min-height: 150px;
+  }
+
+  .trend-message {
+    min-height: 220px;
+  }
+
+
+  /* =======================================================
+     Edit assessment modal
+  ======================================================= */
+
+  .edit-assessment-modal {
+    max-width: 36rem;
+    padding: 1.5rem;
+  }
+}
 
 /* =========================================================
    Responsive
 ========================================================= */
 
-@media (max-width: 48rem) {
+@media (max-width: 767px) {
 
   .dashboard-page {
     padding: 1rem;

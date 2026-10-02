@@ -43,8 +43,29 @@
 }
 
 .menu-bar-actions .history-dropdown {
-  width: clamp(12rem, 20vw, 16rem);
-  flex-shrink: 0;
+  width: clamp(20rem, 30vw, 24rem);
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.menu-bar-actions .history-dropdown-trigger {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.45rem 0.85rem;
+}
+
+.menu-bar-actions .history-trigger-text {
+  min-width: 0;
+}
+
+.menu-bar-actions .history-trigger-title,
+.menu-bar-actions .history-trigger-subtitle {
+  white-space: nowrap;
+}
+
+.menu-bar-actions .history-trigger-subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .menu-bar-actions .history-menu {
@@ -250,30 +271,145 @@
   }
 }
 
-@media (max-width: 767px) {
+/* =========================================================
+   Tablet
+   768px - 1024px
+========================================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+
   .menu-bar {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.25rem 0.5rem;
+    grid-template-columns:
+      auto
+      minmax(0, 1fr)
+      auto;
+
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
   }
 
-  .menu-bar-title {
-    font-size: 1.15rem;
-  }
 
   .menu-bar-actions {
-    grid-column: 1 / -1;
-    padding-bottom: 0.25rem;
-  }
-
-  .menu-bar-actions .history-dropdown {
-    flex: 1;
-    width: auto;
-    max-width: none;
     min-width: 0;
+    gap: 0.6rem;
   }
 
   .menu-bar-actions .history-menu {
-    left: 0;
-    right: auto;
+    left: auto;
+    right: 0;
+
+    width: min(
+      22rem,
+      calc(100vw - 2rem)
+    );
+  }
+}
+
+/* =========================================================
+   Mobile
+   0px - 767px
+========================================================= */
+
+@media (max-width: 767px) {
+
+  .menu-bar {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.5rem;
+    padding: 0.45rem 0.65rem;
+  }
+
+
+  /*
+   * Hide the page title in the mobile header so there is
+   * enough room for navigation/actions on one row.
+   */
+  .menu-bar-title {
+    display: none;
+  }
+
+
+  .menu-bar-left {
+    flex-shrink: 0;
+  }
+
+
+  /*
+   * Keep actions on the same row as the logo.
+   */
+  .menu-bar-actions {
+    width: 100%;
+    min-width: 0;
+
+    justify-content: flex-end;
+
+    gap: 0.35rem;
+    padding-bottom: 0;
+  }
+
+
+  /*
+   * History fills the available space.
+   */
+  .menu-bar-actions .history-dropdown {
+    flex: 1 1 auto;
+
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+
+  .menu-bar-actions .history-dropdown-trigger {
+    width: 100%;
+    min-height: 3rem;
+
+    padding: 0.4rem 0.65rem;
+  }
+
+
+  .menu-bar-actions .history-trigger-content,
+  .menu-bar-actions .history-trigger-text {
+    min-width: 0;
+  }
+
+
+  .menu-bar-actions .history-trigger-title {
+    font-size: 0.85rem;
+    line-height: 1.15;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+
+  .menu-bar-actions .history-trigger-subtitle {
+    font-size: 0.7rem;
+    line-height: 1.15;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+
+  .menu-bar-actions .history-menu {
+    left: auto;
+    right: 0;
+
+    width: min(
+      22rem,
+      calc(100vw - 1.25rem)
+    );
+  }
+
+
+  .menu-profile-wrapper {
+    flex-shrink: 0;
+  }
+
+
+  .menu-unit-label {
+    display: none;
   }
 }
