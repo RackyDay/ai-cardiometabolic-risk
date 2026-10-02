@@ -97,3 +97,10 @@ export const learnRiskFactors = Object.entries(factorContent).map(
     searchTerms,
   }),
 );
+
+// Accept either an assessment key or a model feature when linking to education.
+export function getLearnRiskFactor(key) {
+  return learnRiskFactors.find((factor) =>
+    factor.schemaKey === key || factor.featureKey === key || factor.aliases.includes(key)
+  );
+}

@@ -1,4 +1,6 @@
+import { useSearchParams } from "react-router-dom";
 import useLearnViewModel from "./useLearnViewModel";
+import { getLearnRiskFactor } from "./learnRiskFactors";
 import useLearnSearchViewModel from "./useLearnSearchViewModel";
 import PersonalisedEducation from "./components/PersonalisedEducation";
 import RiskFactorEducationCard from "./components/RiskFactorEducationCard";
@@ -8,15 +10,17 @@ import RiskFactorFilter from "./components/RiskFactorFilter";
 import "./LearnPage.css";
 
 function LearnPage() {
+  const [searchParams] = useSearchParams();
+  const focusedFactor = getLearnRiskFactor(searchParams.get("factor"));
   const {
-    riskFactorGroups, visibleGroups, activeGroupId, setActiveGroupId,
+    riskFactorGroups, visibleGroups, activeGroupId, setActiveGroupId, selectedFactor,
     articleContent, isLoadingArticles, hasArticleErrors, reloadArticles,
-  } = useLearnViewModel();
+  } = useLearnViewModel(focusedFactor);
   const { query, setQuery, search, submitSearch, clearSearch } = useLearnSearchViewModel();
 
   return (
     <div className="learn-page">
-      <PersonalisedEducation />
+      {!selectedFactor && <PersonalisedEducation />}
 
       <section
         className="learn-explore"
@@ -69,6 +73,7 @@ function LearnPage() {
                   key={factor.schemaKey}
                   factor={factor}
                   content={articleContent[factor.schemaKey]}
+                  isFocused={factor === selectedFactor}
                 />
               ))}
             </div>
