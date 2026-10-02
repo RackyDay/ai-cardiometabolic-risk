@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render as renderPage, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthContext } from "../../context/AuthContext";
 import { RiskContext } from "../../context/RiskContext";
@@ -15,6 +16,7 @@ beforeEach(() => {
 });
 
 const schemaFields = Object.values(riskInputSchema);
+const render = (ui, options) => renderPage(ui, { wrapper: MemoryRouter, ...options });
 
 it("offers every schema factor to a guest without requiring providers", () => {
   render(<LearnPage />);

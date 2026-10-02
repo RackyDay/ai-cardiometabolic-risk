@@ -1,13 +1,34 @@
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import ArticleCard from "./ArticleCard";
 
-function RiskFactorEducationCard({ factor, content }) {
+function RiskFactorEducationCard({ factor, content, isFocused = false }) {
   // A factor can appear in more than one section without duplicate DOM IDs.
   const titleId = useId();
+  const cardRef = useRef(null);
+  const headingRef = useRef(null);
+
+  useEffect(() => {
+    if (!isFocused) return;
+    headingRef.current?.focus({ preventScroll: true });
+  }, [isFocused]);
+
+  useEffect(() => {
+    // Keep the requested articles in view as they load, unless the user has
+    // already moved focus to another control (such as search or a filter).
+    if (isFocused && document.activeElement === headingRef.current) {
+      cardRef.current?.scrollIntoView?.({ block: "start" });
+    }
+  }, [isFocused, content?.status]);
 
   return (
-    <article className="learn-factor-card" aria-labelledby={titleId}>
-      <h4 id={titleId} className="learn-factor-title">{factor.title}</h4>
+    <article
+      ref={cardRef}
+      className={`learn-factor-card${isFocused ? " learn-factor-card-focused" : ""}`}
+      aria-labelledby={titleId}
+    >
+      <h4 ref={headingRef} id={titleId} className="learn-factor-title" tabIndex={isFocused ? -1 : undefined}>
+        {factor.title}
+      </h4>
       <p className="learn-factor-description">{factor.description}</p>
       {content && (
         <div className="learn-articles" aria-busy={content.status === "loading"}>
