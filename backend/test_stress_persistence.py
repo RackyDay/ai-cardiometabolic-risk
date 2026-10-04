@@ -76,3 +76,55 @@ def test_base_risk_edit_preserves_existing_context(monkeypatch):
                          json={**VALID_PAYLOAD, "age": 60}, headers={"Authorization": "Bearer token"})
     assert response.status_code == 200
     assert tables["risk_inputs"][0]["context_JSON"] == context
+
+
+def test_stress_edit_updates_only_target_context_and_can_be_reloaded(monkeypatch):
+    _install_fake_auth(monkeypatch)
+    calculation_id = "00000000-0000-0000-0000-000000000001"
+    tables = {"risk_calculations": [{"riskcalc_id": calculation_id, "risk_score": 12}],
+              "risk_inputs": [{"riskcalc_id": calculation_id, "inputs_JSON": VALID_PAYLOAD,
+                               "context_JSON": {"other": {"keep": True}}},
+                              {"riskcalc_id": "other", "context_JSON": None}]}
+    _install_fake_scoped_client(monkeypatch, tables)
+    headers = {"Authorization": "Bearer token"}
+    for values, score in [([2] * 10, 20), ([0] * 10, 16)]:
+        response = client.put(f"/api/risk-calculations/{calculation_id}/stress",
+                              json={"answers": answers(values)}, headers=headers)
+        assert response.status_code == 200
+        context = response.json()["context_JSON"]
+        assert context["stress"]["score"] == score
+        assert context["other"] == {"keep": True}
+        fetched = client.get(f"/api/risk-calculations/{calculation_id}", headers=headers)
+        assert fetched.json()["context_JSON"] == context
+    assert tables["risk_inputs"][0]["inputs_JSON"] == VALID_PAYLOAD
+    assert tables["risk_calculations"][0]["risk_score"] == 12
+    assert tables["risk_inputs"][1]["context_JSON"] is None
+
+
+def test_stress_edit_requires_auth_and_existing_owned_row(monkeypatch):
+    path = "/api/risk-calculations/00000000-0000-0000-0000-000000000001/stress"
+    assert client.put(path, json={"answers": answers([2] * 10)}).status_code == 401
+    _install_fake_auth(monkeypatch)
+    # An RLS-filtered result is indistinguishable from a missing assessment.
+    _install_fake_scoped_client(monkeypatch, {"risk_calculations": [], "risk_inputs": []})
+    assert client.put(path, json={"answers": answers([2] * 10)},
+                      headers={"Authorization": "Bearer token"}).status_code == 404
+
+
+@pytest.mark.parametrize("module", ["stress", "base"])
+def test_historical_assessments_cannot_be_changed(monkeypatch, module):
+    from copy import deepcopy
+    _install_fake_auth(monkeypatch)
+    old_id = "00000000-0000-0000-0000-000000000001"
+    new_id = "00000000-0000-0000-0000-000000000002"
+    tables = {"risk_calculations": [
+        {"riskcalc_id": new_id, "riskcalc_timestamp": "2026-10-05", "risk_score": 12},
+        {"riskcalc_id": old_id, "riskcalc_timestamp": "2026-10-01", "risk_score": 10}],
+        "risk_inputs": [{"riskcalc_id": old_id, "inputs_JSON": VALID_PAYLOAD, "context_JSON": None}]}
+    original = deepcopy(tables)
+    _install_fake_scoped_client(monkeypatch, tables)
+    path = f"/api/risk-calculations/{old_id}" + ("/stress" if module == "stress" else "")
+    payload = {"answers": answers([2] * 10)} if module == "stress" else VALID_PAYLOAD
+    response = client.put(path, json=payload, headers={"Authorization": "Bearer token"})
+    assert response.status_code == 409
+    assert tables == original

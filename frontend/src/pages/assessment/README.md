@@ -38,8 +38,20 @@ the same `risk_inputs` row:
 Skipped or unsaved stress modules are omitted; no stress submission stores a null
 context for a new calculation. Anonymous predictions are not persisted. Stress
 does not enter the cardiovascular model. Base-risk updates preserve `context_JSON`.
-Dashboard stress completion/editing and restoring persisted stress results from
-history are not implemented yet; the dashboard still displays the session result.
+The dashboard Stress tab loads `context_JSON` for the assessment being viewed
+(including history). The current assessment offers Complete stress module or
+Edit stress module. History uses the existing `selectedCalculation` read-only
+guard: saved stress results are viewable, with no completion/edit actions. If
+absent, it displays "Stress was not calculated for this assessment." Both backend
+update endpoints reject changes to assessments older than the user's latest one.
+It opens `/stress?from=dashboard&calculation=<id>` with an isolated draft. Saving
+calls `PUT /api/risk-calculations/{id}/stress`, which authenticates the caller,
+validates and scores the responses, and updates only the stress entry while
+preserving other context and cardiovascular inputs/results. RLS restricts this
+to the assessment owner. Success returns to the dashboard Stress tab and reloads
+the result; failed saves keep the draft available for retry. Back discards dashboard
+edits. Anonymous dashboard edits update session state only. Module-hub entry
+continues to save the module draft and return to the hub.
 
 Sources: [PSS-10 questions](https://www.cmu.edu/dietrich/psychology/stress-immunity-disease-lab/scales/html/pss.html),
 [scoring](https://www.cmu.edu/dietrich/psychology/stress-immunity-disease-lab/scales/html/pssscoring.html),
