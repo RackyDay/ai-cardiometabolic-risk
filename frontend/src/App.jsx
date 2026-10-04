@@ -6,11 +6,8 @@ import "./App.css";
 // (especially DashboardPage, which pulls in recharts) are lazy: nothing
 // visiting "/" or "/auth" should have to download and parse the dashboard's
 // charting code before it can render a login form.
-import InputPage from "./pages/input/InputPage";
 import StressPage from "./pages/stress/StressPage";
 import AssessmentPage from "./pages/assessment/AssessmentPage";
-import DashboardPage from "./pages/dashboard/DashboardPage";
-import LearnPage from "./pages/learn/LearnPage";
 import WelcomePage from "./pages/welcome/WelcomePage";
 import AuthPage from "./pages/auth/AuthPage";
 import { RiskProvider } from "./context/RiskProvider";
