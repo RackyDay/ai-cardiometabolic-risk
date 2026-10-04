@@ -245,6 +245,19 @@
   transform: translateY(0);
 }
 
+/* Red section (last zone): anchor the tooltip to the right edge instead */
+.risk-bar-segment-last .risk-range-tooltip {
+  left: auto;
+  right: 0;
+  transform: translateY(0.25rem);
+}
+
+.risk-bar-segment-last:hover .risk-range-tooltip,
+.risk-bar-segment-last:focus .risk-range-tooltip,
+.risk-bar-segment-last .risk-range-tooltip.open {
+  transform: translateY(0);
+}
+
 .risk-range-tooltip-title {
   font-size: 0.9rem;
   font-weight: 700;
