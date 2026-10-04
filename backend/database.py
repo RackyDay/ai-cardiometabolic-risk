@@ -9,7 +9,7 @@ from supabase_client import get_user_scoped_client
 _RPC_NOT_FOUND = "PGRST202"
 
 
-def save_assessment(user_id, risk_score, model_version, risk_inputs, top_contributors, token):
+def save_assessment(user_id, risk_score, model_version, risk_inputs, top_contributors, token, context=None):
     user_client = get_user_scoped_client(token)
 
     # One round trip (both inserts run atomically inside the Postgres
@@ -41,7 +41,8 @@ def save_assessment(user_id, risk_score, model_version, risk_inputs, top_contrib
 
     user_client.table("risk_inputs").insert({
         "riskcalc_id": riskcalc_id,
-        "inputs_JSON": risk_inputs
+        "inputs_JSON": risk_inputs,
+        "context_JSON": context,
     }).execute()
 
     return riskcalc_id

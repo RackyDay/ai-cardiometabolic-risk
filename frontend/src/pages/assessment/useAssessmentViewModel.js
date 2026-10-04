@@ -24,6 +24,9 @@ export function useAssessmentViewModel() {
     setCalculationError("");
     try {
       const payload = buildPredictionPayload(risk.riskInputs, riskInputSchema);
+      if (accessToken && risk.isModuleComplete("stress", risk.stressInputs)) {
+        payload.stress = { answers: { ...risk.stressInputs } };
+      }
       const result = await predictRisk(payload, accessToken);
       risk.setRiskScore(result.risk_score);
       risk.selectCalculation(null);
