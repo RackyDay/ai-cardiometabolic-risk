@@ -3,6 +3,7 @@ import { AuthContext } from "./AuthContext";
 import { RiskContext } from "./RiskContext";
 import { createInitalRiskInputs } from "../schemas/createInitialRiskInputs";
 import { riskInputSchema } from "../schemas/riskInputSchema";
+import { stressInputSchema, calculateStressScore } from "../schemas/stressInputSchema";
 
 export function RiskProvider({ children }) {
   const { user, isAuthenticated } = useContext(AuthContext);
@@ -26,7 +27,11 @@ export function RiskProvider({ children }) {
   }, []);
   const userId = isAuthenticated ? user?.id : null;
   const [moduleCompletion, setModuleCompletion] = useState({});
-  const startNewAssessment = () => setModuleCompletion({});
+  const [stressInputs, setStressInputs] = useState(() => createInitalRiskInputs(stressInputSchema));
+  const startNewAssessment = () => {
+    setModuleCompletion({});
+    setStressInputs(createInitalRiskInputs(stressInputSchema));
+  };
   const completeModule = (id, inputs) => {
     setModuleCompletion((current) => ({
       ...current,
@@ -44,6 +49,7 @@ export function RiskProvider({ children }) {
     setHistorySelection((current) => current?.userId === userId ? current : null);
     setViewingCalculationId(null);
     setModuleCompletion({});
+    setStressInputs(createInitalRiskInputs(stressInputSchema));
   }, [userId]);
   const selectedCalculation = userId && historySelection?.userId === userId
     ? historySelection.calculation : null;
@@ -88,6 +94,9 @@ export function RiskProvider({ children }) {
   const value = useMemo(
     () => ({
       // Original assessment
+      stressInputs,
+      setStressInputs,
+      stressScore: isModuleComplete("stress", stressInputs) ? calculateStressScore(stressInputs) : null,
       startNewAssessment,
       completeModule,
       isModuleComplete,

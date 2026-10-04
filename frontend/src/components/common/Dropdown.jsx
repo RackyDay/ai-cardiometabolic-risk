@@ -6,6 +6,8 @@ function Dropdown({ label, value, onChange, options, error, required = true, too
       <FieldLabel label={label} required={required} tooltip={tooltip} />
       <div className="select-wrapper">
         <select
+          aria-label={label}
+          aria-invalid={Boolean(error)}
           className={`form-select ${error ? "error" : ""}`}
           value={value}
           onChange={onChange}

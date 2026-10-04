@@ -9,8 +9,21 @@ control is disabled until the module is complete.
 
 Set `comingSoon: true` for a placeholder module without a form route. Its card
 shows a disabled Coming soon action and no completion badge or edit control.
-Stress Levels is an optional placeholder for the Perceived Stress Scale (PSS)
-test and does not block risk calculation.
+Stress Levels is an optional PSS-10 module at `/stress` and does not block risk
+calculation. `stressInputSchema.js` defines the questions, response options,
+page grouping and reverse-scoring metadata. The form reuses `RiskField` and
+the base input styles. All ten responses are required to save this module.
+Items 4, 5, 7 and 8 are reverse-scored; the total ranges from 0 to 40.
+The dashboard Stress tab shows the current session's saved score; the form and
+module card do not display it. Scoring remains local. Editing answers invalidates completion
+until saved again. Answers and completion are session-only, cleared on a new
+assessment or account change. They are not sent to the cardiovascular prediction
+API or stored in assessment history.
+
+Sources: [PSS-10 questions](https://www.cmu.edu/dietrich/psychology/stress-immunity-disease-lab/scales/html/pss.html),
+[scoring](https://www.cmu.edu/dietrich/psychology/stress-immunity-disease-lab/scales/html/pssscoring.html),
+[PhenX protocol and use information](https://www.phenxtoolkit.org/protocols/view/180801).
+No diagnostic categories or cutoffs are assigned.
 
 The hub displays one module at a time in an arrow-controlled carousel, ending
 with a More modules coming soon placeholder. Inactive cards are hidden from
