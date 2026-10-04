@@ -1,4 +1,5 @@
 .stress-header { margin-bottom: 1.5rem; }
+.stress-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .stress-header h1 { margin: 0 0 .5rem; font-size: 1.8rem; color: #192b48; }
 .stress-header p { margin-top: .5rem; color: #617089; line-height: 1.5; }
 .stress-progress { margin-bottom: 1rem; color: #42649a; font-size: .85rem; }

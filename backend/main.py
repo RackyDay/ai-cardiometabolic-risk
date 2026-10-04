@@ -12,6 +12,7 @@ from schemas import (
     LoginRequest,
     PredictionResponse,
     PredictionRequest,
+    StressSubmission,
     RiskInputData,
     SignUpRequest,
     UpdatePasswordRequest,
@@ -96,6 +97,7 @@ def edit_risk_calculation(calculation_id: UUID, data: RiskInputData, auth = Depe
     _, token = auth
 
     result = predict_risk(data)
+    require_current_assessment(str(calculation_id), token)
     db.update_assessment(
         str(calculation_id), result["risk_score"], data.model_dump(), result["top_contributors"], token
     )
@@ -109,6 +111,24 @@ async def get_assessment_history(auth = Depends(get_optional_user)):
         _, token = auth
         risk_calculations = db.fetch_assessment_history(token)
         return risk_calculations
+
+
+@app.put("/api/risk-calculations/{calculation_id}/stress")
+def update_stress(calculation_id: UUID, data: StressSubmission, auth=Depends(get_current_user_and_token)):
+    _, token = auth
+    require_current_assessment(str(calculation_id), token)
+    context = db.save_stress(str(calculation_id), data.saved_context(), token)
+    if context is None:
+        raise HTTPException(status_code=404, detail="Calculation not found")
+    return {"context_JSON": context}
+
+
+def require_current_assessment(calculation_id, token):
+    latest_id = db.latest_assessment_id(token)
+    if latest_id is None:
+        raise HTTPException(status_code=404, detail="Calculation not found")
+    if calculation_id != latest_id:
+        raise HTTPException(status_code=409, detail="Historical assessments are read-only.")
 
 @app.get("/api/risk-calculations/{calculation_id}")
 def get_risk_calculation(calculation_id: UUID, auth = Depends(get_current_user_and_token)):
@@ -138,6 +158,7 @@ def get_risk_calculation(calculation_id: UUID, auth = Depends(get_current_user_a
         "riskcalc_id": risk_calc[0]["riskcalc_id"],
         "risk_score": risk_calc[0]["risk_score"],
         "inputs": response_inputs,
+        **({"context_JSON": risk_inputs[0]["context_JSON"]} if risk_inputs[0].get("context_JSON") else {}),
         "top_contributors": top_contributors,
     }
 

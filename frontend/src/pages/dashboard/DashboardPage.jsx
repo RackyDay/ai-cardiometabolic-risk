@@ -14,7 +14,8 @@ import AlertTriangleIcon from "../../components/icons/AlertTriangleIcon";
 import PencilIcon from "../../components/icons/PencilIcon";
 
 import RiskGauge from "./components/RiskGauge";
-import StressResult from "./components/StressResult";
+import DashboardStress from "./components/DashboardStress";
+import { useLocation } from "react-router-dom";
 
 import RiskFactorPieChart, {
   RISK_FACTOR_DESCRIPTIONS,
@@ -29,7 +30,6 @@ import { formatSavedValue } from "./formatSavedValue";
 import EditAssessmentModal from "./EditAssessmentModal";
 
 import { UnitContext } from "../../context/UnitContext";
-import { RiskContext } from "../../context/RiskContext";
 
 import { riskInputSchema } from "../../schemas/riskInputSchema";
 
@@ -251,7 +251,7 @@ function RiskFactorToggle({
 ========================================================= */
 
 function DashboardPage() {
-  const { stressScore } = useContext(RiskContext);
+  const location = useLocation();
 
   const {
     pastCalculation,
@@ -318,7 +318,7 @@ function DashboardPage() {
   const [
     activeFactorTab,
     setActiveFactorTab,
-  ] = useState("changeable");
+  ] = useState(location.state?.tab === "stress" ? "stress" : "changeable");
 
 
   const [
@@ -1314,13 +1314,7 @@ function DashboardPage() {
                   {activeFactorTab === "stress" ? (
 
                     <div className="risk-factor-tab-empty">
-                      {!pastCalculation && stressScore != null ? (
-                        <StressResult score={stressScore} />
-                      ) : (
-                        <p>{pastCalculation
-                          ? "No stress result is stored with this assessment."
-                          : "Complete and save the optional Stress Levels module to view your result here."}</p>
-                      )}
+                      <DashboardStress />
                     </div>
 
                   ) : (
