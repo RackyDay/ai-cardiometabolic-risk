@@ -49,11 +49,12 @@ function AssessmentPage() {
           transform: `translateX(calc(-${carousel.index * 100}% - ${carousel.index} * var(--carousel-gap)))`,
           transition: carousel.moving ? undefined : "none",
         }}>
-        {[...assessmentModules, ...assessmentModules, ...assessmentModules].map(({ id, Icon, getInputs, ...module }, index) => (
+        {[...assessmentModules, ...assessmentModules, ...assessmentModules].map(({ id, Icon, getInputs, getFooter, ...module }, index) => (
           <div key={`${id}-${index}`} className="assessment-carousel-slide" inert={index !== carousel.index}
             aria-hidden={index !== carousel.index}>
           <AssessmentModuleCard
             {...module}
+            footer={getFooter ? getFooter(risk) : module.footer}
             icon={<Icon />}
             complete={risk.isModuleComplete(id, getInputs(risk))}
           />

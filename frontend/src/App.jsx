@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./App.css";
 import InputPage from "./pages/input/InputPage";
+import StressPage from "./pages/stress/StressPage";
 import AssessmentPage from "./pages/assessment/AssessmentPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import LearnPage from "./pages/learn/LearnPage";
@@ -51,6 +52,7 @@ function AppLayout() {
             <Route path="/" element={<WelcomePage />} />
             <Route path="/assessment" element={<AssessmentPage />} />
             <Route path="/inputs" element={<InputPage />} />
+            <Route path="/stress" element={<StressPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/learn" element={<LearnPage />} />
             <Route path="/auth" element={<AuthPage />} />

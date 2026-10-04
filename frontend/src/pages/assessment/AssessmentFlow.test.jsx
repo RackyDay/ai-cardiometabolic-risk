@@ -55,7 +55,7 @@ it("loops modules in both directions without an end stop", () => {
   expect(screen.getByRole("heading", { name: "Base risk inputs" })).toBeInTheDocument();
   move(next);
   expect(screen.getByRole("heading", { name: "Stress Levels" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Coming soon" })).toBeDisabled();
+  expect(screen.getByRole("link", { name: /Start module/ })).toHaveAttribute("href", "/stress");
   move(next);
   expect(screen.getByRole("heading", { name: "More modules coming soon" })).toBeInTheDocument();
   expect(next).toBeEnabled();

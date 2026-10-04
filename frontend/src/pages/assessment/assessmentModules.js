@@ -25,9 +25,9 @@ export const assessmentModules = [
     Icon: StressIcon,
     topics: ["Perceived stress", "Everyday pressures"],
     required: false,
-    comingSoon: true,
-    footer: "The PSS test will be available soon.",
-    getInputs: () => ({}),
+    to: "/stress",
+    footer: "Your results will appear on your dashboard.",
+    getInputs: ({ stressInputs }) => stressInputs,
   },
   {
     id: "more-modules",
