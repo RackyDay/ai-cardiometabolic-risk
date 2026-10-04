@@ -11,6 +11,7 @@ from schemas import (
     LatestPredictionResponse,
     LoginRequest,
     PredictionResponse,
+    PredictionRequest,
     RiskInputData,
     SignUpRequest,
     UpdatePasswordRequest,
@@ -65,15 +66,20 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 @app.post("/predict", response_model=PredictionResponse)
-def predict(data: RiskInputData, auth=Depends(get_optional_user)):
+def predict(data: PredictionRequest, auth=Depends(get_optional_user)):
     # data is already validated/coerced against RiskInputData's field
     # constraints by FastAPI before this line runs. response_model in turn
     # validates/serializes predict_risk()'s return value on the way out.
-    result = predict_risk(data)
+    risk_inputs = RiskInputData(**data.model_dump(exclude={"stress"}))
+    result = predict_risk(risk_inputs)
 
     if auth is not None:
         user, token = auth
-        result["riskcalc_id"] = db.save_assessment(user.id, result["risk_score"], "1", data.model_dump(), token)
+        context = {"stress": data.stress.saved_context()} if data.stress is not None else None
+        result["riskcalc_id"] = db.save_assessment(
+            user.id, result["risk_score"], "1", risk_inputs.model_dump(), token,
+            context=context,
+        )
 
     return result
 

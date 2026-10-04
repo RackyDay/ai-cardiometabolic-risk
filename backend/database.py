@@ -1,7 +1,7 @@
 from supabase_client import get_user_scoped_client
 from auth import _maybe_single_data
 
-def save_assessment(user_id, risk_score, model_version, risk_inputs, token):
+def save_assessment(user_id, risk_score, model_version, risk_inputs, token, context=None):
 
     user_client = get_user_scoped_client(token)
 
@@ -15,7 +15,8 @@ def save_assessment(user_id, risk_score, model_version, risk_inputs, token):
 
     user_client.table("risk_inputs").insert({
         "riskcalc_id": riskcalc_id,
-        "inputs_JSON": risk_inputs
+        "inputs_JSON": risk_inputs,
+        "context_JSON": context,
     }).execute()
 
     return riskcalc_id

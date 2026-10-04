@@ -16,9 +16,30 @@ the base input styles. All ten responses are required to save this module.
 Items 4, 5, 7 and 8 are reverse-scored; the total ranges from 0 to 40.
 The dashboard Stress tab shows the current session's saved score; the form and
 module card do not display it. Scoring remains local. Editing answers invalidates completion
-until saved again. Answers and completion are session-only, cleared on a new
-assessment or account change. They are not sent to the cardiovascular prediction
-API or stored in assessment history.
+until saved again. Draft answers and completion are cleared on a new assessment
+or account change. On Calculate risk score, signed-in users also submit completed
+stress answers to `/predict`. The backend validates all ten integer responses
+(0–4), recomputes the total, and saves the following alongside `inputs_JSON` in
+the same `risk_inputs` row:
+
+```json
+{
+  "context_JSON": {
+    "stress": {
+      "instrument": "PSS-10",
+      "schema_version": 1,
+      "answers": { "pss1": 2, "pss2": 2, "pss3": 2, "pss4": 2, "pss5": 2, "pss6": 2, "pss7": 2, "pss8": 2, "pss9": 2, "pss10": 2 },
+      "score": 20
+    }
+  }
+}
+```
+
+Skipped or unsaved stress modules are omitted; no stress submission stores a null
+context for a new calculation. Anonymous predictions are not persisted. Stress
+does not enter the cardiovascular model. Base-risk updates preserve `context_JSON`.
+Dashboard stress completion/editing and restoring persisted stress results from
+history are not implemented yet; the dashboard still displays the session result.
 
 Sources: [PSS-10 questions](https://www.cmu.edu/dietrich/psychology/stress-immunity-disease-lab/scales/html/pss.html),
 [scoring](https://www.cmu.edu/dietrich/psychology/stress-immunity-disease-lab/scales/html/pssscoring.html),
