@@ -1,43 +1,54 @@
 import ArticleCard from "./ArticleCard";
 import usePersonalisedEducationViewModel from "../usePersonalisedEducationViewModel";
 
-// Topics come from a completed assessment only (see the view model); the
-// placeholder stays for guests and anyone without an assessment yet.
+// MyHealthfinder recommendations from a signed-in user's completed assessment
+// only (see the view model). Guests see a disabled card, matching the
+// dashboard's Insights card.
 function PersonalisedEducation() {
-  const { hasAssessment, topics } = usePersonalisedEducationViewModel();
+  const { isAuthenticated, hasAssessment, status, recommendations } = usePersonalisedEducationViewModel();
 
   return (
-    <section className="learn-personalised" aria-labelledby="learn-personalised-title">
+    <section
+      className={`learn-personalised${!isAuthenticated ? " learn-personalised-disabled" : ""}`}
+      aria-labelledby="learn-personalised-title"
+      aria-disabled={!isAuthenticated}
+    >
       <h2 id="learn-personalised-title" className="learn-section-title">
         Based on your assessment
       </h2>
-      {hasAssessment ? (
+      {!isAuthenticated ? (
+        <p className="learn-personalised-message">Sign in to view personalised education.</p>
+      ) : hasAssessment ? (
         <>
           <p className="learn-section-description">
-            Topics picked from the answers in your latest assessment. This is
-            general education, not medical advice.
+            Prevention recommendations picked from the answers in your latest
+            assessment, from MyHealthfinder (U.S. Office of Disease Prevention
+            and Health Promotion), which follows U.S. guidelines. This is general
+            information, not medical advice.
           </p>
-          <ul className="learn-factor-grid learn-personalised-list" aria-label="Topics related to your assessment">
-            {topics.map(({ searchTerm, reason, content }) => (
-              <li key={searchTerm} className="learn-factor-card" aria-busy={content.status === "loading"}>
-                <p className="learn-factor-description">{reason}</p>
-                <div className="learn-articles">
-                  {content.status === "loading" && <p className="learn-article-status">Loading articles…</p>}
-                  {content.status === "error" && (
-                    <p className="learn-article-status">Articles are unavailable right now. Please try again later.</p>
-                  )}
-                  {content.status === "empty" && (
-                    <p className="learn-article-status">No MedlinePlus articles found for this topic.</p>
-                  )}
-                  {content.status === "ready" && (
-                    <ul className="learn-article-list" aria-label={`MedlinePlus articles about ${searchTerm}`}>
-                      {content.articles.map((article) => <ArticleCard key={article.id} article={article} />)}
-                    </ul>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div aria-busy={status === "loading"}>
+            {status === "loading" && <p className="learn-article-status">Loading recommendations…</p>}
+            {status === "error" && (
+              <p className="learn-article-status">Recommendations are unavailable right now. Please try again later.</p>
+            )}
+            {status === "empty" && (
+              <p className="learn-article-status">No MyHealthfinder recommendations found for your assessment.</p>
+            )}
+            {status === "ready" && (
+              <ul className="learn-factor-grid learn-personalised-list" aria-label="Prevention recommendations for your assessment">
+                {recommendations.map((recommendation) => (
+                  <li key={recommendation.id} className="learn-factor-card">
+                    <p className="learn-factor-description">{recommendation.reason}</p>
+                    <div className="learn-articles">
+                      <ul className="learn-article-list">
+                        <ArticleCard article={recommendation} />
+                      </ul>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </>
       ) : (
         <>

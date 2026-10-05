@@ -16,6 +16,26 @@
   background: #f8faff;
 }
 
+.learn-personalised-disabled {
+  background: #f1f3f5;
+  color: #737b84;
+}
+
+.learn-personalised-disabled .learn-section-title {
+  color: #737b84;
+}
+
+.learn-personalised-message {
+  min-height: 6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: #737b84;
+  text-align: center;
+  font-size: 0.9375rem;
+}
+
 .learn-section-title {
   margin: 0 0 0.75rem;
   color: #111827;
@@ -193,8 +213,44 @@
 
 .learn-factor-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.learn-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.learn-pagination-status {
+  color: #536b7c;
+  font-size: 0.8125rem;
+}
+
+.learn-pagination-button {
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1px solid #dce4f1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.learn-pagination-button:hover:not(:disabled) {
+  border-color: #2f5fc9;
+  color: #234a9e;
+}
+
+.learn-pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .learn-factor-card {
@@ -304,7 +360,8 @@
 .learn-reload-button:focus-visible,
 .learn-search-input:focus-visible,
 .learn-search-button:focus-visible,
-.learn-filter-chip:focus-visible {
+.learn-filter-chip:focus-visible,
+.learn-pagination-button:focus-visible {
   outline: 3px solid #2f5fc9;
   outline-offset: 3px;
 }
@@ -338,9 +395,17 @@
   .learn-explore-header {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .learn-factor-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 767px) {
+  .learn-factor-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .learn-page {
     gap: 1.5rem;
   }

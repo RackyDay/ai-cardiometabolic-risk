@@ -2,7 +2,7 @@ import { riskInputSchema } from "../../schemas/riskInputSchema";
 import { learnRiskFactors } from "./learnRiskFactors";
 import { formatSavedValue } from "../dashboard/formatSavedValue";
 
-// Maps the values of a completed assessment to MedlinePlus search terms.
+// Maps the values of a completed assessment to prevention topics.
 // Thresholds follow Australian guidance (values are stored in mg/dL):
 // - Blood pressure: Heart Foundation hypertension guideline (2016), high at
 //   140/90 mmHg or above; healthdirect describes low as below 90/60 mmHg.
@@ -13,8 +13,9 @@ import { formatSavedValue } from "../dashboard/formatSavedValue";
 //   diabetes range 7.0 mmol/L or above.
 // - Resting heart rate: healthdirect adult range of 60-100 bpm.
 // - Age: Heart Foundation recommends Heart Health Checks from age 45.
-// Only the generic search term is sent to MedlinePlus, never the values.
-const MAX_TOPICS = 4;
+// Each topic maps to a curated MyHealthfinder topic (topicId, from the v4
+// itemlist.json endpoint), which the personalised section requests by ID.
+const MAX_TOPICS = 6;
 
 const toNumber = (value) =>
   value === null || value === undefined || value === "" ? NaN : Number(value);
@@ -26,6 +27,7 @@ const rules = [
     schemaKeys: ["currentSmoker", "cigsPerDay"],
     match: (inputs) => inputs.currentSmoker === true && {
       searchTerm: "quitting smoking",
+      topicId: 30610,
       reason: () => "You told us that you currently smoke.",
     },
   },
@@ -37,18 +39,21 @@ const rules = [
       if (sysBP >= 140 || diaBP >= 90) {
         return {
           searchTerm: "high blood pressure",
+          topicId: 533,
           reason: (format) => `Your blood pressure of ${format("sysBP")} / ${format("diaBP")} is at or above 140/90 mmHg, which Australian guidelines describe as high.`,
         };
       }
       if (inputs.prevalentHyp === true) {
         return {
           searchTerm: "high blood pressure",
+          topicId: 533,
           reason: () => "You told us you have been diagnosed with hypertension.",
         };
       }
       if (sysBP < 90 || diaBP < 60) {
         return {
           searchTerm: "low blood pressure",
+          topicId: 533,
           reason: (format) => `Your blood pressure of ${format("sysBP")} / ${format("diaBP")} is below 90/60 mmHg, which is generally considered low.`,
         };
       }
@@ -59,6 +64,7 @@ const rules = [
     schemaKeys: ["bpMeds"],
     match: (inputs) => inputs.bpMeds === true && {
       searchTerm: "blood pressure medicines",
+      topicId: 30594,
       reason: () => "You told us that you take blood pressure medication.",
     },
   },
@@ -69,18 +75,21 @@ const rules = [
       if (inputs.diabetes === true) {
         return {
           searchTerm: "diabetic heart disease",
+          topicId: 25,
           reason: () => "You told us you have been diagnosed with diabetes.",
         };
       }
       if (glucose >= fromMmol("glucose", 7.0)) {
         return {
           searchTerm: "diabetes",
+          topicId: 30601,
           reason: (format) => `Your fasting blood glucose of ${format("glucose")} is in the range used to diagnose diabetes.`,
         };
       }
       if (glucose >= fromMmol("glucose", 6.1)) {
         return {
           searchTerm: "prediabetes",
+          topicId: 30536,
           reason: (format) => `Your fasting blood glucose of ${format("glucose")} is above the usual fasting range.`,
         };
       }
@@ -91,6 +100,7 @@ const rules = [
     schemaKeys: ["totChol"],
     match: (inputs) => toNumber(inputs.totChol) >= fromMmol("totChol", 5.5) && {
       searchTerm: "cholesterol levels",
+      topicId: 537,
       reason: (format) => `Your total cholesterol of ${format("totChol")} is at or above 5.5 mmol/L, which is considered high in Australia.`,
     },
   },
@@ -101,18 +111,21 @@ const rules = [
       if (bmi >= 30) {
         return {
           searchTerm: "obesity",
+          topicId: 30551,
           reason: (format) => `Your BMI of ${format("BMI")} is in the obese range (30 or above).`,
         };
       }
       if (bmi >= 25) {
         return {
           searchTerm: "weight control",
+          topicId: 30551,
           reason: (format) => `Your BMI of ${format("BMI")} is in the overweight range (25 to 29.9).`,
         };
       }
       if (bmi < 18.5) {
         return {
           searchTerm: "healthy weight",
+          topicId: 30539,
           reason: (format) => `Your BMI of ${format("BMI")} is in the underweight range (below 18.5).`,
         };
       }
@@ -123,6 +136,7 @@ const rules = [
     schemaKeys: ["prevalentStroke"],
     match: (inputs) => inputs.prevalentStroke === true && {
       searchTerm: "stroke",
+      topicId: 30561,
       reason: () => "You told us that you have had a stroke.",
     },
   },
@@ -133,12 +147,14 @@ const rules = [
       if (heartRate > 100) {
         return {
           searchTerm: "tachycardia",
+          topicId: 30605,
           reason: (format) => `Your resting heart rate of ${format("heartRate")} is above the usual adult range of 60 to 100 bpm.`,
         };
       }
       if (heartRate < 60) {
         return {
           searchTerm: "bradycardia",
+          topicId: 30605,
           reason: (format) => `Your resting heart rate of ${format("heartRate")} is below the usual adult range of 60 to 100 bpm.`,
         };
       }
@@ -149,6 +165,7 @@ const rules = [
     schemaKeys: ["age"],
     match: (inputs) => toNumber(inputs.age) >= 45 && {
       searchTerm: "heart health tests",
+      topicId: 25,
       reason: (format) => `At ${format("age")} years of age, regular heart health checks are recommended in Australia.`,
     },
   },
@@ -156,7 +173,8 @@ const rules = [
 
 export const generalTopic = {
   searchTerm: "heart health",
-  reason: "None of your answers were outside the ranges we check, so here is some general heart health reading.",
+  topicId: 25,
+  reason: "None of your answers were outside the ranges we check, so here is some general heart health advice.",
 };
 
 // Model contributors use feature names (e.g. "male", "BPMeds"); map them back
@@ -169,7 +187,7 @@ const schemaKeyByFeature = Object.fromEntries(
  * @param {object | null | undefined} inputs Completed assessment inputs, keyed by schema key.
  * @param {Array<{feature: string, contribution: number}> | null | undefined} contributors
  * @param {string} clinicalUnit Display unit used in the explanations.
- * @returns {Array<{searchTerm: string, reason: string}> | null} null without an assessment.
+ * @returns {Array<{searchTerm: string, topicId: number, reason: string}> | null} null without an assessment.
  */
 export function buildPersonalisedTopics(inputs, contributors, clinicalUnit) {
   if (!inputs || typeof inputs !== "object") return null;
@@ -183,12 +201,14 @@ export function buildPersonalisedTopics(inputs, contributors, clinicalUnit) {
   const topics = [];
   rules.forEach((rule, order) => {
     const topic = rule.match(inputs);
-    if (!topic || topics.some((existing) => existing.searchTerm === topic.searchTerm)) return;
+    // Two rules can share a MyHealthfinder topic; keep the higher-priority one.
+    if (!topic || topics.some((existing) => existing.topicId === topic.topicId)) return;
     const contributions = rule.schemaKeys
       .map((schemaKey) => contributionBySchemaKey[schemaKey])
       .filter((contribution) => contribution !== undefined);
     topics.push({
       searchTerm: topic.searchTerm,
+      topicId: topic.topicId,
       reason: topic.reason(format),
       order,
       contribution: contributions.length ? Math.max(...contributions) : -Infinity,
@@ -198,6 +218,6 @@ export function buildPersonalisedTopics(inputs, contributors, clinicalUnit) {
   // Factors that raised this user's risk the most come first; rule order
   // breaks ties (Array.prototype.sort is stable).
   topics.sort((a, b) => b.contribution - a.contribution || a.order - b.order);
-  const selected = topics.slice(0, MAX_TOPICS).map(({ searchTerm, reason }) => ({ searchTerm, reason }));
+  const selected = topics.slice(0, MAX_TOPICS).map(({ searchTerm, topicId, reason }) => ({ searchTerm, topicId, reason }));
   return selected.length ? selected : [generalTopic];
 }

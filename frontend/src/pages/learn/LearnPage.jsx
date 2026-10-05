@@ -7,13 +7,14 @@ import RiskFactorEducationCard from "./components/RiskFactorEducationCard";
 import LearnSearch from "./components/LearnSearch";
 import LearnSearchResults from "./components/LearnSearchResults";
 import RiskFactorFilter from "./components/RiskFactorFilter";
+import RiskFactorPagination from "./components/RiskFactorPagination";
 import "./LearnPage.css";
 
 function LearnPage() {
   const [searchParams] = useSearchParams();
   const focusedFactor = getLearnRiskFactor(searchParams.get("factor"));
   const {
-    riskFactorGroups, visibleGroups, activeGroupId, setActiveGroupId, selectedFactor,
+    riskFactorGroups, visibleGroups, activeGroupId, setActiveGroupId, selectedFactor, setGroupPage,
     articleContent, isLoadingArticles, hasArticleErrors, reloadArticles,
   } = useLearnViewModel(focusedFactor);
   const { query, setQuery, search, submitSearch, clearSearch } = useLearnSearchViewModel();
@@ -77,6 +78,12 @@ function LearnPage() {
                 />
               ))}
             </div>
+            <RiskFactorPagination
+              groupTitle={group.title}
+              page={group.page}
+              pageCount={group.pageCount}
+              onPageChange={(page) => setGroupPage(group.id, page)}
+            />
           </section>
         ))}
       </section>

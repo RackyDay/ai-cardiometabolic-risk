@@ -8,11 +8,16 @@ import { learnRiskFactors } from "./learnRiskFactors";
 import { buildPersonalisedTopics, generalTopic } from "./learnPersonalisedTopics";
 import LearnPage from "./LearnPage";
 import RiskFactorEducationCard from "./components/RiskFactorEducationCard";
+import RiskFactorPagination from "./components/RiskFactorPagination";
+import { CARDS_PER_PAGE, paginate } from "./useLearnViewModel";
 import { searchMedlinePlus } from "../../services/medlinePlusApi";
+import { getPreventionRecommendations } from "../../services/myHealthfinderApi";
 
 vi.mock("../../services/medlinePlusApi", () => ({ searchMedlinePlus: vi.fn() }));
+vi.mock("../../services/myHealthfinderApi", () => ({ getPreventionRecommendations: vi.fn() }));
 beforeEach(() => {
   searchMedlinePlus.mockReset().mockImplementation(() => new Promise(() => {}));
+  getPreventionRecommendations.mockReset().mockImplementation(() => new Promise(() => {}));
 });
 
 const schemaFields = Object.values(riskInputSchema);
@@ -48,7 +53,7 @@ it.each([
 
   expect(screen.getAllByRole("article")).toHaveLength(schemaFields.length);
   expect(screen.getByRole("region", { name: "Based on your assessment" }))
-    .toHaveTextContent("with or without an assessment");
+    .toHaveTextContent("Sign in to view personalised education.");
 });
 
 it("keeps general education available across sign-in and sign-out without changing an assessment", () => {
@@ -77,7 +82,7 @@ it("keeps general education available across sign-in and sign-out without changi
     rerender(page(signedIn));
     expect(screen.getAllByRole("article")).toHaveLength(schemaFields.length);
     expect(screen.getByRole("region", { name: "Based on your assessment" }))
-      .toHaveTextContent("Topics picked from the answers in your latest assessment.");
+      .toHaveTextContent(signedIn ? "Prevention recommendations picked from the answers in your latest assessment" : "Sign in to view personalised education.");
   }
   const publicQueries = [
     ...learnRiskFactors.flatMap((factor) => factor.searchTerms),
@@ -202,6 +207,9 @@ it("covers the schema exactly and preserves the backend's two feature aliases", 
 });
 
 describe("personalised education", () => {
+  const signedIn = (ui) => (
+    <AuthContext.Provider value={{ isAuthenticated: true, user: { id: "user-a" } }}>{ui}</AuthContext.Provider>
+  );
   const completed = {
     gender: "M", age: 52, education: 2, currentSmoker: true, cigsPerDay: 10, bpMeds: false,
     prevalentStroke: false, prevalentHyp: false, diabetes: false,
@@ -217,7 +225,9 @@ describe("personalised education", () => {
     expect(terms({ totChol: 213, glucose: 110, heartRate: 101 })).toEqual(["prediabetes", "cholesterol levels", "tachycardia"]);
     expect(terms({ glucose: 127, BMI: 26, sysBP: 85, diaBP: 55 })).toEqual(["low blood pressure", "diabetes", "weight control"]);
     expect(terms({ prevalentHyp: true, bpMeds: true, diabetes: true, prevalentStroke: true, BMI: 17 }))
-      .toEqual(["high blood pressure", "blood pressure medicines", "diabetic heart disease", "healthy weight"]);
+      .toEqual(["high blood pressure", "blood pressure medicines", "diabetic heart disease", "healthy weight", "stroke"]);
+    expect(terms({ currentSmoker: true, sysBP: 150, bpMeds: true, diabetes: true, totChol: 250, BMI: 31, prevalentStroke: true, heartRate: 110, age: 60 }))
+      .toHaveLength(6);
   });
 
   it("ranks topics by model contribution, accepts form strings and never returns values in search terms", () => {
@@ -234,52 +244,120 @@ describe("personalised education", () => {
     expect(buildPersonalisedTopics(null, [])).toBeNull();
   });
 
-  it("uses the completed assessment snapshot, never the live draft inputs", async () => {
-    searchMedlinePlus.mockResolvedValue([article]);
-    render(
+  const recommendation = (topicId, title) => ({
+    id: String(topicId ?? title), title, summary: "Plain-language advice.", topicId,
+    url: `https://odphp.health.gov/myhealthfinder/topics/${topicId ?? 1}`, source: "MyHealthfinder",
+  });
+
+  it("maps every topic to a MyHealthfinder topic and drops duplicates of the same topic", () => {
+    expect(buildPersonalisedTopics(completed, []).map((topic) => topic.topicId)).toEqual([30610, 533, 30551, 25]);
+    expect(generalTopic.topicId).toBe(25);
+    const shared = buildPersonalisedTopics({ diabetes: true, age: 60 }, []);
+    expect(shared.map((topic) => topic.searchTerm)).toEqual(["diabetic heart disease"]);
+  });
+
+  it("requests recommendations for the completed snapshot, never the live draft inputs", async () => {
+    getPreventionRecommendations.mockResolvedValue([
+      recommendation(30610, "Quit Smoking"),
+      recommendation(533, "Get Your Blood Pressure Checked"),
+      recommendation(null, "Get Screened for Colorectal Cancer"),
+    ]);
+    render(signedIn(
       <RiskContext.Provider value={{ riskInputs: { ...completed, currentSmoker: false }, riskScore: 9, assessedInputs: completed, topContributors: [] }}>
         <LearnPage />
       </RiskContext.Provider>,
-    );
+    ));
     const region = screen.getByRole("region", { name: "Based on your assessment" });
-    expect(region).toHaveTextContent("You told us that you currently smoke.");
-    expect(region).toHaveTextContent("150.0 mmHg");
-    await waitFor(() => expect(within(region).getAllByRole("link", { name: /Heart Diseases/ })).toHaveLength(4));
-    for (const term of terms(completed)) expect(searchMedlinePlus).toHaveBeenCalledWith(term, expect.objectContaining({ limit: 1 }));
+    expect(region).toHaveTextContent("Loading recommendations…");
+    expect(getPreventionRecommendations).toHaveBeenCalledWith(expect.objectContaining({
+      topicIds: [30610, 533, 30551, 25], age: 52, sex: "male", tobaccoUse: true,
+    }));
+    const list = await within(region).findByRole("list", { name: "Prevention recommendations for your assessment" });
+    const cards = within(list).getAllByRole("listitem").filter((item) => item.parentElement === list);
+    expect(cards).toHaveLength(3);
+    expect(cards[0]).toHaveTextContent("You told us that you currently smoke.");
+    expect(within(cards[0]).getByRole("link", { name: "Quit Smoking (opens in a new tab)" }))
+      .toHaveAttribute("href", "https://odphp.health.gov/myhealthfinder/topics/30610");
+    expect(cards[1]).toHaveTextContent("150.0 mmHg");
+    expect(cards[2]).toHaveTextContent("Recommended by MyHealthfinder for people of your age and sex.");
+    expect(region).toHaveTextContent("Source: MyHealthfinder");
+    expect(region).toHaveTextContent("U.S. guidelines");
+    for (const [query] of searchMedlinePlus.mock.calls) {
+      expect(learnRiskFactors.flatMap((factor) => factor.searchTerms)).toContain(query);
+    }
   });
 
-  it("prefers a selected history calculation and keeps the placeholder for a draft without a score", () => {
-    const { unmount } = render(
+  it("sends no age or sex for \"Rather not say\", so only risk factor topics are requested", () => {
+    render(signedIn(
+      <RiskContext.Provider value={{ assessedInputs: { ...completed, gender: "O" } }}>
+        <LearnPage />
+      </RiskContext.Provider>,
+    ));
+    const [request] = getPreventionRecommendations.mock.calls[0];
+    expect(request.topicIds).toEqual([30610, 533, 30551, 25]);
+    expect(request).not.toHaveProperty("age");
+    expect(request).not.toHaveProperty("sex");
+    expect(request).not.toHaveProperty("tobaccoUse");
+  });
+
+  it("prefers a selected history calculation and keeps the placeholder for a draft without a score", async () => {
+    getPreventionRecommendations.mockResolvedValue([recommendation(25, "Keep Your Heart Healthy")]);
+    const { unmount } = render(signedIn(
       <RiskContext.Provider value={{ assessedInputs: completed, selectedCalculation: { inputs: { diabetes: true } } }}>
         <LearnPage />
       </RiskContext.Provider>,
-    );
+    ));
     const region = screen.getByRole("region", { name: "Based on your assessment" });
-    expect(region).toHaveTextContent("diagnosed with diabetes");
+    expect(await within(region).findByText(/diagnosed with diabetes/)).toBeInTheDocument();
     expect(region).not.toHaveTextContent("currently smoke");
+    expect(getPreventionRecommendations).toHaveBeenLastCalledWith(expect.objectContaining({ topicIds: [25] }));
     unmount();
 
-    render(
+    getPreventionRecommendations.mockClear();
+    render(signedIn(
       <RiskContext.Provider value={{ riskInputs: completed, riskScore: null, assessedInputs: null }}>
         <LearnPage />
       </RiskContext.Provider>,
-    );
+    ));
     expect(screen.getByRole("region", { name: "Based on your assessment" }))
       .toHaveTextContent("Personalised education will appear here when it is available.");
+    expect(getPreventionRecommendations).not.toHaveBeenCalled();
   });
 
-  it("shows a per-topic message when an article can't be loaded", async () => {
-    searchMedlinePlus.mockImplementation(async (query) => {
-      if (query === "obesity") throw new Error("Unavailable");
-      return [article];
-    });
+  it("is only available to signed-in users, like the dashboard's Insights card", () => {
     render(
+      <AuthContext.Provider value={{ isAuthenticated: false, user: null }}>
+        <RiskContext.Provider value={{ assessedInputs: completed, selectedCalculation: { inputs: completed } }}>
+          <LearnPage />
+        </RiskContext.Provider>
+      </AuthContext.Provider>,
+    );
+    const region = screen.getByRole("region", { name: "Based on your assessment" });
+    expect(region).toHaveAttribute("aria-disabled", "true");
+    expect(region).toHaveTextContent("Sign in to view personalised education.");
+    expect(region).not.toHaveTextContent("currently smoke");
+    expect(getPreventionRecommendations).not.toHaveBeenCalled();
+  });
+
+  it("shows clear messages when recommendations fail or none are found", async () => {
+    getPreventionRecommendations.mockRejectedValueOnce(new Error("Unavailable"));
+    const { unmount } = render(signedIn(
       <RiskContext.Provider value={{ assessedInputs: { BMI: 31.2 } }}>
         <LearnPage />
       </RiskContext.Provider>,
-    );
-    const region = screen.getByRole("region", { name: "Based on your assessment" });
-    expect(await within(region).findByText(/Articles are unavailable right now/)).toBeInTheDocument();
+    ));
+    let region = screen.getByRole("region", { name: "Based on your assessment" });
+    expect(await within(region).findByText(/Recommendations are unavailable right now/)).toBeInTheDocument();
+    unmount();
+
+    getPreventionRecommendations.mockResolvedValueOnce([]);
+    render(signedIn(
+      <RiskContext.Provider value={{ assessedInputs: { BMI: 31.2 } }}>
+        <LearnPage />
+      </RiskContext.Provider>,
+    ));
+    region = screen.getByRole("region", { name: "Based on your assessment" });
+    expect(await within(region).findByText(/No MyHealthfinder recommendations found/)).toBeInTheDocument();
   });
 });
 
@@ -360,5 +438,37 @@ describe("risk factor filter", () => {
     fireEvent.click(within(filter).getByRole("button", { name: "All" }));
     expect(screen.getAllByRole("article")).toHaveLength(schemaFields.length);
     expect(searchMedlinePlus).toHaveBeenCalledTimes(callsBefore);
+  });
+});
+
+describe("topic card pages", () => {
+  it("shows at most two rows of three cards per page", () => {
+    const items = Array.from({ length: 14 }, (_, index) => index);
+    expect(CARDS_PER_PAGE).toBe(6);
+    expect(paginate(items, 0)).toEqual({ items: [0, 1, 2, 3, 4, 5], page: 0, pageCount: 3 });
+    expect(paginate(items, 2)).toEqual({ items: [12, 13], page: 2, pageCount: 3 });
+    expect(paginate(items, 9).page).toBe(2);
+    expect(paginate([1, 2, 3], undefined)).toEqual({ items: [1, 2, 3], page: 0, pageCount: 1 });
+  });
+
+  it("offers previous and next buttons only when a category needs more than one page", () => {
+    const onPageChange = vi.fn();
+    const { rerender } = render(<RiskFactorPagination groupTitle="clinical" page={0} pageCount={2} onPageChange={onPageChange} />);
+    const nav = screen.getByRole("navigation", { name: "clinical topic pages" });
+    expect(within(nav).getByText("Page 1 of 2")).toBeInTheDocument();
+    expect(within(nav).getByRole("button", { name: "Previous" })).toBeDisabled();
+    fireEvent.click(within(nav).getByRole("button", { name: "Next" }));
+    expect(onPageChange).toHaveBeenCalledWith(1);
+
+    rerender(<RiskFactorPagination groupTitle="clinical" page={1} pageCount={2} onPageChange={onPageChange} />);
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+    rerender(<RiskFactorPagination groupTitle="clinical" page={0} pageCount={1} onPageChange={onPageChange} />);
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("fits every current category on one page, so no pagination is shown", () => {
+    render(<LearnPage />);
+    expect(screen.queryByRole("navigation", { name: /topic pages/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("article")).toHaveLength(schemaFields.length);
   });
 });

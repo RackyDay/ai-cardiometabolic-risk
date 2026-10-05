@@ -50,3 +50,54 @@ def test_upstream_failures_have_predictable_json_errors(api, status):
     assert response.json() == {"detail": "Articles unavailable."}
     if status == 503:
         assert response.headers["Retry-After"] == "60"
+
+
+@pytest.fixture
+def prevention_api():
+    from learning_router import get_prevention_service
+    app = FastAPI()
+    app.include_router(router)
+    class Service:
+        error = None
+        calls = []
+
+        async def recommend(self, topic_ids, age, sex, tobacco_use):
+            self.calls.append((topic_ids, age, sex, tobacco_use))
+            if self.error:
+                raise self.error
+            return [{
+                "id": "533", "title": "Get Your Blood Pressure Checked", "summary": "Advice.",
+                "url": "https://odphp.health.gov/myhealthfinder/topics/533", "source": "MyHealthfinder", "topic_id": 533,
+            }]
+    service = Service()
+    app.dependency_overrides[get_prevention_service] = lambda: service
+    with TestClient(app) as client:
+        yield client, service
+
+
+def test_prevention_is_public_and_passes_topics_and_demographics(prevention_api):
+    client, service = prevention_api
+    response = client.get("/prevention", params={"topic_ids": "533,30610", "age": 52, "sex": "male", "tobacco_use": "true"})
+    assert response.status_code == 200
+    assert response.json()["recommendations"][0]["topic_id"] == 533
+    assert service.calls[-1] == ([533, 30610], 52, "male", True)
+    assert client.get("/prevention", params={"topic_ids": "25"}).status_code == 200
+    assert service.calls[-1] == ([25], None, None, None)
+
+
+@pytest.mark.parametrize("params", [
+    {"topic_ids": "abc"}, {"topic_ids": "1,2,3,4,5,6,7"}, {"age": 0}, {"age": 121}, {"sex": "other"},
+])
+def test_prevention_rejects_invalid_parameters(prevention_api, params):
+    client, _ = prevention_api
+    assert client.get("/prevention", params=params).status_code == 422
+
+
+def test_prevention_failures_have_predictable_json_errors(prevention_api):
+    from myhealthfinder_service import MyHealthfinderError
+    client, service = prevention_api
+    service.error = MyHealthfinderError("Recommendations unavailable.", 503, 60)
+    response = client.get("/prevention", params={"topic_ids": "533"})
+    assert response.status_code == 503
+    assert response.headers["Retry-After"] == "60"
+    assert response.json() == {"detail": "Recommendations unavailable."}

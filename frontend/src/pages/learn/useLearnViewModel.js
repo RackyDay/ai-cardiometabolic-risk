@@ -17,6 +17,15 @@ const riskFactorGroups = Array.from(
 const topicQueries = [...new Set(learnRiskFactors.flatMap((factor) => factor.searchTerms))];
 const loadingContent = { status: "loading", articles: [] };
 
+// Topic cards are laid out three per row, two rows per page.
+export const CARDS_PER_PAGE = 6;
+
+export function paginate(items, requestedPage = 0) {
+  const pageCount = Math.max(1, Math.ceil(items.length / CARDS_PER_PAGE));
+  const page = Math.min(Math.max(requestedPage, 0), pageCount - 1);
+  return { items: items.slice(page * CARDS_PER_PAGE, (page + 1) * CARDS_PER_PAGE), page, pageCount };
+}
+
 function useLearnViewModel(focusedFactor) {
   const [attempt, setAttempt] = useState(0);
   // A factor link shows one topic until the user chooses a category or "All".
@@ -32,6 +41,11 @@ function useLearnViewModel(focusedFactor) {
     : null;
   const [response, setResponse] = useState({ attempt: 0, byQuery: {} });
   const reloadArticles = useCallback(() => setAttempt((current) => current + 1), []);
+  // Current page per category; categories with six or fewer topics have one.
+  const [pageByGroup, setPageByGroup] = useState({});
+  const setGroupPage = useCallback((groupId, page) => {
+    setPageByGroup((current) => ({ ...current, [groupId]: page }));
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -82,10 +96,15 @@ function useLearnViewModel(focusedFactor) {
       .filter((group) => activeGroupId === "all" || group.id === activeGroupId)
       .map((group) => selectedFactor
         ? { ...group, factors: group.factors.filter((factor) => factor === selectedFactor) }
-        : group),
+        : group)
+      .map((group) => {
+        const { items, page, pageCount } = paginate(group.factors, pageByGroup[group.id]);
+        return { ...group, factors: items, page, pageCount };
+      }),
     activeGroupId,
     setActiveGroupId,
     selectedFactor,
+    setGroupPage,
     articleContent,
     isLoadingArticles: states.some((content) => content.status === "loading"),
     hasArticleErrors: states.some((content) => content.status === "error" || content.partialError),
