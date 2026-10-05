@@ -1,0 +1,178 @@
+.assessment-page {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(min-content, 1fr) auto minmax(min-content, 1fr);
+  row-gap: clamp(.75rem, 2vh, 2rem);
+}
+.assessment-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-block;
+  color: #53627b;
+  font-size: .85rem;
+  text-decoration: none;
+  padding: .35rem 0;
+}
+.assessment-back:hover { color: #285bbd; text-decoration: underline; }
+.assessment-back:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 5px;
+}
+.assessment-header {
+  align-self: start;
+  margin: 2rem auto 0;
+  text-align: center;
+  max-width: 35rem;
+}
+.assessment-header h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -.04em;
+  color: #192b48;
+}
+.assessment-header p { color: #617089; line-height: 1.65; }
+.assessment-modules {
+  --carousel-gap: clamp(1rem, 3vw, 3rem);
+  --carousel-card-width: min(64vw, 46rem);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: .5rem 1rem;
+  width: calc(100% + 64px);
+  margin: 0 -32px;
+}
+.assessment-modules .assessment-module-footer { flex-wrap: wrap; gap: .75rem; }
+.assessment-carousel-viewport {
+  overflow: hidden;
+  /* Allow the card shadows to fade out without increasing the layout height. */
+  padding: 40px 0;
+  margin: -28px 0;
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+}
+.assessment-carousel-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 100%;
+  gap: var(--carousel-gap);
+  width: var(--carousel-card-width);
+  margin: 0 auto;
+  transition: transform .45s cubic-bezier(.22, .68, .2, 1);
+}
+.assessment-carousel-slide {
+  min-width: 0;
+  display: flex;
+  transition: opacity .45s ease, scale .45s ease;
+}
+.assessment-carousel-slide[aria-hidden="true"] { opacity: .55; scale: .95; }
+.assessment-carousel-track[data-moving="false"] .assessment-carousel-slide { transition: none; }
+.assessment-carousel-slide > .assessment-module { width: 100%; }
+.assessment-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 2px solid #3d6fd4;
+  border-radius: 50%;
+  background: #3d6fd4;
+  color: #fff;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 22px #285bbd40;
+}
+.assessment-carousel-arrow svg { display: block; width: 30px; height: 30px; }
+.assessment-carousel-arrow[aria-label="Previous module"] { left: 16px; }
+.assessment-carousel-arrow[aria-label="Next module"] { right: 16px; }
+.assessment-carousel-arrow:hover:not(:disabled) { background: #285bbd; border-color: #285bbd; }
+.assessment-carousel-arrow:disabled { background: #e0e8f6; border-color: #b8c9e5; color: #8195b6; box-shadow: none; cursor: default; }
+.assessment-carousel-arrow:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .assessment-carousel-track, .assessment-carousel-slide { transition: none; }
+}
+@media (max-width: 600px) {
+  .assessment-modules { --carousel-card-width: 76vw; --carousel-gap: .75rem; }
+  .assessment-carousel-arrow { width: 44px; height: 44px; }
+  .assessment-carousel-arrow svg { width: 24px; height: 24px; }
+  .assessment-carousel-arrow[aria-label="Previous module"] { left: 6px; }
+  .assessment-carousel-arrow[aria-label="Next module"] { right: 6px; }
+  .assessment-carousel-viewport { mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); }
+  .assessment-modules .assessment-module-body { padding: 1rem; }
+  .assessment-modules .assessment-module-footer { padding: 1rem; }
+  .assessment-modules .assessment-module-actions { flex-shrink: 1; }
+}
+.assessment-actions {
+  align-self: end;
+  justify-self: end;
+  margin: 0;
+  padding-top: clamp(0rem, calc(2vh - .75rem), 1rem);
+  text-align: right;
+  max-width: 46rem;
+}
+.assessment-actions p:first-child { margin-top: 0; }
+.assessment-actions p { margin-bottom: clamp(.5rem, 1.5vh, 1.5rem); }
+.assessment-actions p { color: #617089; line-height: 1.5; }
+.assessment-actions [role="alert"] { color: #b42318; }
+.assessment-calculate-help { position: relative; display: inline-block; }
+.assessment-calculate-help:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 4px; border-radius: 28px; }
+.assessment-calculate-tooltip {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  width: min(18rem, calc(100vw - 64px));
+  box-sizing: border-box;
+  padding: .75rem 1rem;
+  border-radius: .6rem;
+  background: #192b48;
+  color: #fff;
+  font-size: .8rem;
+  line-height: 1.5;
+  text-align: left;
+  box-shadow: 0 4px 16px #192b4826;
+  visibility: hidden;
+  z-index: 2;
+}
+.assessment-calculate-help:hover .assessment-calculate-tooltip,
+.assessment-calculate-help:focus-within .assessment-calculate-tooltip { visibility: visible; }
+.assessment-calculate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: #3d6fd4;
+  color: white;
+  border: none;
+  border-radius: 28px;
+  padding: .875em 2.5em;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.assessment-calculate span { font-size: 1.35em; line-height: 1; }
+.assessment-calculate:hover:not(:disabled) { background: #2d5fc4; }
+.assessment-calculate:disabled { opacity: .55; cursor: not-allowed; }
+.assessment-calculate:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 4px; }
+@media (max-width: 600px) {
+  .assessment-page { height: auto; min-height: 100%; row-gap: 1.25rem; }
+  .assessment-header { margin: 2rem auto 0; }
+  .assessment-actions { padding: 0; }
+}
+@media (max-height: 850px) and (min-width: 601px) {
+  .app-content:has(.assessment-page) { padding-top: 16px; padding-bottom: 16px; }
+  .assessment-header { margin-top: 1.5rem; max-width: 46rem; }
+  .assessment-header h1 { font-size: 2rem; margin-bottom: .5rem; }
+  .assessment-page .assessment-module-body { padding-top: 1rem; padding-bottom: 1rem; }
+  .assessment-page .assessment-module-heading { margin-bottom: .75rem; }
+  .assessment-page .assessment-module-footer { padding-top: .75rem; padding-bottom: .75rem; }
+  .assessment-actions { padding-top: 0; }
+}

@@ -4,9 +4,11 @@ import HeartECGIcon from "../../components/icons/HeartECGIcon";
 import "./WelcomePage.css";
 import ActionButton from "../../components/common/ActionButton";
 import { AuthContext } from "../../context/AuthContext";
+import { RiskContext } from "../../context/RiskContext";
 
 function WelcomePage() {
   const { isAuthenticated } = useContext(AuthContext);
+  const { startNewAssessment } = useContext(RiskContext);
 
   // An already-signed-in user has no use for the landing page - its only
   // actions are "get started" and "log in / sign up". Send them straight
@@ -30,7 +32,7 @@ function WelcomePage() {
         </p>
 
 
-        <ActionButton label="Click to get started" to="/inputs" />
+        <ActionButton label="Click to get started" to="/assessment" onClick={startNewAssessment} />
 
         <ActionButton label="Log In / Sign Up" to="/auth" />
 
