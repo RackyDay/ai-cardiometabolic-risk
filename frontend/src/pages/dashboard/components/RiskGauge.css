@@ -21,11 +21,24 @@
   line-height: 1;
 }
 
+.risk-level-summary {
+  max-width: 26rem;
+  text-align: center;
+}
+
 .risk-level-label {
   font-size: 0.95rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+/* Plain case and a lighter weight than the label - this is a short "what
+   to do" note riding alongside it, not a second shouted headline. */
+.risk-level-tag {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #4b5563;
 }
 
 .risk-bar-wrapper {
@@ -118,7 +131,9 @@
 
 .risk-legend {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* 3 columns rather than 2 - with all 8 severity zones now listed, 2
+     columns runs to 4 rows; 3 columns fits the same 8 rows into 3. */
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem 0.75rem;
   width: 100%;
   padding-top: 0.25rem;
@@ -293,5 +308,19 @@
 
   .risk-legend {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Narrow phones (e.g. a 320px-wide viewport): the label + severity tag
+   can still run long enough together to wrap even after shortening the
+   tag copy - trade a little size for staying on one line. */
+@media (max-width: 340px) {
+  .risk-level-label,
+  .risk-level-tag {
+    font-size: 0.8rem;
+  }
+
+  .risk-level-label {
+    letter-spacing: 0.01em;
   }
 }
