@@ -4,8 +4,7 @@
 // successful one instead of getting a FastAPI error body back as if it were
 // a score.
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { API_URL } from "./apiConfig";
 
 // FastAPI validation errors (422) come back as { detail: [{ loc, msg, ... }] }
 // - one entry per invalid field. Turn that into a single plain-English line

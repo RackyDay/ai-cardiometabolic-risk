@@ -131,6 +131,33 @@ class AuthResponse(BaseModel):
     email_confirmation_required: bool = False
 
 
+class LearningArticle(BaseModel):
+    id: str
+    title: str
+    summary: str
+    url: str
+    source: Literal["MedlinePlus"]
+
+
+class LearningContentResponse(BaseModel):
+    query: str
+    articles: list[LearningArticle]
+
+
+class PreventionRecommendation(BaseModel):
+    id: str
+    title: str
+    summary: str
+    url: str
+    source: Literal["MyHealthfinder"]
+    # The requested topic this answers; null for general age/sex recommendations.
+    topic_id: Optional[int] = None
+
+
+class PreventionResponse(BaseModel):
+    recommendations: list[PreventionRecommendation]
+
+
 class LatestPredictionResponse(BaseModel):
     has_history: bool
     riskcalc_id: Optional[str] = None

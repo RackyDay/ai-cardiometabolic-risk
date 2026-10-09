@@ -1,21 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import "./RiskGauge.css";
-import { RISK_LEVELS, getRiskLevel, formatRiskRange } from "./riskLevels";
+import { RISK_LEVELS, RISK_ZONES, getRiskLevel, formatRiskRange } from "./riskLevels";
 
-/* Tick marks derived from the bands themselves, so the scale always lines
-   up with wherever the band boundaries currently are. */
+/* Tick marks derived from the zones themselves, so the scale always lines
+   up with wherever the boundaries currently are. */
 const SCALE_TICKS = [
   ...new Set([
-    ...RISK_LEVELS.map((level) => level.min),
-    RISK_LEVELS[RISK_LEVELS.length - 1].max,
+    ...RISK_ZONES.map((zone) => zone.min),
+    RISK_ZONES[RISK_ZONES.length - 1].max,
   ]),
 ].sort((a, b) => a - b);
 
-const SCALE_DOMAIN_MAX = RISK_LEVELS[RISK_LEVELS.length - 1].max;
+const SCALE_DOMAIN_MAX = RISK_ZONES[RISK_ZONES.length - 1].max;
 
 /* A plain linear mapping puts most people's scores (0-20%) in the first
-   fifth of the bar and lets the open-ended 20-100% "High Risk" band
-   swallow the rest, crushing Low/Borderline/Moderate into slivers. A
+   fifth of the bar and lets the open-ended top band swallow the rest,
+   crushing Low/Borderline/Moderate into slivers. A
    square-root scale keeps the bar honest and continuous (unlike an
    equal-width categorical split, it still shows 25% as meaningfully
    different from 90%) while giving the low end - where most scores
@@ -25,7 +25,7 @@ function scalePosition(value) {
 }
 
 function RiskGauge({ score }) {
-  const [selectedLevel, setSelectedLevel] = useState(null);
+  const [selectedZone, setSelectedZone] = useState(null);
   const riskBarRef = useRef(null);
   const numericScore = Number(score) || 0;
   const clampedScore = Math.max(0, Math.min(100, numericScore));
@@ -40,7 +40,7 @@ function RiskGauge({ score }) {
         riskBarRef.current &&
         !riskBarRef.current.contains(event.target)
       ) {
-        setSelectedLevel(null);
+        setSelectedZone(null);
       }
     };
 
@@ -72,45 +72,45 @@ function RiskGauge({ score }) {
         </p>
 
         <div className="risk-bar-track" ref={riskBarRef}>
-          {RISK_LEVELS.map((level, index) => (
+          {RISK_ZONES.map((zone, index) => (
             <div
-              key={level.key}
+              key={zone.key}
               className={`risk-bar-segment ${
                 index === 0 ? "risk-bar-segment-first" : ""
               } ${
-                index === RISK_LEVELS.length - 1
+                index === RISK_ZONES.length - 1
                   ? "risk-bar-segment-last"
                   : ""
               }`}
               style={{
-                flex: scalePosition(level.max) - scalePosition(level.min),
-                backgroundColor: level.color,
+                flex: scalePosition(zone.max) - scalePosition(zone.min),
+                backgroundColor: zone.color,
               }}
               onClick={() => {
                 const isMobile = window.matchMedia("(max-width: 767px)").matches;
 
                 if (!isMobile) return;
 
-                setSelectedLevel((current) =>
-                  current === level.key ? null : level.key
+                setSelectedZone((current) =>
+                  current === zone.key ? null : zone.key
                 );
               }}
             >
               <div
                 className={`risk-range-tooltip ${
-                  selectedLevel === level.key ? "open" : ""
+                  selectedZone === zone.key ? "open" : ""
                 }`}
               >
                 <div className="risk-range-tooltip-title">
-                  {level.label}
+                  {zone.label}
                 </div>
 
                 <div className="risk-range-tooltip-range">
-                  {formatRiskRange(level)}
+                  {formatRiskRange(zone)}
                 </div>
 
                 <div className="risk-range-tooltip-description">
-                  {level.description}
+                  {zone.description}
                 </div>
               </div>
             </div>

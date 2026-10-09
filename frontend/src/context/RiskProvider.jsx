@@ -11,6 +11,10 @@ export function RiskProvider({ children }) {
   const [historyRevision, setHistoryRevision] = useState(0);
   const [historyActivity, setHistoryActivity] = useState("");
   const [viewingCalculationId, setViewingCalculationId] = useState(null);
+  // The inputs behind riskScore/topContributors. Unlike riskInputs, this is
+  // never an unfinished draft (e.g. after "Add Assessment"), so the Learn
+  // page can personalise content from it. null when nothing is assessed.
+  const [assessedInputs, setAssessedInputs] = useState(null);
   // useCallback (not a plain function) so these keep a stable identity
   // across renders - otherwise they'd be a new function on every render,
   // which would defeat the useMemo on the context value below (its
@@ -48,6 +52,7 @@ export function RiskProvider({ children }) {
   useEffect(() => {
     setHistorySelection((current) => current?.userId === userId ? current : null);
     setViewingCalculationId(null);
+    setAssessedInputs(null);
     setModuleCompletion({});
     setStressInputs(createInitalRiskInputs(stressInputSchema));
   }, [userId]);
@@ -114,6 +119,8 @@ export function RiskProvider({ children }) {
       setRiskCalculationId,
       riskScore,
       setRiskScore,
+      assessedInputs,
+      setAssessedInputs,
       topContributors,
       setTopContributors,
 
@@ -137,6 +144,7 @@ export function RiskProvider({ children }) {
       riskInputs,
       riskCalculationId,
       riskScore,
+      assessedInputs,
       topContributors,
       hypotheticalInputs,
       hypotheticalRiskScore,

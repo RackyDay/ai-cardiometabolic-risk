@@ -13,6 +13,7 @@ export function useEditAssessmentViewModel() {
         riskInputs,
         setRiskInputs,
         setRiskScore,
+        setAssessedInputs,
         setTopContributors,
         riskCalculationId,
         setRiskCalculationId,
@@ -181,6 +182,7 @@ export function useEditAssessmentViewModel() {
             // Only now does the draft become the actual saved assessment.
             setRiskInputs(draftInputs);
             setRiskScore(result.risk_score);
+            setAssessedInputs?.(payload);
             setTopContributors(result.top_contributors);
             setRiskCalculationId(result.riskcalc_id ?? null);
 

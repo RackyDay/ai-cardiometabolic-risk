@@ -8,7 +8,8 @@ export function useInputViewModel() {
 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
-    const { riskInputs, setRiskInputs, completeModule } = useContext(RiskContext);
+    const { riskInputs, setRiskInputs, setRiskScore, setAssessedInputs, setTopContributors, setRiskCalculationId, selectCalculation, completeModule } = useContext(RiskContext);
+    const { accessToken } = useContext(AuthContext);
     const [page, setPage] = useState(0);
     // Each convertible question (glucose, cholesterol) picks its own
     // display unit independently - this is unrelated to the dashboard's
@@ -143,6 +144,34 @@ export function useInputViewModel() {
         return;
         }
 
+        // All fields passed validation above, so it's safe to build the API
+        // payload and ask the model for a risk score.
+        setSubmitError("");
+        setIsSubmitting(true);
+
+        try {
+            const payload = buildPredictionPayload(riskInputs, riskInputSchema);
+            const result = await predictRisk(payload, accessToken);
+            // Persist the score and its explanation on the shared
+            // RiskContext (Model) so DashboardPage can read them after
+            // navigation.
+            setRiskScore(result.risk_score);
+            // Snapshot of exactly what was scored, for the Learn page.
+            setAssessedInputs?.(payload);
+            selectCalculation(null);
+            setTopContributors(result.top_contributors);
+            // Lets "Edit original assessment" update this exact row
+            // afterward instead of inserting a new one - null for an
+            // anonymous submission, since nothing was persisted.
+            setRiskCalculationId(result.riskcalc_id ?? null);
+            navigate("/dashboard");
+        } catch {
+            // Network failure or a 4xx/5xx from the API — keep the user on
+            // this page and surface a generic, non-technical message.
+            setSubmitError("We couldn't calculate your risk score. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
         completeModule("base-risk", riskInputs);
         navigate("/assessment");
     };

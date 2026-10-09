@@ -1,4 +1,7 @@
 
+/* Each level is one colour on the bar and one row in the legend. A level can
+   also be split into zones: the bar draws every zone in the level's colour,
+   but hovering or tapping a zone shows its own tooltip. */
 export const RISK_LEVELS = [
   {
     key: "low",
@@ -41,10 +44,42 @@ export const RISK_LEVELS = [
     color: "#ef4444",
     bgColor: "#fef2f2",
     shortDescription: "Talk to a healthcare provider soon.",
-    description:
-      "Your 10-year CHD risk is high. We recommend speaking with a healthcare provider soon to discuss treatment and prevention strategies tailored to your risk factors.",
+    zones: [
+      {
+        key: "high-20",
+        label: "High Risk",
+        min: 20,
+        max: 30,
+        description:
+          "Your 10-year CHD risk is high. We recommend speaking with a healthcare provider soon to discuss treatment and prevention strategies tailored to your risk factors.",
+      },
+      {
+        key: "high-30",
+        label: "Very High Risk",
+        min: 30,
+        max: 50,
+        description:
+          "Your 10-year CHD risk is very high. Please arrange a medical review soon. At this level, treatment such as medication is often recommended, so ask your provider about your blood pressure, cholesterol and blood sugar as well as lifestyle changes.",
+      },
+      {
+        key: "high-50",
+        label: "Severe Risk",
+        min: 50,
+        max: 100,
+        description:
+          "Your 10-year CHD risk is severe. Please contact a healthcare provider urgently rather than waiting for a routine appointment. If you have chest pain, shortness of breath, or pain spreading to your arm or jaw, call emergency services now.",
+      },
+    ],
   },
 ];
+
+/* The bar's drawing units: every level, with its sub-zones expanded in place.
+   A level without zones is its own single zone. */
+export const RISK_ZONES = RISK_LEVELS.flatMap((level) =>
+  level.zones
+    ? level.zones.map((zone) => ({ ...zone, color: level.color }))
+    : [level]
+);
 
 export function getRiskLevel(score) {
   const clamped = Math.max(0, Math.min(100, score));
@@ -54,8 +89,8 @@ export function getRiskLevel(score) {
   );
 }
 
-/* Formats a level's range as "0–5%" or, for the open-ended top band, "20%+". */
-export function formatRiskRange(level) {
-  const isLastBand = level === RISK_LEVELS[RISK_LEVELS.length - 1];
-  return isLastBand ? `${level.min}%+` : `${level.min}–${level.max}%`;
+/* Formats a range as "0–5%" or, for an open-ended top range, "20%+".
+   Works for levels and zones alike. */
+export function formatRiskRange(range) {
+  return range.max >= 100 ? `${range.min}%+` : `${range.min}–${range.max}%`;
 }

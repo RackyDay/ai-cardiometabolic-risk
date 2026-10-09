@@ -14,6 +14,7 @@ import AlertTriangleIcon from "../../components/icons/AlertTriangleIcon";
 import PencilIcon from "../../components/icons/PencilIcon";
 
 import RiskGauge from "./components/RiskGauge";
+import LearnMoreLink from "./components/LearnMoreLink";
 import DashboardStress from "./components/DashboardStress";
 import { useLocation } from "react-router-dom";
 
@@ -1207,6 +1208,8 @@ function DashboardPage() {
 
                               </span>
 
+                              <LearnMoreLink feature={factor.feature} />
+
                             </div>
 
                           )}
@@ -1236,6 +1239,8 @@ function DashboardPage() {
                                       "This factor is included by the risk model because it can provide information relevant to cardiovascular risk."}
 
                                   </span>
+
+                                  <LearnMoreLink feature={factor.feature} />
 
                                 </div>
 
