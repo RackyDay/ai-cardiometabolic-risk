@@ -1,8 +1,11 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 import { RiskContext } from "../../context/RiskContext";
 import { MG_DL, canonicalToDisplay, getDisplayUnit } from "../../utils/unitConversion";
 import { riskInputSchema } from "../../schemas/riskInputSchema";
+import { predictRisk } from "../../services/api";
+import { buildPredictionPayload } from "./riskInputTransform";
 
 export function useInputViewModel() {
 
@@ -11,6 +14,8 @@ export function useInputViewModel() {
     const { riskInputs, setRiskInputs, setRiskScore, setAssessedInputs, setTopContributors, setRiskCalculationId, selectCalculation, completeModule } = useContext(RiskContext);
     const { accessToken } = useContext(AuthContext);
     const [page, setPage] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState("");
     // Each convertible question (glucose, cholesterol) picks its own
     // display unit independently - this is unrelated to the dashboard's
     // app-wide unit setting. Fields not present here default to mg/dL.
@@ -129,7 +134,7 @@ export function useInputViewModel() {
         });
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const newErrors = {};
         Object.keys(riskInputs).forEach((field) => {
         const error = validateField(field, riskInputs[field]);
@@ -176,5 +181,5 @@ export function useInputViewModel() {
         navigate("/assessment");
     };
 
-    return {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSave, fieldUnits, setFieldUnit};
+    return {riskInputs, errors, set, categories, pageOrder, page, setPage, handleSave, fieldUnits, setFieldUnit, isSubmitting, submitError};
 }
