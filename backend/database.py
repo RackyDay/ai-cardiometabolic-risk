@@ -9,7 +9,7 @@ from supabase_client import get_user_scoped_client
 _RPC_NOT_FOUND = "PGRST202"
 
 
-def save_assessment(user_id, risk_score, model_version, risk_inputs, top_contributors, token):
+def save_assessment(user_id, risk_score, model_version, risk_inputs, top_contributors, token, context=None):
     user_client = get_user_scoped_client(token)
 
     # One round trip (both inserts run atomically inside the Postgres
@@ -41,7 +41,8 @@ def save_assessment(user_id, risk_score, model_version, risk_inputs, top_contrib
 
     user_client.table("risk_inputs").insert({
         "riskcalc_id": riskcalc_id,
-        "inputs_JSON": risk_inputs
+        "inputs_JSON": risk_inputs,
+        "context_JSON": context,
     }).execute()
 
     return riskcalc_id
@@ -50,6 +51,24 @@ def delete_assessment(riskcalc_id, token):
     user_client = get_user_scoped_client(token)
 
     user_client.table("risk_calculations").delete().eq("riskcalc_id", riskcalc_id).execute()
+
+
+def latest_assessment_id(token):
+    rows = (get_user_scoped_client(token).table("risk_calculations")
+            .select("riskcalc_id").order("riskcalc_timestamp", desc=True).limit(1).execute().data)
+    return rows[0]["riskcalc_id"] if rows else None
+
+
+def save_stress(riskcalc_id, stress, token):
+    # The user-scoped client enforces ownership through the existing RLS rules.
+    client = get_user_scoped_client(token)
+    rows = client.table("risk_inputs").select("context_JSON").eq("riskcalc_id", riskcalc_id).execute().data
+    if not rows:
+        return None
+    context = dict(rows[0].get("context_JSON") or {})
+    context["stress"] = stress
+    updated = client.table("risk_inputs").update({"context_JSON": context}).eq("riskcalc_id", riskcalc_id).execute()
+    return context if updated.data else None
 
 def update_assessment(riskcalc_id, risk_score, risk_inputs, top_contributors, token):
     user_client = get_user_scoped_client(token)

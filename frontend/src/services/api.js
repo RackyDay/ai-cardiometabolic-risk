@@ -62,6 +62,21 @@ export const editRiskCalculation = async (accessToken, calculationId, inputData)
   return res.json();
 };
 
+export const getLearningContent = async () => {
+  const res = await fetch(`${API_URL}/learn`);
+  return res.json();
+};
+
+export const saveStressResult = async (accessToken, calculationId, answers) => {
+  const res = await fetch(`${API_URL}/api/risk-calculations/${calculationId}/stress`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ answers }),
+  });
+  await throwForStatus(res, "Saving stress results");
+  return res.json();
+};
+
 export const signUp = async ({ email, username, password }) => {
   const res = await fetch(`${API_URL}/auth/signup`, {
     method: "POST",

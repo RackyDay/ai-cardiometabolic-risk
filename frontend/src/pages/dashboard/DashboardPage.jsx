@@ -15,6 +15,8 @@ import PencilIcon from "../../components/icons/PencilIcon";
 
 import RiskGauge from "./components/RiskGauge";
 import LearnMoreLink from "./components/LearnMoreLink";
+import DashboardStress from "./components/DashboardStress";
+import { useLocation } from "react-router-dom";
 
 import RiskFactorPieChart, {
   RISK_FACTOR_DESCRIPTIONS,
@@ -250,6 +252,7 @@ function RiskFactorToggle({
 ========================================================= */
 
 function DashboardPage() {
+  const location = useLocation();
 
   const {
     pastCalculation,
@@ -316,7 +319,7 @@ function DashboardPage() {
   const [
     activeFactorTab,
     setActiveFactorTab,
-  ] = useState("changeable");
+  ] = useState(location.state?.tab === "stress" ? "stress" : "changeable");
 
 
   const [
@@ -1316,7 +1319,7 @@ function DashboardPage() {
                   {activeFactorTab === "stress" ? (
 
                     <div className="risk-factor-tab-empty">
-                      Stress factors are coming soon.
+                      <DashboardStress />
                     </div>
 
                   ) : (

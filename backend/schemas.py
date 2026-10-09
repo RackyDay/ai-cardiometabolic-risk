@@ -1,7 +1,7 @@
 # Request body for POST /predict. Field names and bounds mirror
 # frontend/src/schemas/riskInputSchema.ts so the same "shape" of data is
 # validated on both sides of the API boundary.
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
@@ -36,6 +36,25 @@ class RiskInputData(BaseModel):
             self.cigsPerDay = 0
 
         return self
+
+
+class StressSubmission(BaseModel):
+    # Ten canonical PSS-10 responses. Reject partial answers, unknown keys,
+    # booleans, strings and out-of-range values rather than coercing them.
+    answers: dict[
+        Literal["pss1", "pss2", "pss3", "pss4", "pss5", "pss6", "pss7", "pss8", "pss9", "pss10"],
+        Annotated[int, Field(strict=True, ge=0, le=4)],
+    ] = Field(min_length=10, max_length=10)
+
+    def saved_context(self):
+        reverse = {"pss4", "pss5", "pss7", "pss8"}
+        score = sum(4 - value if key in reverse else value for key, value in self.answers.items())
+        return {"instrument": "PSS-10", "schema_version": 1,
+                "answers": self.answers, "score": score}
+
+
+class PredictionRequest(RiskInputData):
+    stress: Optional[StressSubmission] = None
 
 
 class FeatureContribution(BaseModel):
