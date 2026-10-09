@@ -31,7 +31,7 @@ describe("risk-raising pie contributions", () => {
     const glucose = { feature: "glucose", label: "Glucose", raisesRisk: true, weightPercent: 10 };
     const original = [age, bmi, glucose];
     const changed = [glucose, { ...bmi, weightPercent: 30 }, { ...age, raisesRisk: false }];
-    const result = buildPieData(changed, original);
+    const result = buildPieData(changed, { referenceFactors: original });
     expect(result.map((factor) => factor.feature)).toEqual(["age", "BMI", "glucose"]);
     expect(result.map((factor) => factor.value)).toEqual([0, 30, 10]);
     expect(changed.map((factor) => factor.feature)).toEqual(["glucose", "BMI", "age"]);
@@ -45,5 +45,27 @@ describe("risk-raising pie contributions", () => {
     ]);
     expect(result.map((factor) => factor.value)).toEqual([0, 0]);
     expect(buildPieData([])).toEqual([]);
+  });
+});
+
+describe("scaling slices to the risk score", () => {
+  it("rescales each slice so the raising factors sum to the risk score, not to 100", () => {
+    // age/bmi weightPercents (60/40) already sum to 100 - a 23.4% risk
+    // score should split proportionally into 14.04 / 9.36.
+    const result = buildPieData([age, bmi], { riskScore: 23.4 });
+    expect(result.map((factor) => Number(factor.value.toFixed(2)))).toEqual([14.04, 9.36]);
+    expect(result.reduce((sum, factor) => sum + factor.value, 0)).toBeCloseTo(23.4);
+    expect(result.every((factor) => factor.total === 23.4)).toBe(true);
+  });
+
+  it("falls back to each factor's own weightPercent when no risk score is given", () => {
+    const result = buildPieData([age, bmi]);
+    expect(result.map((factor) => factor.value)).toEqual([60, 40]);
+  });
+
+  it("tags each slice as fixed or not using the supplied predicate", () => {
+    const result = buildPieData([age, bmi], { isFixedFactor: (feature) => feature === "age" });
+    expect(result.find((factor) => factor.feature === "age").fixed).toBe(true);
+    expect(result.find((factor) => factor.feature === "BMI").fixed).toBe(false);
   });
 });

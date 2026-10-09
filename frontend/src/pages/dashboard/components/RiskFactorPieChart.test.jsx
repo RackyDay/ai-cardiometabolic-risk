@@ -66,6 +66,45 @@ describe("pie hover highlighting", () => {
   });
 });
 
+describe("fixed factors grouped under Fixed factors", () => {
+  it("folds a single fixed factor into its own Fixed factors slice, leaving changeable factors individually labelled", () => {
+    const data = buildPieData(
+      [
+        { ...age, weightPercent: 70 },
+        { feature: "BMI", label: "Body mass index", weightPercent: 30, raisesRisk: true },
+      ],
+      { isFixedFactor: (feature) => feature === "age" }
+    );
+    const { container } = render(<RiskFactorPieChart data={data} />);
+    const labelText = [...container.querySelectorAll(".risk-chart-slice-label")]
+      .map((label) => label.textContent)
+      .join(" | ");
+    expect(labelText).not.toContain("Age");
+    expect(labelText).toContain("Body mass index");
+    expect(labelText).toContain("Fixed factors");
+
+    const sectors = container.querySelectorAll(".recharts-pie-sector");
+    fireEvent.mouseEnter(sectors[sectors.length - 1]);
+    const membersList = container.querySelector(".risk-chart-tooltip-members");
+    expect(membersList).toBeInTheDocument();
+    expect(membersList).toHaveTextContent("Age");
+  });
+
+  it("keeps a tiny changeable factor as its own slice instead of grouping it away", () => {
+    const data = buildPieData([
+      { feature: "BMI", label: "Body mass index", weightPercent: 97, raisesRisk: true },
+      { feature: "glucose", label: "Glucose", weightPercent: 3, raisesRisk: true },
+    ]);
+    const { container } = render(<RiskFactorPieChart data={data} />);
+    const labelText = [...container.querySelectorAll(".risk-chart-slice-label")]
+      .map((label) => label.textContent)
+      .join(" | ");
+    expect(labelText).toContain("Glucose");
+    expect(labelText).not.toContain("Other factors");
+    expect(labelText).not.toContain("Fixed factors");
+  });
+});
+
 describe("pie without risk-raising effects", () => {
   it("explains an assessment with only risk-lowering factors", () => {
     render(<RiskFactorPieChart data={buildPieData([{ ...age, raisesRisk: false }])} />);

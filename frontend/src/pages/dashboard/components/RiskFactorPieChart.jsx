@@ -25,33 +25,34 @@ const SLICE_LABEL_LINE_GAP = 10;
 const SLICE_LABEL_TEXT_GAP = 16;
 const SLICE_LABEL_MAX_CHARS_PER_LINE = 16;
 const SLICE_LABEL_MIN_GAP = 6;
-const OTHERS_THRESHOLD_PERCENT = 5;
 
-// Groups risk-raising factors under the threshold into a single "Other
-// factors" slice, so a handful of near-invisible slivers don't crowd the
-// chart with labels. Only kicks in with 2+ small factors - grouping just
-// one wouldn't declutter anything, only hide its name for no reason.
-// feature is left null: it has no single row in the breakdown list to
-// highlight, and getRiskFactorColor()/Cell keys already fall back
-// sensibly for an unknown feature.
-function aggregateSmallSlices(factors) {
-  const small = factors.filter(
-    (factor) => factor.value > 0 && factor.value < OTHERS_THRESHOLD_PERCENT
-  );
-  if (small.length <= 1) return factors;
+// Every changeable factor stays its own slice (it has a what-if control, so
+// it's individually actionable), while every fixed factor (age, sex, ...)
+// is folded into one "Fixed factors" slice - they have nothing to adjust,
+// so showing them as individually-labelled slices would just add noise.
+// The stacked bars below break both groups back out into their individual
+// factors. feature is left null on the group: it has no single row in the
+// breakdown list to highlight, and getRiskFactorColor()/Cell keys already
+// fall back sensibly for an unknown feature.
+function aggregateFixedFactors(factors) {
+  const fixed = factors
+    .filter((factor) => factor.fixed && factor.value > 0)
+    .sort((a, b) => b.value - a.value);
+  if (fixed.length === 0) return factors;
 
-  const smallFeatures = new Set(small.map((factor) => factor.feature));
-  const kept = factors.filter((factor) => !smallFeatures.has(factor.feature));
-  const othersValue = small.reduce((sum, factor) => sum + factor.value, 0);
+  const fixedFeatures = new Set(fixed.map((factor) => factor.feature));
+  const kept = factors.filter((factor) => !fixedFeatures.has(factor.feature));
+  const fixedValue = fixed.reduce((sum, factor) => sum + factor.value, 0);
 
   return [
     ...kept,
     {
       feature: null,
-      name: "Other factors",
-      value: othersValue,
+      name: "Fixed factors",
+      value: fixedValue,
       raisesRisk: true,
-      members: small,
+      members: fixed,
+      total: factors[0]?.total,
     },
   ];
 }
@@ -83,6 +84,17 @@ function wrapSliceLabel(text, maxCharsPerLine = SLICE_LABEL_MAX_CHARS_PER_LINE) 
   if (current) lines.push(current);
 
   return lines;
+}
+
+// Renders a slice's value as its share of the total risk score it's part
+// of (e.g. "8.32% of 23.40%"), so the breakdown visibly adds up to the
+// score shown on the gauge above instead of reading as an isolated number.
+// Exported so the stacked bars below can read off the same wording.
+export function formatRiskScoreShare(value, total) {
+  const formattedValue = value.toFixed(2);
+  return Number.isFinite(total) && total > 0
+    ? `${formattedValue}% of ${total.toFixed(2)}%`
+    : `${formattedValue}%`;
 }
 
 // getBBox() isn't implemented in jsdom (used by the component's tests),
@@ -244,16 +256,14 @@ function RiskFactorTooltip({
       <div className="risk-chart-tooltip-row">
 
         <span>
-          Share of total contribution
+          Contribution to risk score
         </span>
 
         <strong>
           {Number.isFinite(
             contribution
           )
-            ? `${contribution.toFixed(
-                2
-              )}%`
+            ? formatRiskScoreShare(contribution, factor.total)
             : "N/A"}
         </strong>
 
@@ -345,7 +355,7 @@ function RiskFactorPieChart({
      Choose original or hypothetical data
   ======================================================= */
 
-  const chartData = aggregateSmallSlices(
+  const chartData = aggregateFixedFactors(
     isHypotheticalActive &&
     hypotheticalData &&
     hypotheticalData.length > 0
@@ -763,8 +773,8 @@ function RiskFactorPieChart({
 
             <span>
               {highlightedFactor
-                ? "of total contribution"
-                : "of contribution raises risk"}
+                ? `of your ${totalRaisingShare.toFixed(1)}% risk score`
+                : "estimated risk score"}
             </span>
 
           </div>
@@ -819,14 +829,14 @@ function RiskFactorPieChart({
             <div className="risk-chart-selected-factor-row">
 
               <span>
-                Share of total contribution
+                Contribution to risk score
               </span>
 
               <strong>
-                {Number(
-                  highlightedFactor.value
-                ).toFixed(2)}
-                %
+                {formatRiskScoreShare(
+                  Number(highlightedFactor.value),
+                  highlightedFactor.total
+                )}
               </strong>
 
             </div>

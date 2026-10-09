@@ -354,10 +354,15 @@
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.65fr);
   gap: 1.5rem;
-  align-items: start;
+  /* Stretch (the grid default) so the list panel matches the chart
+     panel's full height - pie + stacked bars - instead of sizing to
+     its own (shorter) content and leaving the row height mismatched. */
+  align-items: stretch;
 }
 
 .risk-breakdown-list-panel {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
@@ -368,8 +373,20 @@
   min-width: 0;
 }
 
+/* The pie and the stacked bars below it are stacked vertically, not laid
+   out as flex siblings of the (row-direction) chart panel above. */
+.risk-breakdown-chart-stack {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 .risk-breakdown-controls {
   margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 
@@ -472,7 +489,11 @@
   flex-direction: column;
   gap: 0.625rem;
 
-  max-height:
+  /* Fills whatever height the stretched list panel ends up with (matching
+     the pie + stacked bars on the right) and scrolls internally beyond
+     that - min-height is only a floor for when the chart panel is short. */
+  flex: 1;
+  min-height:
     calc(
       var(--visible-rows) * 5rem
       +
