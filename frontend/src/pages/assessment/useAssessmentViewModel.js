@@ -32,6 +32,11 @@ export function useAssessmentViewModel() {
       risk.selectCalculation(null);
       risk.setTopContributors(result.top_contributors);
       risk.setRiskCalculationId(result.riskcalc_id ?? null);
+
+      if (result.riskcalc_id) {
+        risk.calculationSaved();
+      }
+
       navigate("/dashboard");
     } catch {
       setCalculationError("We couldn't calculate your risk score. Please try again.");

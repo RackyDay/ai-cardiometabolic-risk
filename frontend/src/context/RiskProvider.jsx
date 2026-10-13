@@ -29,6 +29,11 @@ export function RiskProvider({ children }) {
     });
     setHistoryRevision((value) => value + 1);
   }, []);
+
+  const calculationSaved = useCallback(() => {
+    setHistoryRevision((value) => value + 1);
+  }, []);
+
   const userId = isAuthenticated ? user?.id : null;
   const [moduleCompletion, setModuleCompletion] = useState({});
   const [stressInputs, setStressInputs] = useState(() => createInitalRiskInputs(stressInputSchema));
@@ -112,6 +117,7 @@ export function RiskProvider({ children }) {
       historyActivity,
       setHistoryActivity,
       calculationDeleted,
+      calculationSaved,
       selectCalculation,
       riskInputs,
       setRiskInputs,
@@ -143,6 +149,7 @@ export function RiskProvider({ children }) {
       viewingCalculationId,
       historyActivity,
       calculationDeleted,
+      calculationSaved,
       selectCalculation,
       riskInputs,
       riskCalculationId,

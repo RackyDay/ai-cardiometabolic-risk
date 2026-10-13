@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
+import { RiskContext } from "../../../context/RiskContext";
 import {
   getRiskCalculationHistory,
   getRiskCalculation,
@@ -17,8 +18,13 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCal
   const [viewError, setViewError] = useState("");
   const dropdownRef = useRef(null);
   const requestVersion = useRef(0);
-  const currentResult = result?.accessToken === accessToken &&
-    result?.retryCount === retryCount ? result : null;
+  const { historyRevision = 0 } = useContext(RiskContext);
+  const currentResult =
+    result?.accessToken === accessToken &&
+    result?.retryCount === retryCount &&
+    result?.historyRevision === historyRevision
+      ? result
+      : null;
   const history = currentResult?.history ?? [];
   const isLoading = Boolean(accessToken) && !currentResult;
   const error = currentResult?.error ?? "";
@@ -52,12 +58,12 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCal
         const data = await getRiskCalculationHistory(accessToken);
         if (!Array.isArray(data)) throw new Error("Invalid history response");
         if (!cancelled) {
-          setResult({ accessToken, retryCount, history: data, error: "" });
+          setResult({ accessToken, retryCount, historyRevision, history: data, error: "" });
         }
       } catch (error) {
         if (cancelled) return;
         console.error("Failed to load history:", error);
-        setResult({ accessToken, retryCount, history: [],
+        setResult({ accessToken, retryCount, historyRevision, history: [],
           error: "Couldn't load history. Please try again." });
       }
     };
@@ -67,7 +73,7 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCal
       cancelled = true;
       requestVersion.current += 1;
     };
-  }, [accessToken, retryCount]);
+  }, [accessToken, retryCount, historyRevision]);
 
   const viewCalculation = async () => {
     if (isViewing || deletePending.current || !accessToken || !history.some((item) => item.riskcalc_id === selectedId)) return;
@@ -111,7 +117,7 @@ function useHistoryDropdownViewModel(accessToken, onLoadCalculation, onDeleteCal
       await deleteRiskCalculation(accessToken, id);
       if (version !== requestVersion.current) return;
       const remaining = history.filter((item) => item.riskcalc_id !== id);
-      setResult({ accessToken, retryCount, history: remaining, error: "" });
+      setResult({ accessToken, retryCount, historyRevision, history: remaining, error: "" });
       setSelectedId((current) => current === id ? "" : current);
       onDeleteCalculation?.(id, remaining);
       return true;
