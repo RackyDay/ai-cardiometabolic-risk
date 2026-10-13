@@ -22,6 +22,8 @@ import RiskFactorPieChart, {
   RISK_FACTOR_DESCRIPTIONS,
 } from "./components/RiskFactorPieChart";
 
+import RiskFactorStackedBars from "./components/RiskFactorStackedBars";
+
 import { buildPieData } from "./buildPieData";
 
 import { getRiskFactorColor } from "./riskFactorColors";
@@ -370,31 +372,31 @@ function DashboardPage() {
 
 
   /*
-   * The pie chart mirrors whichever tab the factor list is on: only
-   * changeable factors while that tab is active, only fixed factors on
-   * the other.
+   * The pie chart is a single, combined view of every risk factor
+   * regardless of which breakdown tab is active - fixed factors (no
+   * what-if control) are folded into the chart's "Fixed factors" slice
+   * rather than driving a separate chart, while changeable factors stay
+   * individually-labelled slices. Its slice values are scaled to the
+   * actual risk score so the breakdown literally sums to it. The stacked
+   * bars rendered below the pie reuse this same data, broken back out into
+   * one bar per category.
    */
-  const isChangeableFactor = (factor) =>
-    Boolean(changeableRiskFactors[factor.feature]);
+  const isFixedFeature = (feature) => !changeableRiskFactors[feature];
 
-  const tabRiskFactors = riskFactors.filter((factor) =>
-    activeFactorTab === "changeable"
-      ? isChangeableFactor(factor)
-      : !isChangeableFactor(factor)
-  );
+  const piePercentOptions = {
+    riskScore: displayScore,
+    isFixedFactor: isFixedFeature,
+  };
 
-  const tabHypotheticalRiskFactors = hypotheticalRiskFactors.filter((factor) =>
-    activeFactorTab === "changeable"
-      ? isChangeableFactor(factor)
-      : !isChangeableFactor(factor)
-  );
+  const pieData = buildPieData(riskFactors, piePercentOptions);
 
-  const tabPieData = buildPieData(tabRiskFactors);
-
-  const tabHypotheticalPieData = buildPieData(
-    tabHypotheticalRiskFactors,
-    tabRiskFactors
-  );
+  const hypotheticalPieData = buildPieData(hypotheticalRiskFactors, {
+    riskScore: isHypotheticalActive && hypotheticalScore !== null
+      ? hypotheticalScore
+      : displayScore,
+    referenceFactors: riskFactors,
+    isFixedFactor: isFixedFeature,
+  });
 
   // Row order stays pinned to the original assessment (matching buildPieData's
   // own referenceFactors behavior above) so rows don't reshuffle while a
@@ -563,13 +565,13 @@ function DashboardPage() {
 
             <p className="risk-chart-description">
 
-              {`Shows how much each factor drives your ${Number(
+              {`Each slice is a literal portion of your ${Number(
                 isHypotheticalActive && hypotheticalScore !== null
                   ? hypotheticalScore
                   : displayScore
               ).toFixed(
                 1
-              )}% risk score above, relative to the other factors — not a portion of that percentage itself.`}
+              )}% risk score above, and together they add up to it. Fixed factors (no what-if control) are grouped under "Fixed factors" — hover any slice for its exact share.`}
 
             </p>
 
@@ -1493,13 +1495,15 @@ function DashboardPage() {
 
             ) : (
 
+              <div className="risk-breakdown-chart-stack">
+
               <RiskFactorPieChart
                 data={
-                  tabPieData
+                  pieData
                 }
 
                 hypotheticalData={
-                  tabHypotheticalPieData
+                  hypotheticalPieData
                 }
 
                 isHypotheticalActive={
@@ -1514,6 +1518,22 @@ function DashboardPage() {
                   setHoveredRiskFactor
                 }
               />
+
+              <RiskFactorStackedBars
+                data={
+                  pieData
+                }
+
+                hypotheticalData={
+                  hypotheticalPieData
+                }
+
+                isHypotheticalActive={
+                  isHypotheticalActive
+                }
+              />
+
+              </div>
 
             )}
 

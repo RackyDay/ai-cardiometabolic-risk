@@ -157,8 +157,11 @@ describe("insights", () => {
     getRiskCalculation.mockResolvedValue({
       riskcalc_id: "calc-previous",
       risk_score: 20,
-      inputs: { cigsPerDay: 5, age: 45, currentSmoker: true },
-      top_contributors: [{ feature: "age", contribution: 80 }],
+      inputs: { cigsPerDay: 8, age: 45, currentSmoker: true },
+      top_contributors: [
+        { feature: "age", contribution: 80 },
+        { feature: "cigsPerDay", contribution: 15 },
+      ],
     });
 
     const { result } = renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
@@ -168,17 +171,38 @@ describe("insights", () => {
     expect(result.current.hasPreviousAssessment).toBe(true);
     expect(result.current.isLoadingInsights).toBe(false);
     expect(result.current.insightsError).toBe("");
-    expect(result.current.insights.map((insight) => insight.key)).toEqual(["overall-risk-score", "age"]);
+    // Age changed too (45 -> 50, contribution 80 -> 98) and would dominate
+    // by magnitude, but age is deliberately excluded from factor insights
+    // (see "Removed age from insights") - only cigsPerDay surfaces here.
+    expect(result.current.insights.map((insight) => insight.key)).toEqual(["overall-risk-score", "cigsPerDay"]);
     expect(result.current.insights[0]).toMatchObject({
       text: "Overall risk score decreased from 20.0% to 10.0%.",
       positive: true,
     });
-    // age's contribution went from 80 to 98 (worse), even though the
-    // overall score improved - the two are tracked independently.
+    // cigsPerDay's contribution went from 15 to -2 (improved).
     expect(result.current.insights[1]).toMatchObject({
-      text: "Age changed from 45 to 50.",
-      positive: false,
+      text: "Number of cigarettes smoked per day changed from 8 to 5.",
+      positive: true,
     });
+  });
+
+  it("never reports an age insight, even when age changed and would otherwise dominate by magnitude", async () => {
+    getLatestPrediction.mockResolvedValue({ has_history: false });
+    getRiskCalculationHistory.mockResolvedValue(history);
+    getRiskCalculation.mockResolvedValue({
+      riskcalc_id: "calc-previous",
+      risk_score: 20,
+      inputs: { cigsPerDay: 5, age: 45, currentSmoker: true },
+      top_contributors: [{ feature: "age", contribution: 80 }],
+    });
+
+    const { result } = renderHook(useDashboardViewModel, { wrapper: AuthenticatedWrapper });
+    await act(async () => {});
+
+    // Only the overall-score insight survives - age changed (45 -> 50) and
+    // its contribution shifted (80 -> 98), which would otherwise produce
+    // an "age" factor insight, but that's deliberately suppressed.
+    expect(result.current.insights.map((insight) => insight.key)).toEqual(["overall-risk-score"]);
   });
 
   it("reports loading (not 'no previous assessment') while history is still being fetched", async () => {

@@ -21,11 +21,24 @@
   line-height: 1;
 }
 
+.risk-level-summary {
+  max-width: 26rem;
+  text-align: center;
+}
+
 .risk-level-label {
   font-size: 0.95rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+/* Plain case and a lighter weight than the label - this is a short "what
+   to do" note riding alongside it, not a second shouted headline. */
+.risk-level-tag {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #4b5563;
 }
 
 .risk-bar-wrapper {
@@ -118,11 +131,92 @@
 
 .risk-legend {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* 3 columns rather than 2 - with all 8 severity zones now listed, 2
+     columns runs to 4 rows; 3 columns fits the same 8 rows into 3. */
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem 0.75rem;
   width: 100%;
-  padding-top: 0.25rem;
-  border-top: 1px solid #f3f4f6;
+  padding-top: 0.75rem;
+}
+
+
+/* =========================================================
+   Legend toggle - a thin divider line with a small circular
+   expand/collapse button centered on it. The legend itself
+   starts collapsed; this is what reveals it.
+========================================================= */
+
+.risk-legend-divider {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+
+.risk-legend-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.risk-legend-toggle {
+  position: relative;
+  z-index: 1;
+
+  width: 1.75rem;
+  height: 1.75rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  background: #ffffff;
+
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.risk-legend-toggle:hover {
+  background: #f9fafb;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.risk-legend-toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.risk-legend-toggle-icon {
+  transition: transform 0.2s ease;
+}
+
+.risk-legend-toggle-icon-open {
+  transform: rotate(180deg);
+}
+
+.risk-legend-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .risk-legend-row {
@@ -293,5 +387,19 @@
 
   .risk-legend {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Narrow phones (e.g. a 320px-wide viewport): the label + severity tag
+   can still run long enough together to wrap even after shortening the
+   tag copy - trade a little size for staying on one line. */
+@media (max-width: 340px) {
+  .risk-level-label,
+  .risk-level-tag {
+    font-size: 0.8rem;
+  }
+
+  .risk-level-label {
+    letter-spacing: 0.01em;
   }
 }

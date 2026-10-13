@@ -1,15 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./RiskGauge.css";
-import { RISK_LEVELS, RISK_ZONES, getRiskLevel, formatRiskRange } from "./riskLevels";
-
-/* Tick marks derived from the zones themselves, so the scale always lines
-   up with wherever the boundaries currently are. */
-const SCALE_TICKS = [
-  ...new Set([
-    ...RISK_ZONES.map((zone) => zone.min),
-    RISK_ZONES[RISK_ZONES.length - 1].max,
-  ]),
-].sort((a, b) => a - b);
+import { RISK_ZONES, getRiskZone, formatRiskRange } from "./riskLevels";
+import ChevronDownIcon from "../../../components/icons/ChevronDownIcon";
 
 const SCALE_DOMAIN_MAX = RISK_ZONES[RISK_ZONES.length - 1].max;
 
@@ -24,12 +16,46 @@ function scalePosition(value) {
   return (Math.sqrt(value) / Math.sqrt(SCALE_DOMAIN_MAX)) * 100;
 }
 
+const MIN_TICK_GAP_PERCENT = 6;
+
+/* Tick marks derived from the zones themselves, so the scale always lines
+   up with wherever the boundaries currently are. The closing domain-max
+   tick (100%) is dropped when a zone boundary already sits within
+   MIN_TICK_GAP_PERCENT of it on the (non-linear) scale - the bar's own
+   right edge already reads as "the top of the scale" without it, and at
+   that spacing the two labels would otherwise overlap (e.g. 90% and 100%
+   sit only ~5% of the bar's width apart once square-rooted). */
+const SCALE_TICKS = (() => {
+  const candidates = [
+    ...new Set([
+      ...RISK_ZONES.map((zone) => zone.min),
+      SCALE_DOMAIN_MAX,
+    ]),
+  ].sort((a, b) => a - b);
+
+  const last = candidates[candidates.length - 1];
+  const secondLast = candidates[candidates.length - 2];
+
+  if (
+    secondLast !== undefined &&
+    scalePosition(last) - scalePosition(secondLast) < MIN_TICK_GAP_PERCENT
+  ) {
+    return candidates.slice(0, -1);
+  }
+
+  return candidates;
+})();
+
 function RiskGauge({ score }) {
   const [selectedZone, setSelectedZone] = useState(null);
+  // The full severity legend starts collapsed behind a toggle - the bar
+  // and headline already carry the current score's own severity; the
+  // full 8-row reference list is detail most visits don't need open.
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
   const riskBarRef = useRef(null);
   const numericScore = Number(score) || 0;
   const clampedScore = Math.max(0, Math.min(100, numericScore));
-  const currentLevel = getRiskLevel(clampedScore);
+  const currentZone = getRiskZone(clampedScore);
 
     useEffect(() => {
     const handleOutsidePress = (event) => {
@@ -58,11 +84,19 @@ function RiskGauge({ score }) {
           {clampedScore.toFixed(1)}%
         </span>
 
-        <span
-          className="risk-level-label"
-          style={{ color: currentLevel.color }}
-        >
-          {currentLevel.label}
+        <span className="risk-level-summary">
+          <span
+            className="risk-level-label"
+            style={{ color: currentZone.color }}
+          >
+            {currentZone.label}
+          </span>
+
+          {currentZone.severityTag && (
+            <span className="risk-level-tag">
+              {" "}– {currentZone.severityTag}
+            </span>
+          )}
         </span>
       </div>
 
@@ -143,47 +177,76 @@ function RiskGauge({ score }) {
         </div>
       </div>
 
-      <div className="risk-legend" aria-label="Risk level reference">
-        {RISK_LEVELS.map((level) => {
-          const isCurrent = level.key === currentLevel.key;
+      <div className="risk-legend-divider">
+        <button
+          type="button"
+          className="risk-legend-toggle"
+          onClick={() => setIsLegendOpen((open) => !open)}
+          aria-expanded={isLegendOpen}
+          aria-controls="risk-legend-panel"
+        >
+          <ChevronDownIcon
+            size={14}
+            className={`risk-legend-toggle-icon ${
+              isLegendOpen ? "risk-legend-toggle-icon-open" : ""
+            }`}
+          />
 
-          return (
-            <div
-              key={level.key}
-              className={`risk-legend-row ${
-                isCurrent ? "risk-legend-row-active" : ""
-              }`}
-              style={isCurrent ? { backgroundColor: level.bgColor } : undefined}
-            >
-              <span
-                className="risk-legend-swatch"
-                style={{ backgroundColor: level.color }}
-              />
-
-              <div className="risk-legend-text">
-                <span className="risk-legend-label">
-                  {level.label}{" "}
-                  <span className="risk-legend-range">
-                    ({formatRiskRange(level)})
-                  </span>
-                  {isCurrent && (
-                    <span
-                      className="risk-legend-current-badge"
-                      style={{ backgroundColor: level.color }}
-                    >
-                      Your range
-                    </span>
-                  )}
-                </span>
-
-                <span className="risk-legend-desc">
-                  {level.shortDescription}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+          <span className="risk-legend-sr-only">
+            {isLegendOpen ? "Hide" : "Show"} all risk level ranges
+          </span>
+        </button>
       </div>
+
+      {isLegendOpen && (
+
+        <div
+          id="risk-legend-panel"
+          className="risk-legend"
+          aria-label="Risk level reference"
+        >
+          {RISK_ZONES.map((zone) => {
+            const isCurrent = zone.key === currentZone.key;
+
+            return (
+              <div
+                key={zone.key}
+                className={`risk-legend-row ${
+                  isCurrent ? "risk-legend-row-active" : ""
+                }`}
+                style={isCurrent ? { backgroundColor: zone.bgColor } : undefined}
+              >
+                <span
+                  className="risk-legend-swatch"
+                  style={{ backgroundColor: zone.color }}
+                />
+
+                <div className="risk-legend-text">
+                  <span className="risk-legend-label">
+                    {zone.label}{" "}
+                    <span className="risk-legend-range">
+                      ({formatRiskRange(zone)})
+                    </span>
+                    {isCurrent && (
+                      <span
+                        className="risk-legend-current-badge"
+                        style={{ backgroundColor: zone.color }}
+                      >
+                        Your range
+                      </span>
+                    )}
+                  </span>
+
+                  <span className="risk-legend-desc">
+                    {zone.shortDescription}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+      )}
     </div>
   );
 }
