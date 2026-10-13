@@ -135,6 +135,9 @@ export function RiskProvider({ children }) {
       resetHypothetical,
     }),
     [
+      moduleCompletion,
+      stressInputs,
+      userId,
       selectedCalculation,
       historyRevision,
       viewingCalculationId,
