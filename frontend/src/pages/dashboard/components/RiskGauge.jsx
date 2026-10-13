@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./RiskGauge.css";
 import { RISK_ZONES, getRiskZone, formatRiskRange } from "./riskLevels";
+import ChevronDownIcon from "../../../components/icons/ChevronDownIcon";
 
 const SCALE_DOMAIN_MAX = RISK_ZONES[RISK_ZONES.length - 1].max;
 
@@ -47,6 +48,10 @@ const SCALE_TICKS = (() => {
 
 function RiskGauge({ score }) {
   const [selectedZone, setSelectedZone] = useState(null);
+  // The full severity legend starts collapsed behind a toggle - the bar
+  // and headline already carry the current score's own severity; the
+  // full 8-row reference list is detail most visits don't need open.
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
   const riskBarRef = useRef(null);
   const numericScore = Number(score) || 0;
   const clampedScore = Math.max(0, Math.min(100, numericScore));
@@ -172,47 +177,76 @@ function RiskGauge({ score }) {
         </div>
       </div>
 
-      <div className="risk-legend" aria-label="Risk level reference">
-        {RISK_ZONES.map((zone) => {
-          const isCurrent = zone.key === currentZone.key;
+      <div className="risk-legend-divider">
+        <button
+          type="button"
+          className="risk-legend-toggle"
+          onClick={() => setIsLegendOpen((open) => !open)}
+          aria-expanded={isLegendOpen}
+          aria-controls="risk-legend-panel"
+        >
+          <ChevronDownIcon
+            size={14}
+            className={`risk-legend-toggle-icon ${
+              isLegendOpen ? "risk-legend-toggle-icon-open" : ""
+            }`}
+          />
 
-          return (
-            <div
-              key={zone.key}
-              className={`risk-legend-row ${
-                isCurrent ? "risk-legend-row-active" : ""
-              }`}
-              style={isCurrent ? { backgroundColor: zone.bgColor } : undefined}
-            >
-              <span
-                className="risk-legend-swatch"
-                style={{ backgroundColor: zone.color }}
-              />
-
-              <div className="risk-legend-text">
-                <span className="risk-legend-label">
-                  {zone.label}{" "}
-                  <span className="risk-legend-range">
-                    ({formatRiskRange(zone)})
-                  </span>
-                  {isCurrent && (
-                    <span
-                      className="risk-legend-current-badge"
-                      style={{ backgroundColor: zone.color }}
-                    >
-                      Your range
-                    </span>
-                  )}
-                </span>
-
-                <span className="risk-legend-desc">
-                  {zone.shortDescription}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+          <span className="risk-legend-sr-only">
+            {isLegendOpen ? "Hide" : "Show"} all risk level ranges
+          </span>
+        </button>
       </div>
+
+      {isLegendOpen && (
+
+        <div
+          id="risk-legend-panel"
+          className="risk-legend"
+          aria-label="Risk level reference"
+        >
+          {RISK_ZONES.map((zone) => {
+            const isCurrent = zone.key === currentZone.key;
+
+            return (
+              <div
+                key={zone.key}
+                className={`risk-legend-row ${
+                  isCurrent ? "risk-legend-row-active" : ""
+                }`}
+                style={isCurrent ? { backgroundColor: zone.bgColor } : undefined}
+              >
+                <span
+                  className="risk-legend-swatch"
+                  style={{ backgroundColor: zone.color }}
+                />
+
+                <div className="risk-legend-text">
+                  <span className="risk-legend-label">
+                    {zone.label}{" "}
+                    <span className="risk-legend-range">
+                      ({formatRiskRange(zone)})
+                    </span>
+                    {isCurrent && (
+                      <span
+                        className="risk-legend-current-badge"
+                        style={{ backgroundColor: zone.color }}
+                      >
+                        Your range
+                      </span>
+                    )}
+                  </span>
+
+                  <span className="risk-legend-desc">
+                    {zone.shortDescription}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+      )}
     </div>
   );
 }

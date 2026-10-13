@@ -1,6 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import RiskGauge from "./RiskGauge";
+
+function openLegend() {
+  fireEvent.click(screen.getByRole("button", { name: /show all risk level ranges/i }));
+}
 
 function headlineText(container) {
   return container.querySelector(".risk-level-label").textContent;
@@ -36,18 +40,42 @@ describe("RiskGauge severity breakdown", () => {
     expect(headlineText(container)).toBe("High Risk");
   });
 
-  it("lists every severity tier in the always-visible legend, not only on hover", () => {
+  it("keeps the full severity legend collapsed behind a toggle by default", () => {
     render(<RiskGauge score={10} />);
+    expect(screen.queryByLabelText("Risk level reference")).not.toBeInTheDocument();
+
+    const toggle = screen.getByRole("button", { name: /show all risk level ranges/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("reveals every severity tier once the toggle is opened", () => {
+    render(<RiskGauge score={10} />);
+    openLegend();
+
     const legend = screen.getByLabelText("Risk level reference");
     expect(legend).toHaveTextContent("High Risk");
     expect(legend).toHaveTextContent("Very High Risk");
     expect(legend).toHaveTextContent("Severe Risk");
     expect(legend).toHaveTextContent("Critical Risk");
     expect(legend).toHaveTextContent("Extreme Risk");
+
+    // The toggle now offers to collapse it again.
+    expect(screen.getByRole("button", { name: /hide all risk level ranges/i }))
+      .toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("closes the legend again on a second click", () => {
+    render(<RiskGauge score={10} />);
+    openLegend();
+    expect(screen.getByLabelText("Risk level reference")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /hide all risk level ranges/i }));
+    expect(screen.queryByLabelText("Risk level reference")).not.toBeInTheDocument();
   });
 
   it("highlights only the matching zone's legend row as the current range", () => {
     render(<RiskGauge score={85} />);
+    openLegend();
     const legend = screen.getByLabelText("Risk level reference");
     const rows = [...legend.querySelectorAll(".risk-legend-row")];
     const activeRows = rows.filter((row) => row.className.includes("risk-legend-row-active"));
