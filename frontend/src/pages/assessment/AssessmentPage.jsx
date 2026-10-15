@@ -69,6 +69,26 @@ function AssessmentPage() {
           </svg>
         </button>
       </section>
+
+      {/* Vertically stacked modules for tablet portrait */}
+      <section
+        className="assessment-modules-stack"
+        aria-label="Assessment modules"
+      >
+        {assessmentModules.map(
+          ({ id, Icon, getInputs, getFooter, ...module }) => (
+            <div className="assessment-module-item" key={id}>
+              <AssessmentModuleCard
+                {...module}
+                footer={getFooter ? getFooter(risk) : module.footer}
+                icon={<Icon />}
+                complete={risk.isModuleComplete(id, getInputs(risk))}
+              />
+            </div>
+          )
+        )}
+      </section>
+
       <div className="assessment-actions">
         {calculationError && <p role="alert">{calculationError}</p>}
         <div
