@@ -97,19 +97,14 @@
 .assessment-carousel-arrow:hover:not(:disabled) { background: #285bbd; border-color: #285bbd; }
 .assessment-carousel-arrow:disabled { background: #e0e8f6; border-color: #b8c9e5; color: #8195b6; box-shadow: none; cursor: default; }
 .assessment-carousel-arrow:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 3px; }
+
+/* Hide stacked modules by default */
+.assessment-modules-stack {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .assessment-carousel-track, .assessment-carousel-slide { transition: none; }
-}
-@media (max-width: 600px) {
-  .assessment-modules { --carousel-card-width: 76vw; --carousel-gap: .75rem; }
-  .assessment-carousel-arrow { width: 44px; height: 44px; }
-  .assessment-carousel-arrow svg { width: 24px; height: 24px; }
-  .assessment-carousel-arrow[aria-label="Previous module"] { left: 6px; }
-  .assessment-carousel-arrow[aria-label="Next module"] { right: 6px; }
-  .assessment-carousel-viewport { mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); }
-  .assessment-modules .assessment-module-body { padding: 1rem; }
-  .assessment-modules .assessment-module-footer { padding: 1rem; }
-  .assessment-modules .assessment-module-actions { flex-shrink: 1; }
 }
 .assessment-actions {
   align-self: end;
@@ -162,12 +157,8 @@
 .assessment-calculate:hover:not(:disabled) { background: #2d5fc4; }
 .assessment-calculate:disabled { opacity: .55; cursor: not-allowed; }
 .assessment-calculate:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 4px; }
-@media (max-width: 600px) {
-  .assessment-page { height: auto; min-height: 100%; row-gap: 1.25rem; }
-  .assessment-header { margin: 2rem auto 0; }
-  .assessment-actions { padding: 0; }
-}
-@media (max-height: 850px) and (min-width: 601px) {
+
+@media (max-height: 850px) and (min-width: 1025px) {
   .app-content:has(.assessment-page) { padding-top: 16px; padding-bottom: 16px; }
   .assessment-header { margin-top: 1.5rem; max-width: 46rem; }
   .assessment-header h1 { font-size: 2rem; margin-bottom: .5rem; }
@@ -175,4 +166,286 @@
   .assessment-page .assessment-module-heading { margin-bottom: .75rem; }
   .assessment-page .assessment-module-footer { padding-top: .75rem; padding-bottom: .75rem; }
   .assessment-actions { padding-top: 0; }
+}
+
+/* =========================================================
+   TABLET: 768px - 1024px
+========================================================= */
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  .assessment-page {
+    height: auto;
+    min-height: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    row-gap: 1.5rem;
+    padding-top: 2.75rem;
+    box-sizing: border-box;
+  }
+
+  .assessment-header {
+    margin: 0 auto;
+    max-width: 36rem;
+  }
+
+  .assessment-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .assessment-header p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .assessment-modules {
+    width: 100%;
+    margin: 0;
+    --carousel-card-width: min(78%, 40rem);
+    --carousel-gap: 1.25rem;
+  }
+
+  .assessment-carousel-viewport {
+    padding: 1.5rem 0;
+    margin: 0;
+  }
+
+  .assessment-carousel-arrow {
+    width: 50px;
+    height: 50px;
+  }
+
+  .assessment-carousel-arrow svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .assessment-carousel-arrow[aria-label="Previous module"] {
+    left: 0;
+  }
+
+  .assessment-carousel-arrow[aria-label="Next module"] {
+    right: 0;
+  }
+
+  .assessment-modules .assessment-module-body {
+    padding: 1.25rem;
+  }
+
+  .assessment-modules .assessment-module-footer {
+    padding: 1rem 1.25rem;
+  }
+
+  .assessment-actions {
+    align-self: start;
+    justify-self: center;
+    width: 100%;
+    max-width: 24rem;
+    padding: 0;
+    text-align: center;
+  }
+
+  .assessment-calculate {
+    min-height: 48px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE: Below 768px
+========================================================= */
+@media (max-width: 767px) {
+
+  .assessment-page {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    row-gap: 1.25rem;
+    padding-top: 2.75rem;
+    box-sizing: border-box;
+  }
+
+  .assessment-back {
+    font-size: 0.85rem;
+  }
+
+  .assessment-header {
+    margin: 0 auto;
+    max-width: 30rem;
+    padding: 0 0.25rem;
+  }
+
+  .assessment-header h1 {
+    font-size: clamp(1.5rem, 6vw, 1.9rem);
+    margin-bottom: 0.6rem;
+    line-height: 1.2;
+  }
+
+  .assessment-header p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  /* Place carousel arrows BELOW the card */
+  .assessment-modules {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 0.75rem;
+    --carousel-card-width: min(calc(100% - 0.5rem), 28rem);
+    --carousel-gap: 0.75rem;
+  }
+
+  .assessment-carousel-viewport {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-width: 0;
+    padding: 1rem 0;
+    margin: 0;
+    mask-image: none;
+  }
+
+  .assessment-carousel-arrow {
+    position: static;
+    top: auto;
+    transform: none;
+    width: 44px;
+    height: 44px;
+    box-shadow: 0 3px 12px rgba(40, 91, 189, 0.2);
+  }
+
+  .assessment-carousel-arrow svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .assessment-carousel-arrow[aria-label="Previous module"] {
+    left: auto;
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  .assessment-carousel-arrow[aria-label="Next module"] {
+    right: auto;
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .assessment-modules .assessment-module-body {
+    padding: 1rem;
+  }
+
+  .assessment-modules .assessment-module-footer {
+    padding: 1rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .assessment-modules .assessment-module-actions {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  /* Full-width calculate button */
+  .assessment-actions {
+    align-self: start;
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0 0 1rem;
+    text-align: center;
+  }
+
+  .assessment-calculate-help {
+    display: block;
+    width: 100%;
+  }
+
+  .assessment-calculate {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    box-sizing: border-box;
+  }
+
+  .assessment-calculate-tooltip {
+    right: 50%;
+    transform: translateX(50%);
+    width: min(18rem, calc(100vw - 3rem));
+  }
+}
+
+/* =========================================================
+   TABLET PORTRAIT ONLY
+========================================================= */
+/* =========================================================
+   TABLET PORTRAIT ONLY: STACKED MODULES
+========================================================= */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+
+  .assessment-page {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    height: auto;
+    min-height: 100%;
+    gap: 1.5rem;
+    padding-top: 2.75rem;
+  }
+
+  /* Hide original carousel */
+  .assessment-modules {
+    display: none;
+  }
+
+  /* Show vertical module list */
+  .assessment-modules-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+
+  .assessment-module-item {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .assessment-module-item > .assessment-module {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .assessment-modules-stack .assessment-module-body {
+    padding: 1.25rem;
+  }
+
+  .assessment-modules-stack .assessment-module-footer {
+    padding: 1rem 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  /* Centre Calculate Risk Score below the modules */
+  .assessment-actions {
+    align-self: center;
+    width: 100%;
+    max-width: 40rem;
+    margin: 0 auto;
+    text-align: center;
+  }
 }
