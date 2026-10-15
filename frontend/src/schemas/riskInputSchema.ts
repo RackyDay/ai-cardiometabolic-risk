@@ -69,7 +69,7 @@ export const riskInputSchema = {
     bpMeds: {
         name: "bpMeds",
         print_name: "Blood pressure medication status",
-        input_label: "Do you take any blood pressure medication?",
+        input_label: "Are you currently taking any blood pressure medication?",
         type: "boolean",
         defaultValue: null,
         required: true,
@@ -89,7 +89,7 @@ export const riskInputSchema = {
     prevalentHyp: {
         name: "prevalentHyp",
         print_name: "Hypertension diagnosis status",
-        input_label: "Have you been clinically diagnosed with hypertension?",
+        input_label: "Are you currently clinically diagnosed with hypertension?",
         type: "boolean",
         defaultValue: null,
         required: true,
@@ -99,7 +99,7 @@ export const riskInputSchema = {
     diabetes: {
         name: "diabetes",
         print_name: "Diabetes diagnosis status",
-        input_label: "Have you been clinically diagnosed with diabetes?",
+        input_label: "Are you currently clinically diagnosed with diabetes?",
         type: "boolean",
         defaultValue: null,
         required: true,
