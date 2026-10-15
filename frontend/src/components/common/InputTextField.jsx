@@ -11,6 +11,7 @@ function InputTextField({ label, value, onChange, min, step, max, error, require
           value={value}
           onChange={onChange}
           onKeyDown={onKeyDown}
+          onWheel={(e) => e.currentTarget.blur()}
           min={min}
           max={max}
           step={step}
