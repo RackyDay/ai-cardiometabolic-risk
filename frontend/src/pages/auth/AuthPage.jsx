@@ -1,5 +1,6 @@
 import { useAuthViewModel } from "./useAuthViewModel";
 import "./AuthPage.css";
+import { Link } from "react-router-dom";
 
 function AuthPage() {
   const {
@@ -46,6 +47,9 @@ function AuthPage() {
 
   return (
     <main className="auth-page">
+      <Link to="/" className="auth-back">
+        &lsaquo; Back to home
+      </Link>
       <form className="auth-card" onSubmit={handleSubmit}>
         <div className="auth-toggle">
           <button
