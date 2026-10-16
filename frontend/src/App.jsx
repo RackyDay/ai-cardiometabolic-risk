@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import useMenuBarViewModel from "./components/layout/MenuBar/useMenuBarViewModel";
 // WelcomePage and AuthPage stay eagerly imported - they're the first thing
@@ -26,6 +26,7 @@ const ResetPasswordPage = lazy(() => import("./pages/resetPassword/ResetPassword
 const SettingsPage = lazy(() => import("./pages/settings/SettingsPage"));
 
 function AppLayout() {
+  const location = useLocation();
   const { pageTitle } = useMenuBarViewModel();
   const {
     shouldShowSideNav,
@@ -57,7 +58,7 @@ function AppLayout() {
         )}
 
         <main className="app-content">
-          {pageTitle && (
+          {pageTitle && location.pathname !== "/assessment" && (
             <h1 className="mobile-page-title">
               {pageTitle}
             </h1>
