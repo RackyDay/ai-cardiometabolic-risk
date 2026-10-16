@@ -33,6 +33,11 @@
   display: none;
 }
 
+/* Page title hidden on desktop and tablet */
+.mobile-page-title {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .app-body.with-sidebar {
     display: block;
@@ -67,5 +72,16 @@
 @media (max-width: 767px) {
   .app-content {
     padding: 16px;
+  }
+
+  .mobile-page-title {
+    display: block;
+    margin: 0 0 16px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: 0.6px;
+    color: #3d6fd4;
+    text-align: center;
   }
 }
