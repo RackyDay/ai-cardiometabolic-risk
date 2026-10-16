@@ -22,6 +22,7 @@ function MenuBar({ showMenuButton, onMenuClick }) {
   // dashboard, so the control only shows there - it would otherwise sit in
   // the menu bar on pages where it does nothing.
   const isDashboard = location.pathname === "/dashboard";
+  const showHistoryDropdown = !["/", "/auth"].includes(location.pathname);
   const dropdownRef = useRef(null);
 
   const {
@@ -139,7 +140,11 @@ function MenuBar({ showMenuButton, onMenuClick }) {
             />
           </div>
         )}
-        <HistoryDropdown onLoadCalculation={handleLoadCalculation}/>
+
+        {showHistoryDropdown && (
+          <HistoryDropdown onLoadCalculation={handleLoadCalculation} />
+        )}
+        
         <div className="menu-profile-wrapper" ref={dropdownRef}>
           <button
             className="menu-profile-name"
