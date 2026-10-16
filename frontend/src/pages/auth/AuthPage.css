@@ -5,6 +5,29 @@
   background: #eaf0fb;
   padding: 2rem;
   box-sizing: border-box;
+  position: relative;
+}
+
+/* Back to home */
+.auth-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-block;
+  color: #53627b;
+  font-size: 0.85rem;
+  text-decoration: none;
+  padding: 0.35rem 0;
+}
+
+.auth-back:hover {
+  color: #285bbd;
+  text-decoration: underline;
+}
+
+.auth-back:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 5px;
 }
 
 .auth-card {
@@ -259,6 +282,7 @@
 
   .auth-page {
     padding: 1rem;
+    padding-top: 3.5rem;
     place-items: start center;
   }
 
