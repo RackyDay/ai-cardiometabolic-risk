@@ -1,5 +1,5 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { RiskContext } from "../../context/RiskContext";
@@ -40,31 +40,34 @@ function lastPage() {
   fireEvent.click(pages[pages.length - 1]);
 }
 beforeEach(() => vi.resetAllMocks());
+afterEach(() => vi.useRealTimers());
 
 it("loops modules in both directions without an end stop", () => {
   setup();
   fireEvent.click(screen.getByRole("button", { name: /Back/ }));
   const previous = screen.getByRole("button", { name: "Previous module" });
   const next = screen.getByRole("button", { name: "Next module" });
+  // jsdom does not apply the CSS that hides the tablet stack on desktop.
+  const activeSlide = () => within(previous.closest("section").querySelector('[aria-hidden="false"]'));
   vi.useFakeTimers();
   const move = (button) => {
     fireEvent.click(button);
     act(() => vi.advanceTimersByTime(450));
   };
   expect(previous).toBeEnabled();
-  expect(screen.getByRole("heading", { name: "Base risk inputs" })).toBeInTheDocument();
+  expect(activeSlide().getByRole("heading", { name: "Base risk inputs" })).toBeInTheDocument();
   move(next);
-  expect(screen.getByRole("heading", { name: "Stress Levels" })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /Start module/ })).toHaveAttribute("href", "/stress");
+  expect(activeSlide().getByRole("heading", { name: "Stress Levels" })).toBeInTheDocument();
+  expect(activeSlide().getByRole("link", { name: /Start module/ })).toHaveAttribute("href", "/stress");
   move(next);
-  expect(screen.getByRole("heading", { name: "More modules coming soon" })).toBeInTheDocument();
+  expect(activeSlide().getByRole("heading", { name: "More modules coming soon" })).toBeInTheDocument();
   expect(next).toBeEnabled();
   move(next);
-  expect(screen.getByRole("heading", { name: "Base risk inputs" })).toBeInTheDocument();
+  expect(activeSlide().getByRole("heading", { name: "Base risk inputs" })).toBeInTheDocument();
   move(previous);
-  expect(screen.getByRole("heading", { name: "More modules coming soon" })).toBeInTheDocument();
+  expect(activeSlide().getByRole("heading", { name: "More modules coming soon" })).toBeInTheDocument();
   move(previous);
-  expect(screen.getByRole("heading", { name: "Stress Levels" })).toBeInTheDocument();
+  expect(activeSlide().getByRole("heading", { name: "Stress Levels" })).toBeInTheDocument();
   expect(predictRisk).not.toHaveBeenCalled();
   vi.useRealTimers();
 });

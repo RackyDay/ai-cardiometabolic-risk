@@ -2,6 +2,11 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { getRiskCalculationHistory, deleteRiskCalculation } from "../../../services/api.js";
 import useHistoryDropdownViewModel from "./useHistoryDropdownViewModel";
+import { RiskContext } from "../../../context/RiskContext";
+
+function Wrapper({ children }) {
+  return <RiskContext.Provider value={{ historyRevision: 0 }}>{children}</RiskContext.Provider>;
+}
 
 vi.mock("../../../services/api.js", () => ({
   getRiskCalculationHistory: vi.fn(),
@@ -14,7 +19,7 @@ describe("history loading", () => {
     getRiskCalculationHistory.mockResolvedValueOnce([{ riskcalc_id: "saved" }]);
     deleteRiskCalculation.mockResolvedValueOnce(null);
     const onDelete = vi.fn();
-    const { result } = renderHook(() => useHistoryDropdownViewModel("token", vi.fn(), onDelete));
+    const { result } = renderHook(() => useHistoryDropdownViewModel("token", vi.fn(), onDelete), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.history).toHaveLength(1));
     act(() => result.current.setSelectedId("saved"));
     await act(async () => result.current.deleteCalculation("saved"));
@@ -28,7 +33,7 @@ describe("history loading", () => {
     getRiskCalculationHistory.mockResolvedValueOnce([{ riskcalc_id: "saved" }]);
     deleteRiskCalculation.mockRejectedValueOnce(new Error("Unavailable"));
     const onDelete = vi.fn();
-    const { result } = renderHook(() => useHistoryDropdownViewModel("token", vi.fn(), onDelete));
+    const { result } = renderHook(() => useHistoryDropdownViewModel("token", vi.fn(), onDelete), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.history).toHaveLength(1));
     await act(async () => result.current.deleteCalculation("saved"));
     expect(result.current.history).toHaveLength(1);
@@ -41,7 +46,7 @@ describe("history loading", () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     getRiskCalculationHistory.mockRejectedValueOnce(new Error("Backend unavailable"));
     getRiskCalculationHistory.mockResolvedValueOnce([{ riskcalc_id: "saved" }]);
-    const { result } = renderHook(() => useHistoryDropdownViewModel("token", vi.fn()));
+    const { result } = renderHook(() => useHistoryDropdownViewModel("token", vi.fn()), { wrapper: Wrapper });
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.error).toContain("Couldn't load history"));
     act(() => result.current.retryHistory());
@@ -59,7 +64,7 @@ describe("history loading", () => {
     const onLoad = vi.fn();
     const { result, rerender } = renderHook(
       ({ token }) => useHistoryDropdownViewModel(token, onLoad),
-      { initialProps: { token: "old-token" } },
+      { initialProps: { token: "old-token" }, wrapper: Wrapper },
     );
     rerender({ token: "new-token" });
     await waitFor(() => expect(result.current.history).toEqual([{ riskcalc_id: "new" }]));
