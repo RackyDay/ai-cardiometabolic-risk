@@ -1,6 +1,7 @@
 # Smart Heart AI
 ###### A platform which collects user health data (e.g. age, BMI, lifestyle) and predicts their 10 year cardiovascular disease risk with an integrated AI model.
 
+Full technical documentation (architecture, database schema, API reference, ML model, testing, CI/CD) lives in [`docs/TECHNICAL_DOCUMENTATION.md`](docs/TECHNICAL_DOCUMENTATION.md).
 
 ### Team members:<br>
 Remy Didelis - remydidelis@gmail.com <br>
@@ -8,6 +9,25 @@ Joesiah Liu - tsunetoishida03@gmail.com <br>
 Simran Rao - simranrao9703@gmail.com </br>
 Ansh Kapoor - kapooransh1101@gmail.com</br>
 Henryaldi Matio - henryalditio@gmail.com</br>
+
+## Tech Stack
+
+- **Frontend:** React 19 (Vite), React Router, Recharts, Vitest + React Testing Library
+- **Backend:** FastAPI (Python), Pydantic, Uvicorn
+- **ML model:** Explainable Boosting Machine (InterpretML) trained on the Framingham Heart Study dataset
+- **Database / Auth:** Supabase (PostgreSQL + Auth, with Row Level Security)
+- **CI:** GitHub Actions
+
+## Project Structure
+
+```
+ai-cardiometabolic-risk/
+├── backend/        # FastAPI app, risk model, Supabase integration, pytest tests
+├── frontend/       # React + Vite single-page app, Vitest tests
+├── supabase/       # Database migrations (schema, RLS policies, RPC functions)
+├── docs/           # Technical documentation and feature notes
+└── .github/.workflows/ci.yml   # CI pipeline (backend boot check + tests, frontend build)
+```
 
 ## Local Development
 
@@ -17,75 +37,79 @@ Henryaldi Matio - henryalditio@gmail.com</br>
 - A Supabase project (or the [Supabase CLI](https://supabase.com/docs/guides/local-development) if you want to run Postgres locally against the migrations in `supabase/migrations/`)
 
 ### 1. Clone and install dependencies
-\`\`\`bash
+```bash
 git clone https://github.com/RackyDay/ai-cardiometabolic-risk.git
 cd ai-cardiometabolic-risk
 
 npm install                      # root (installs `concurrently`)
 cd frontend && npm install && cd ..
 cd backend && pip install -r requirements.txt && cd ..
-\`\`\`
+```
 
 ### 2. Configure environment variables
 
 Create `backend/.env`:
-\`\`\`
+```
 SUPABASE_URL=https://<your-project-ref>.supabase.co
 SUPABASE_KEY=<anon/public key>
 SUPABASE_SERVICE_ROLE_KEY=<service role key>
-\`\`\`
+```
 
 Create `frontend/.env`:
-\`\`\`
+```
 VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
 VITE_SUPABASE_ANON_KEY=<anon/public key>
 VITE_API_URL=http://localhost:8000
-\`\`\`
+```
 
 Both files are gitignored — never commit real keys. Get the Supabase values from your project's **Settings → API** page.
 
 ### 3. Apply the database schema
 
 If you're pointing at a fresh Supabase project, push the migrations in `supabase/migrations/` via the Supabase CLI:
-\`\`\`bash
+```bash
 supabase link --project-ref <your-project-ref>
 supabase db push
-\`\`\`
+```
 
 ### 4. Running the prototype
 
 **Full Stack** <br>
 run
-\`\`\`npm run dev\`\`\` from project root (ai-cardiometabolic-risk)
+```npm run dev``` from project root (ai-cardiometabolic-risk)
 
 **Backend only**<br>
 run
-\`\`\`uvicorn main:app --reload\`\`\` from backend folder
+```uvicorn main:app --reload``` from backend folder
 
 API docs available at `http://localhost:8000/docs`.
 
 **Frontend only**<br>
-run \`\`\`npm run dev\`\`\` from frontend folder
+run ```npm run dev``` from frontend folder
 
 App available at `http://localhost:5173`.
 
 ### 5. Run tests
 
 Backend (from `backend/`):
-\`\`\`bash
+```bash
 pytest
-\`\`\`
+```
 
 Frontend (from `frontend/`):
-\`\`\`bash
+```bash
 npm run test        # single run
 npm run test:watch  # watch mode
-\`\`\`
+```
 
 ### 6. Linting (frontend)
-\`\`\`bash
+```bash
 cd frontend && npm run lint
-\`\`\`
+```
+
+## Contributing
+
+See [`docs/TECHNICAL_DOCUMENTATION.md`](docs/TECHNICAL_DOCUMENTATION.md) for the API reference, database schema, and architecture before making changes. Open a pull request against `develop`; the CI pipeline must pass (backend boots and its tests pass, frontend builds) before merging.
 
 ## Known Issues / Next Steps
 
