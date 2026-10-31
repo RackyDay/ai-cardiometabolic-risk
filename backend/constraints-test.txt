@@ -1,0 +1,3 @@
+# Match the SimpleImputer version recorded in framingham_ebm.joblib.
+# Applied only to test/CI installs; production requirements are unchanged.
+scikit-learn==1.9.0
